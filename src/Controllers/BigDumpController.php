@@ -237,6 +237,10 @@ class BigDumpController
             return;
         }
 
+        // Clear any pending query from previous import of this file
+        $sessionKey = 'bigdump_pending_' . md5($filename);
+        unset($_SESSION[$sessionKey]);
+
         // Redirect to import
         $url = $this->request->getScriptUri() . '?' . http_build_query([
             'start' => 1,
@@ -244,6 +248,7 @@ class BigDumpController
             'foffset' => 0,
             'totalqueries' => 0,
             'delimiter' => $this->config->get('delimiter', ';'),
+            'instring' => '0',
         ]);
 
         $this->response->redirect($url);
