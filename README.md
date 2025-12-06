@@ -1,13 +1,13 @@
-# BigDump 2.2 - Staggered MySQL Dump Importer
+# BigDump 2.3 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 <p align="center">
-  <img src="2025-12-06_04h29_29.png" alt="BigDump 2.2 Screenshot" width="800">
+  <img src="2025-12-06_04h29_29.png" alt="BigDump 2.3 Screenshot" width="800">
 </p>
 
-BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This version 2.2 is a complete refactoring using object-oriented MVC architecture.
+BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This version 2.3 is a complete refactoring using object-oriented MVC architecture.
 
 ## Features
 
@@ -166,4 +166,4 @@ return [
 ## Credits
 
 - **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump)
-- **MVC Refactoring**: Version 2.2 with object-oriented architecture by [w3spi5](https://github.com/w3spi5)
+- **MVC Refactoring**: Version 2.3 with object-oriented architecture by [w3spi5](https://github.com/w3spi5)

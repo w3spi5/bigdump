@@ -17,14 +17,14 @@ use Throwable;
  *
  * @package BigDump\Core
  * @author  MVC Refactoring
- * @version 2.2
+ * @version 2.3
  */
 class Application
 {
     /**
      * Application version.
      */
-    public const VERSION = '2.2';
+    public const VERSION = '2.3';
 
     /**
      * Configuration instance.

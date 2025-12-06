@@ -12,7 +12,7 @@ namespace BigDump\Models;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.2
+ * @version 2.3
  */
 class ImportSession
 {
