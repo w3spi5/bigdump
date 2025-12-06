@@ -24,7 +24,7 @@ use BigDump\Services\AjaxService;
  *
  * @package BigDump\Controllers
  * @author  Refactorisation MVC
- * @version 2.3
+ * @version 2.4
  */
 class BigDumpController
 {
@@ -237,6 +237,10 @@ class BigDumpController
             return;
         }
 
+        // Clear any pending query from previous import of this file
+        $sessionKey = 'bigdump_pending_' . md5($filename);
+        unset($_SESSION[$sessionKey]);
+
         // Redirect to import
         $url = $this->request->getScriptUri() . '?' . http_build_query([
             'start' => 1,
@@ -244,6 +248,7 @@ class BigDumpController
             'foffset' => 0,
             'totalqueries' => 0,
             'delimiter' => $this->config->get('delimiter', ';'),
+            'instring' => '0',
         ]);
 
         $this->response->redirect($url);
@@ -256,14 +261,14 @@ class BigDumpController
      */
     public function import(): void
     {
-        // Create the import session
+        // Create the import session (pendingQuery stored in PHP session, not URL)
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
-            $this->request->input('pendingquery', ''),
+            '', // pendingQuery now in $_SESSION
             $this->request->getInt('instring', 0) === 1
         );
 
@@ -318,14 +323,14 @@ class BigDumpController
      */
     public function ajaxImport(): void
     {
-        // Create the import session
+        // Create the import session (pendingQuery stored in PHP session, not URL)
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
-            $this->request->input('pendingquery', ''),
+            '', // pendingQuery now in $_SESSION
             $this->request->getInt('instring', 0) === 1
         );
 

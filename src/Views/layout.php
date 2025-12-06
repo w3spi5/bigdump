@@ -711,7 +711,7 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <h1>BigDump v<?= $view->e($version) ?></h1>
+                <h1><a href="index.php" style="color: inherit; text-decoration: none;">BigDump v<?= $view->e($version) ?></a></h1>
                 <div class="subtitle">Staggered MySQL Dump Importer</div>
             </div>
             <div class="card-body">

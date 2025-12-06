@@ -22,7 +22,7 @@ use RuntimeException;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.3
+ * @version 2.4
  */
 class ImportService
 {
@@ -79,6 +79,9 @@ class ImportService
      */
     public function executeSession(ImportSession $session): ImportSession
     {
+        // Generate unique session key based on filename
+        $sessionKey = 'bigdump_pending_' . md5($session->getFilename());
+
         try {
             // Connect to the database
             $this->database->connect();
@@ -90,8 +93,8 @@ class ImportService
             $this->sqlParser->setDelimiter($session->getDelimiter());
             $this->sqlParser->reset();
 
-            // Restore parser state from previous session
-            $pendingQuery = $session->getPendingQuery();
+            // Restore parser state from PHP session (pendingQuery can be large)
+            $pendingQuery = $_SESSION[$sessionKey] ?? '';
             if ($pendingQuery !== '') {
                 $this->sqlParser->setCurrentQuery($pendingQuery);
                 $this->sqlParser->setInString($session->getInString());
@@ -110,11 +113,22 @@ class ImportService
             $session->setDelimiter($this->sqlParser->getDelimiter());
 
             // Save parser state for next session
-            $session->setPendingQuery($this->sqlParser->getCurrentQuery());
+            $currentQuery = $this->sqlParser->getCurrentQuery();
+            if ($currentQuery !== '') {
+                $_SESSION[$sessionKey] = $currentQuery;
+            } else {
+                unset($_SESSION[$sessionKey]);
+            }
             $session->setInString($this->sqlParser->isInString());
+
+            // Clean up session on completion
+            if ($session->isFinished() || $session->hasError()) {
+                unset($_SESSION[$sessionKey]);
+            }
 
         } catch (RuntimeException $e) {
             $session->setError($e->getMessage());
+            unset($_SESSION[$sessionKey]);
         } finally {
             $this->fileHandler->close();
             $this->database->close();

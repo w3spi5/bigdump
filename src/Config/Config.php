@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * @package BigDump\Config
  * @author  Refactorisation MVC
- * @version 2.3
+ * @version 2.4
  */
 class Config
 {

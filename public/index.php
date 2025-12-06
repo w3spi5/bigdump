@@ -1,7 +1,7 @@
 <?php
 
 /**
- * BigDump 2.3 - Main entry point
+ * BigDump 2.4 - Main entry point
  *
  * This file is the entry point of the refactored BigDump application.
  * It initializes the autoloader and launches the MVC application.
@@ -12,7 +12,7 @@
  * 3. Access this file via your web browser
  *
  * @package BigDump
- * @version 2.3
+ * @version 2.4
  * @author  MVC Refactoring
  * @license MIT
  */
@@ -24,7 +24,7 @@ define('BIGDUMP_ROOT', dirname(__DIR__));
 
 // Check PHP version
 if (PHP_VERSION_ID < 80100) {
-    die('BigDump 2.3 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
+    die('BigDump 2.4 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
 }
 
 // Check MySQLi extension
@@ -113,6 +113,11 @@ if (!file_exists($htaccessFile)) {
 </FilesMatch>
 HTACCESS
     );
+}
+
+// Start PHP session for cross-request state persistence
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
 }
 
 // Launch the application

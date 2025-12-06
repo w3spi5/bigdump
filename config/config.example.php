@@ -1,13 +1,13 @@
 <?php
 
 /**
- * BigDump 2.3 - Configuration
+ * BigDump 2.4 - Configuration
  *
  * Modify this file to configure your MySQL import.
  * All options are documented below.
  *
  * @package BigDump
- * @version 2.3
+ * @version 2.4
  */
 
 return [

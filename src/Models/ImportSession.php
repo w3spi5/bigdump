@@ -12,7 +12,7 @@ namespace BigDump\Models;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.3
+ * @version 2.4
  */
 class ImportSession
 {
@@ -486,7 +486,7 @@ class ImportSession
     }
 
     /**
-     * Generates parameters for next session
+     * Generates parameters for next session (URL-safe, no large data)
      *
      * @return array<string, mixed> Parameters
      */
@@ -498,7 +498,6 @@ class ImportSession
             'foffset' => $this->currentOffset,
             'totalqueries' => $this->totalQueries,
             'delimiter' => $this->delimiter,
-            'pendingquery' => $this->pendingQuery,
             'instring' => $this->inString ? '1' : '0',
         ];
     }
