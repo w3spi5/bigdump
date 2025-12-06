@@ -256,14 +256,14 @@ class BigDumpController
      */
     public function import(): void
     {
-        // Create the import session
+        // Create the import session (pendingQuery stored in PHP session, not URL)
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
-            $this->request->input('pendingquery', ''),
+            '', // pendingQuery now in $_SESSION
             $this->request->getInt('instring', 0) === 1
         );
 
@@ -318,14 +318,14 @@ class BigDumpController
      */
     public function ajaxImport(): void
     {
-        // Create the import session
+        // Create the import session (pendingQuery stored in PHP session, not URL)
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
-            $this->request->input('pendingquery', ''),
+            '', // pendingQuery now in $_SESSION
             $this->request->getInt('instring', 0) === 1
         );
 

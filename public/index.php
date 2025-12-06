@@ -115,6 +115,11 @@ HTACCESS
     );
 }
 
+// Start PHP session for cross-request state persistence
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 // Launch the application
 use BigDump\Core\Application;
 

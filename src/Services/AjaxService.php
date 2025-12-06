@@ -49,13 +49,12 @@ class AjaxService
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<root>';
 
-        // Data for next session calculations
+        // Data for next session calculations (pendingQuery stored in PHP session)
         $xml .= $this->xmlElement('linenumber', (string) $params['start']);
         $xml .= $this->xmlElement('foffset', (string) $params['foffset']);
         $xml .= $this->xmlElement('fn', $params['fn']);
         $xml .= $this->xmlElement('totalqueries', (string) $params['totalqueries']);
         $xml .= $this->xmlElement('delimiter', $params['delimiter']);
-        $xml .= $this->xmlElement('pendingquery', $params['pendingquery'] ?? '');
         $xml .= $this->xmlElement('instring', $params['instring'] ?? '0');
 
         // Statistics for interface update
@@ -167,7 +166,6 @@ class AjaxService
         // Escape values for safe JavaScript string embedding (prevents XSS)
         $fn = $this->escapeJsString($params['fn']);
         $delimiter = $this->escapeJsString($params['delimiter']);
-        $pendingQuery = $this->escapeJsString($params['pendingquery'] ?? '');
         $inString = $params['instring'] ?? '0';
         $safeScriptUri = $this->escapeJsString($scriptUri);
 
@@ -182,14 +180,14 @@ class AjaxService
 
     /**
      * Builds the URL for the next AJAX session.
+     * Note: pendingQuery is stored server-side in PHP session to avoid URL length limits.
      */
-    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter, pendingquery, instring) {
+    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter, instring) {
         return scriptUri + '?start=' + linenumber +
             '&fn=' + encodeURIComponent(fn) +
             '&foffset=' + foffset +
             '&totalqueries=' + totalqueries +
             '&delimiter=' + encodeURIComponent(delimiter) +
-            '&pendingquery=' + encodeURIComponent(pendingquery || '') +
             '&instring=' + (instring || '0') +
             '&ajaxrequest=true';
     }
@@ -296,14 +294,13 @@ class AjaxService
             cells[25].innerHTML = getXmlValue(xml, 'elem_bar');
         }
 
-        // Prepare the next request
+        // Prepare the next request (pendingQuery handled server-side)
         var nextUrl = buildUrl(
             getXmlValue(xml, 'linenumber'),
             getXmlValue(xml, 'fn'),
             getXmlValue(xml, 'foffset'),
             getXmlValue(xml, 'totalqueries'),
             getXmlValue(xml, 'delimiter'),
-            getXmlValue(xml, 'pendingquery'),
             getXmlValue(xml, 'instring')
         );
 
@@ -320,7 +317,6 @@ class AjaxService
         {$params['foffset']},
         {$params['totalqueries']},
         '{$delimiter}',
-        '{$pendingQuery}',
         '{$inString}'
     );
 
