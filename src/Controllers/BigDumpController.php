@@ -13,14 +13,14 @@ use BigDump\Services\ImportService;
 use BigDump\Services\AjaxService;
 
 /**
- * Classe BigDumpController - Contrôleur principal
+ * BigDumpController Class - Main controller.
  *
- * Ce contrôleur gère toutes les actions de l'application:
- * - Affichage de la page d'accueil avec liste des fichiers
- * - Upload de fichiers
- * - Suppression de fichiers
- * - Exécution des sessions d'import
- * - Réponses AJAX
+ * This controller handles all application actions:
+ * - Displaying the home page with file list
+ * - File upload
+ * - File deletion
+ * - Executing import sessions
+ * - AJAX responses
  *
  * @package BigDump\Controllers
  * @author  Refactorisation MVC
@@ -29,48 +29,48 @@ use BigDump\Services\AjaxService;
 class BigDumpController
 {
     /**
-     * Configuration
+     * Configuration.
      * @var Config
      */
     protected Config $config;
 
     /**
-     * Requête
+     * Request.
      * @var Request
      */
     protected Request $request;
 
     /**
-     * Réponse
+     * Response.
      * @var Response
      */
     protected Response $response;
 
     /**
-     * Vue
+     * View.
      * @var View
      */
     protected View $view;
 
     /**
-     * Service d'import
+     * Import service.
      * @var ImportService
      */
     protected ImportService $importService;
 
     /**
-     * Service AJAX
+     * AJAX service.
      * @var AjaxService
      */
     protected AjaxService $ajaxService;
 
     /**
-     * Constructeur
+     * Constructor.
      *
      * @param Config $config Configuration
-     * @param Request $request Requête
-     * @param Response $response Réponse
-     * @param View $view Vue
+     * @param Request $request Request
+     * @param Response $response Response
+     * @param View $view View
      */
     public function __construct(
         Config $config,
@@ -88,9 +88,9 @@ class BigDumpController
     }
 
     /**
-     * Action: Page d'accueil
+     * Action: Home page.
      *
-     * Affiche la liste des fichiers disponibles et le formulaire d'upload.
+     * Displays the list of available files and the upload form.
      *
      * @return void
      */
@@ -98,7 +98,7 @@ class BigDumpController
     {
         $fileHandler = $this->importService->getFileHandler();
 
-        // Vérifier la configuration de la base de données
+        // Check database configuration
         $dbConfigured = $this->importService->isDatabaseConfigured();
         $connectionInfo = null;
 
@@ -106,19 +106,19 @@ class BigDumpController
             $connectionInfo = $this->importService->testConnection();
         }
 
-        // Récupérer la liste des fichiers
+        // Retrieve the file list
         $files = $fileHandler->listFiles();
 
-        // Vérifier si le répertoire est accessible en écriture
+        // Check if the directory is writable
         $uploadEnabled = $fileHandler->isUploadDirWritable();
 
-        // Taille maximale d'upload
+        // Maximum upload size
         $uploadMaxSize = $this->config->getUploadMaxFilesize();
 
-        // Nom de fichier prédéfini
+        // Predefined file name
         $predefinedFile = $this->config->get('filename', '');
 
-        // Préparer les données pour la vue
+        // Prepare data for the view
         $this->view->assign([
             'files' => $files,
             'dbConfigured' => $dbConfigured,
@@ -132,13 +132,13 @@ class BigDumpController
             'testMode' => $this->config->get('test_mode', false),
         ]);
 
-        // Rendre la vue
+        // Render the view
         $content = $this->view->render('home');
         $this->response->setContent($content);
     }
 
     /**
-     * Action: Upload de fichier
+     * Action: File upload.
      *
      * @return void
      */
@@ -153,7 +153,7 @@ class BigDumpController
             $result = $fileHandler->upload($file);
         }
 
-        // Préparer les données pour la vue
+        // Prepare data for the view
         $this->view->assign([
             'uploadResult' => $result,
             'files' => $fileHandler->listFiles(),
@@ -173,7 +173,7 @@ class BigDumpController
     }
 
     /**
-     * Action: Suppression de fichier
+     * Action: File deletion.
      *
      * @return void
      */
@@ -185,7 +185,7 @@ class BigDumpController
         $result = ['success' => false, 'message' => 'No file specified'];
 
         if (!empty($filename)) {
-            // Vérifier que ce n'est pas le script lui-même
+            // Check that it's not the script itself
             if (basename($filename) === $this->request->getScriptName()) {
                 $result = ['success' => false, 'message' => 'Cannot delete the script itself'];
             } else {
@@ -193,7 +193,7 @@ class BigDumpController
             }
         }
 
-        // Préparer les données pour la vue
+        // Prepare data for the view
         $this->view->assign([
             'deleteResult' => $result,
             'files' => $fileHandler->listFiles(),
@@ -213,7 +213,7 @@ class BigDumpController
     }
 
     /**
-     * Action: Démarrage d'import (première page)
+     * Action: Import start (first page).
      *
      * @return void
      */
@@ -225,7 +225,7 @@ class BigDumpController
             $filename = $this->config->get('filename', '');
         }
 
-        // Vérifier que le fichier existe
+        // Check that the file exists
         $fileHandler = $this->importService->getFileHandler();
 
         if (!$fileHandler->exists($filename)) {
@@ -237,7 +237,7 @@ class BigDumpController
             return;
         }
 
-        // Rediriger vers l'import
+        // Redirect to import
         $url = $this->request->getScriptUri() . '?' . http_build_query([
             'start' => 1,
             'fn' => $filename,
@@ -250,13 +250,13 @@ class BigDumpController
     }
 
     /**
-     * Action: Exécution d'une session d'import
+     * Action: Executing an import session.
      *
      * @return void
      */
     public function import(): void
     {
-        // Créer la session d'import
+        // Create the import session
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
@@ -265,7 +265,7 @@ class BigDumpController
             $this->request->input('delimiter', ';')
         );
 
-        // Valider les paramètres
+        // Validate parameters
         if (empty($session->getFilename())) {
             $this->view->assign(['error' => 'No filename specified']);
             $content = $this->view->render('error');
@@ -273,10 +273,10 @@ class BigDumpController
             return;
         }
 
-        // Exécuter la session d'import
+        // Execute the import session
         $session = $this->importService->executeSession($session);
 
-        // Préparer les données pour la vue
+        // Prepare data for the view
         $this->view->assign([
             'session' => $session,
             'statistics' => $session->getStatistics(),
@@ -286,7 +286,7 @@ class BigDumpController
             'nextParams' => $session->getNextSessionParams(),
         ]);
 
-        // Ajouter le script AJAX si nécessaire
+        // Add the AJAX script if necessary
         if (!$session->isFinished() && !$session->hasError()) {
             if ($this->ajaxService->isAjaxEnabled()) {
                 $this->view->assign([
@@ -310,13 +310,13 @@ class BigDumpController
     }
 
     /**
-     * Action: Réponse AJAX pour import
+     * Action: AJAX response for import.
      *
      * @return void
      */
     public function ajaxImport(): void
     {
-        // Créer la session d'import
+        // Create the import session
         $session = ImportSession::fromRequest(
             $this->request->input('fn', ''),
             $this->request->getInt('start', 1),
@@ -325,7 +325,7 @@ class BigDumpController
             $this->request->input('delimiter', ';')
         );
 
-        // Valider les paramètres
+        // Validate parameters
         if (empty($session->getFilename())) {
             $this->response
                 ->asXml()
@@ -333,17 +333,17 @@ class BigDumpController
             return;
         }
 
-        // Exécuter la session d'import
+        // Execute the import session
         $session = $this->importService->executeSession($session);
 
-        // Si terminé ou erreur, renvoyer la page HTML complète
+        // If finished or error, return the complete HTML page
         if ($session->isFinished() || $session->hasError()) {
-            // Préparer la vue finale
+            // Prepare the final view
             $this->view->assign([
                 'session' => $session,
                 'statistics' => $session->getStatistics(),
                 'testMode' => $this->config->get('test_mode', false),
-                'ajaxEnabled' => false, // Pas de script AJAX pour la page finale
+                'ajaxEnabled' => false, // No AJAX script for the final page
                 'delay' => 0,
                 'nextParams' => [],
             ]);
@@ -353,7 +353,7 @@ class BigDumpController
             return;
         }
 
-        // Sinon, renvoyer la réponse XML
+        // Otherwise, return the XML response
         $xml = $this->ajaxService->createXmlResponse($session);
         $this->response->asXml()->setContent($xml);
     }

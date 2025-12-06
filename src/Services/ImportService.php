@@ -12,13 +12,13 @@ use BigDump\Models\ImportSession;
 use RuntimeException;
 
 /**
- * Classe ImportService - Service principal d'importation
+ * ImportService Class - Main import service.
  *
- * Ce service orchestre l'ensemble du processus d'importation:
- * - Ouverture et lecture du fichier dump
- * - Parsing des requêtes SQL
- * - Exécution des requêtes dans la base de données
- * - Gestion des sessions d'import échelonnées
+ * This service orchestrates the entire import process:
+ * - Opening and reading the dump file
+ * - Parsing SQL queries
+ * - Executing queries in the database
+ * - Managing staggered import sessions
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
@@ -27,37 +27,37 @@ use RuntimeException;
 class ImportService
 {
     /**
-     * Configuration
+     * Configuration.
      * @var Config
      */
     private Config $config;
 
     /**
-     * Gestionnaire de base de données
+     * Database handler.
      * @var Database
      */
     private Database $database;
 
     /**
-     * Gestionnaire de fichiers
+     * File handler.
      * @var FileHandler
      */
     private FileHandler $fileHandler;
 
     /**
-     * Parser SQL
+     * SQL parser.
      * @var SqlParser
      */
     private SqlParser $sqlParser;
 
     /**
-     * Nombre de lignes par session
+     * Number of lines per session.
      * @var int
      */
     private int $linesPerSession;
 
     /**
-     * Constructeur
+     * Constructor.
      *
      * @param Config $config Configuration
      */
@@ -71,35 +71,35 @@ class ImportService
     }
 
     /**
-     * Exécute une session d'import
+     * Executes an import session.
      *
-     * @param ImportSession $session Session d'import
-     * @return ImportSession Session mise à jour
-     * @throws RuntimeException En cas d'erreur critique
+     * @param ImportSession $session Import session
+     * @return ImportSession Updated session
+     * @throws RuntimeException In case of critical error
      */
     public function executeSession(ImportSession $session): ImportSession
     {
         try {
-            // Connecter à la base de données
+            // Connect to the database
             $this->database->connect();
 
-            // Ouvrir le fichier
+            // Open the file
             $this->openFile($session);
 
-            // Initialiser le parser avec le délimiteur de la session
+            // Initialize the parser with the session delimiter
             $this->sqlParser->setDelimiter($session->getDelimiter());
             $this->sqlParser->reset();
 
-            // Vider la table CSV si nécessaire
+            // Empty the CSV table if needed
             $this->emptyCsvTableIfNeeded($session);
 
-            // Traiter les lignes
+            // Process lines
             $this->processLines($session);
 
-            // Mettre à jour l'offset final
+            // Update the final offset
             $session->setCurrentOffset($this->fileHandler->tell());
 
-            // Mettre à jour le délimiteur si changé
+            // Update the delimiter if changed
             $session->setDelimiter($this->sqlParser->getDelimiter());
 
         } catch (RuntimeException $e) {
@@ -113,17 +113,17 @@ class ImportService
     }
 
     /**
-     * Ouvre le fichier et positionne le curseur
+     * Opens the file and positions the cursor.
      *
-     * @param ImportSession $session Session d'import
+     * @param ImportSession $session Import session
      * @return void
-     * @throws RuntimeException Si le fichier ne peut pas être ouvert
+     * @throws RuntimeException If the file cannot be opened
      */
     private function openFile(ImportSession $session): void
     {
         $filename = $session->getFilename();
 
-        // Vérifier l'extension pour les fichiers CSV
+        // Check extension for CSV files
         $extension = $this->fileHandler->getExtension($filename);
 
         if ($extension === 'csv') {
@@ -137,14 +137,14 @@ class ImportService
             }
         }
 
-        // Ouvrir le fichier
+        // Open the file
         $this->fileHandler->open($filename);
 
-        // Définir les propriétés de la session
+        // Set the session properties
         $session->setFileSize($this->fileHandler->getFileSize());
         $session->setGzipMode($this->fileHandler->isGzipMode());
 
-        // Positionner au bon offset
+        // Position at the correct offset
         $offset = $session->getStartOffset();
 
         if ($offset > 0) {
@@ -155,15 +155,15 @@ class ImportService
     }
 
     /**
-     * Vide la table CSV si c'est la première session et que l'option est activée
+     * Empties the CSV table if this is the first session and the option is enabled.
      *
-     * @param ImportSession $session Session d'import
+     * @param ImportSession $session Import session
      * @return void
-     * @throws RuntimeException Si la suppression échoue
+     * @throws RuntimeException If deletion fails
      */
     private function emptyCsvTableIfNeeded(ImportSession $session): void
     {
-        // Seulement à la première session
+        // Only on the first session
         if ($session->getStartLine() !== 1) {
             return;
         }
@@ -188,7 +188,7 @@ class ImportService
             throw new RuntimeException("Invalid table name: {$csvTable}");
         }
 
-        // Supprimer les données de la table
+        // Delete data from the table
         $query = "DELETE FROM `{$safeTable}`";
 
         if (!$this->database->query($query)) {
@@ -199,11 +199,11 @@ class ImportService
     }
 
     /**
-     * Traite les lignes du fichier
+     * Processes lines from the file.
      *
-     * @param ImportSession $session Session d'import
+     * @param ImportSession $session Import session
      * @return void
-     * @throws RuntimeException En cas d'erreur
+     * @throws RuntimeException In case of error
      */
     private function processLines(ImportSession $session): void
     {
@@ -214,22 +214,22 @@ class ImportService
         $isFirstLine = ($session->getStartOffset() === 0);
 
         while ($session->getCurrentLine() < $maxLine || $this->sqlParser->isInString()) {
-            // Lire une ligne
+            // Read a line
             $line = $this->fileHandler->readLine();
 
             if ($line === false) {
-                // Fin du fichier
+                // End of file
                 $this->handleEndOfFile($session);
                 break;
             }
 
-            // Supprimer le BOM à la première ligne
+            // Remove BOM on the first line
             if ($isFirstLine) {
                 $line = $this->fileHandler->removeBom($line);
                 $isFirstLine = false;
             }
 
-            // Traiter la ligne
+            // Process the line
             if ($isCsv) {
                 $this->processCsvLine($session, $line, $csvTable);
             } else {
@@ -241,60 +241,60 @@ class ImportService
     }
 
     /**
-     * Traite une ligne SQL
+     * Processes an SQL line.
      *
-     * @param ImportSession $session Session d'import
-     * @param string $line Ligne à traiter
+     * @param ImportSession $session Import session
+     * @param string $line Line to process
      * @return void
-     * @throws RuntimeException En cas d'erreur SQL
+     * @throws RuntimeException In case of SQL error
      */
     private function processSqlLine(ImportSession $session, string $line): void
     {
         $result = $this->sqlParser->parseLine($line);
 
-        // Vérifier les erreurs de parsing
+        // Check for parsing errors
         if ($result['error'] !== null) {
             throw new RuntimeException(
                 "Line {$session->getCurrentLine()}: {$result['error']}"
             );
         }
 
-        // Exécuter la requête si complète
+        // Execute the query if complete
         if ($result['query'] !== null) {
             $this->executeQuery($session, $result['query']);
         }
     }
 
     /**
-     * Traite une ligne CSV
+     * Processes a CSV line.
      *
-     * @param ImportSession $session Session d'import
-     * @param string $line Ligne CSV
-     * @param string $table Table de destination
+     * @param ImportSession $session Import session
+     * @param string $line CSV line
+     * @param string $table Destination table
      * @return void
-     * @throws RuntimeException En cas d'erreur
+     * @throws RuntimeException In case of error
      */
     private function processCsvLine(ImportSession $session, string $line, string $table): void
     {
-        // Ignorer les lignes invalides
+        // Ignore invalid lines
         if (!$this->sqlParser->isValidCsvLine($line)) {
             return;
         }
 
-        // Convertir en INSERT
+        // Convert to INSERT
         $query = $this->sqlParser->csvToInsert($line, $table);
 
-        // Exécuter la requête
+        // Execute the query
         $this->executeQuery($session, $query);
     }
 
     /**
-     * Exécute une requête SQL
+     * Executes an SQL query.
      *
-     * @param ImportSession $session Session d'import
-     * @param string $query Requête SQL
+     * @param ImportSession $session Import session
+     * @param string $query SQL query
      * @return void
-     * @throws RuntimeException En cas d'erreur SQL
+     * @throws RuntimeException In case of SQL error
      */
     private function executeQuery(ImportSession $session, string $query): void
     {
@@ -306,7 +306,7 @@ class ImportService
             $error = $this->database->getLastError();
             $lineNum = $session->getCurrentLine();
 
-            // Tronquer la requête pour l'affichage
+            // Truncate the query for display
             $displayQuery = strlen($query) > 500
                 ? substr($query, 0, 500) . '...'
                 : $query;
@@ -322,23 +322,23 @@ class ImportService
     }
 
     /**
-     * Gère la fin du fichier
+     * Handles the end of the file.
      *
-     * @param ImportSession $session Session d'import
+     * @param ImportSession $session Import session
      * @return void
-     * @throws RuntimeException Si une requête est incomplète
+     * @throws RuntimeException If a query is incomplete
      */
     private function handleEndOfFile(ImportSession $session): void
     {
-        // Vérifier s'il reste une requête incomplète
+        // Check if there's a pending incomplete query
         $pendingQuery = $this->sqlParser->getPendingQuery();
 
         if ($pendingQuery !== null) {
-            // Essayer d'exécuter la requête finale
+            // Try to execute the final query
             $this->executeQuery($session, $pendingQuery);
         }
 
-        // Vérifier qu'on n'est pas dans une chaîne non fermée
+        // Check that we're not inside an unclosed string
         if ($this->sqlParser->isInString()) {
             throw new RuntimeException(
                 "End of file reached with unclosed string. " .
@@ -350,9 +350,9 @@ class ImportService
     }
 
     /**
-     * Récupère le gestionnaire de base de données
+     * Retrieves the database handler.
      *
-     * @return Database Instance de Database
+     * @return Database Database instance
      */
     public function getDatabase(): Database
     {
@@ -360,9 +360,9 @@ class ImportService
     }
 
     /**
-     * Récupère le gestionnaire de fichiers
+     * Retrieves the file handler.
      *
-     * @return FileHandler Instance de FileHandler
+     * @return FileHandler FileHandler instance
      */
     public function getFileHandler(): FileHandler
     {
@@ -370,9 +370,9 @@ class ImportService
     }
 
     /**
-     * Vérifie si la base de données est configurée
+     * Checks if the database is configured.
      *
-     * @return bool True si configurée
+     * @return bool True if configured
      */
     public function isDatabaseConfigured(): bool
     {
@@ -380,9 +380,9 @@ class ImportService
     }
 
     /**
-     * Teste la connexion à la base de données
+     * Tests the database connection.
      *
-     * @return array{success: bool, message: string, charset: string} Résultat du test
+     * @return array{success: bool, message: string, charset: string} Test result
      */
     public function testConnection(): array
     {

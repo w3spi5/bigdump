@@ -8,21 +8,21 @@ use BigDump\Config\Config;
 use RuntimeException;
 
 /**
- * Classe FileHandler - Gestionnaire de fichiers
+ * FileHandler Class - File Manager
  *
- * Cette classe gère les opérations sur les fichiers dump:
- * - Listing des fichiers disponibles
- * - Upload de fichiers
- * - Suppression de fichiers
- * - Lecture de fichiers (normaux et gzippés)
+ * This class handles dump file operations:
+ * - Listing available files
+ * - Uploading files
+ * - Deleting files
+ * - Reading files (normal and gzipped)
  *
- * Corrections par rapport à l'original:
- * - Protection contre les attaques path traversal
- * - Meilleure gestion des fichiers gzippés
- * - Gestion correcte du BOM UTF-8, UTF-16, UTF-32
+ * Improvements over original:
+ * - Protection against path traversal attacks
+ * - Better gzip file handling
+ * - Proper BOM handling for UTF-8, UTF-16, UTF-32
  *
  * @package BigDump\Models
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class FileHandler
@@ -34,37 +34,37 @@ class FileHandler
     private Config $config;
 
     /**
-     * Répertoire d'upload
+     * Upload directory
      * @var string
      */
     private string $uploadDir;
 
     /**
-     * Fichier actuellement ouvert
+     * Currently open file
      * @var resource|null
      */
     private $fileHandle = null;
 
     /**
-     * Mode gzip
+     * Gzip mode
      * @var bool
      */
     private bool $gzipMode = false;
 
     /**
-     * Taille du fichier
+     * File size
      * @var int
      */
     private int $fileSize = 0;
 
     /**
-     * Nom du fichier courant
+     * Current filename
      * @var string
      */
     private string $currentFilename = '';
 
     /**
-     * Constructeur
+     * Constructor
      *
      * @param Config $config Configuration
      */
@@ -76,7 +76,7 @@ class FileHandler
     }
 
     /**
-     * S'assure que le répertoire d'upload existe
+     * Ensures upload directory exists
      *
      * @return void
      */
@@ -88,9 +88,9 @@ class FileHandler
     }
 
     /**
-     * Liste les fichiers dump disponibles
+     * Lists available dump files
      *
-     * @return array<int, array{name: string, size: int, date: string, type: string, path: string}> Liste des fichiers
+     * @return array<int, array{name: string, size: int, date: string, type: string, path: string}> List of files
      */
     public function listFiles(): array
     {
@@ -134,17 +134,17 @@ class FileHandler
 
         closedir($handle);
 
-        // Trier par nom
+        // Sort by name
         usort($files, fn($a, $b) => strcasecmp($a['name'], $b['name']));
 
         return $files;
     }
 
     /**
-     * Récupère l'extension d'un fichier
+     * Retrieves file extension
      *
-     * @param string $filename Nom du fichier
-     * @return string Extension (en minuscule, sans point)
+     * @param string $filename Filename
+     * @return string Extension (lowercase, without dot)
      */
     public function getExtension(string $filename): string
     {
@@ -158,10 +158,10 @@ class FileHandler
     }
 
     /**
-     * Récupère le type de fichier
+     * Retrieves file type
      *
      * @param string $extension Extension
-     * @return string Type de fichier
+     * @return string File type
      */
     private function getFileType(string $extension): string
     {
@@ -174,14 +174,14 @@ class FileHandler
     }
 
     /**
-     * Upload un fichier
+     * Uploads a file
      *
-     * @param array{tmp_name: string, name: string, error: int} $file Données du fichier uploadé
-     * @return array{success: bool, message: string, filename: string} Résultat de l'upload
+     * @param array{tmp_name: string, name: string, error: int} $file Uploaded file data
+     * @return array{success: bool, message: string, filename: string} Upload result
      */
     public function upload(array $file): array
     {
-        // Vérifier les erreurs d'upload
+        // Check upload errors
         if (!isset($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
             return [
                 'success' => false,
@@ -198,11 +198,11 @@ class FileHandler
             ];
         }
 
-        // Nettoyer le nom de fichier
+        // Clean filename
         $originalName = $file['name'] ?? 'unknown';
         $cleanName = $this->sanitizeFilename($originalName);
 
-        // Vérifier l'extension
+        // Check extension
         $extension = $this->getExtension($cleanName);
 
         if (!$this->config->isExtensionAllowed($extension)) {
@@ -213,10 +213,10 @@ class FileHandler
             ];
         }
 
-        // Chemin de destination
+        // Destination path
         $destPath = $this->uploadDir . '/' . $cleanName;
 
-        // Vérifier si le fichier existe déjà
+        // Check if file already exists
         if (file_exists($destPath)) {
             return [
                 'success' => false,
@@ -225,7 +225,7 @@ class FileHandler
             ];
         }
 
-        // Déplacer le fichier
+        // Move file
         if (!@move_uploaded_file($file['tmp_name'], $destPath)) {
             return [
                 'success' => false,
@@ -242,30 +242,30 @@ class FileHandler
     }
 
     /**
-     * Nettoie un nom de fichier
+     * Sanitizes a filename
      *
-     * Protège contre les attaques path traversal et supprime
-     * les caractères dangereux tout en préservant les caractères UTF-8.
+     * Protects against path traversal attacks and removes
+     * dangerous characters while preserving UTF-8 characters.
      *
-     * @param string $filename Nom de fichier original
-     * @return string Nom de fichier nettoyé
+     * @param string $filename Original filename
+     * @return string Sanitized filename
      */
     public function sanitizeFilename(string $filename): string
     {
-        // Supprimer le chemin (protection path traversal)
+        // Remove path (path traversal protection)
         $filename = basename($filename);
 
-        // Remplacer les espaces par des underscores
+        // Replace spaces with underscores
         $filename = str_replace(' ', '_', $filename);
 
-        // Supprimer les caractères dangereux mais garder les caractères UTF-8 valides
-        // On garde: lettres, chiffres, tirets, underscores, points
+        // Remove dangerous characters but keep valid UTF-8 characters
+        // Keep: letters, digits, hyphens, underscores, dots
         $filename = preg_replace('/[^\p{L}\p{N}\-_\.]/u', '', $filename) ?? '';
 
-        // Supprimer les séquences de points multiples (protection path traversal)
+        // Remove multiple consecutive dots (path traversal protection)
         $filename = preg_replace('/\.{2,}/', '.', $filename) ?? '';
 
-        // Limiter la longueur (max 255 caractères)
+        // Limit length (max 255 characters)
         if (strlen($filename) > 255) {
             $ext = $this->getExtension($filename);
 
@@ -282,7 +282,7 @@ class FileHandler
             }
         }
 
-        // Si le nom est vide après nettoyage, générer un nom
+        // If name is empty after sanitization, generate a name
         if (empty($filename) || $filename === '.') {
             $filename = 'upload_' . time() . '.sql';
         }
@@ -291,10 +291,10 @@ class FileHandler
     }
 
     /**
-     * Récupère le message d'erreur pour un code d'erreur upload
+     * Retrieves error message for upload error code
      *
-     * @param int $errorCode Code d'erreur
-     * @return string Message d'erreur
+     * @param int $errorCode Error code
+     * @return string Error message
      */
     private function getUploadErrorMessage(int $errorCode): string
     {
@@ -311,17 +311,17 @@ class FileHandler
     }
 
     /**
-     * Supprime un fichier
+     * Deletes a file
      *
-     * @param string $filename Nom du fichier
-     * @return array{success: bool, message: string} Résultat de la suppression
+     * @param string $filename Filename
+     * @return array{success: bool, message: string} Deletion result
      */
     public function delete(string $filename): array
     {
-        // Nettoyer le nom (protection path traversal)
+        // Clean name (path traversal protection)
         $cleanName = basename($filename);
 
-        // Vérifier l'extension
+        // Check extension
         $extension = $this->getExtension($cleanName);
 
         if (!$this->config->isExtensionAllowed($extension)) {
@@ -354,20 +354,20 @@ class FileHandler
     }
 
     /**
-     * Ouvre un fichier pour lecture
+     * Opens a file for reading
      *
-     * @param string $filename Nom du fichier
-     * @return bool True si l'ouverture réussit
-     * @throws RuntimeException Si le fichier ne peut pas être ouvert
+     * @param string $filename Filename
+     * @return bool True if opening succeeds
+     * @throws RuntimeException If file cannot be opened
      */
     public function open(string $filename): bool
     {
         $this->close();
 
-        // Nettoyer le nom (protection path traversal)
+        // Clean name (path traversal protection)
         $cleanName = basename($filename);
 
-        // Vérifier l'extension
+        // Check extension
         $extension = $this->getExtension($cleanName);
 
         if (!$this->config->isExtensionAllowed($extension)) {
@@ -402,12 +402,12 @@ class FileHandler
 
         $this->currentFilename = $cleanName;
 
-        // Déterminer la taille du fichier
+        // Determine file size
         if (!$this->gzipMode) {
             $this->fileSize = filesize($filepath) ?: 0;
         } else {
-            // Pour les fichiers gzip, on ne peut pas connaître la taille non compressée
-            // sans lire tout le fichier, donc on laisse à 0
+            // For gzip files, we cannot know the uncompressed size
+            // without reading the entire file, so leave it at 0
             $this->fileSize = 0;
         }
 
@@ -415,10 +415,10 @@ class FileHandler
     }
 
     /**
-     * Positionne le pointeur de fichier
+     * Sets file pointer position
      *
-     * @param int $offset Position en octets
-     * @return bool True si le seek réussit
+     * @param int $offset Position in bytes
+     * @return bool True if seek succeeds
      */
     public function seek(int $offset): bool
     {
@@ -434,9 +434,9 @@ class FileHandler
     }
 
     /**
-     * Récupère la position actuelle du pointeur
+     * Retrieves current pointer position
      *
-     * @return int Position en octets
+     * @return int Position in bytes
      */
     public function tell(): int
     {
@@ -452,9 +452,9 @@ class FileHandler
     }
 
     /**
-     * Lit une ligne du fichier
+     * Reads a line from file
      *
-     * @return string|false Ligne lue ou false si fin de fichier
+     * @return string|false Read line or false if end of file
      */
     public function readLine(): string|false
     {
@@ -478,7 +478,7 @@ class FileHandler
 
             $line .= $chunk;
 
-            // Vérifier si on a atteint la fin de la ligne
+            // Check if end of line reached
             $lastChar = substr($line, -1);
             if ($lastChar === "\n" || $lastChar === "\r") {
                 break;
@@ -493,9 +493,9 @@ class FileHandler
     }
 
     /**
-     * Vérifie si on est à la fin du fichier
+     * Checks if end of file reached
      *
-     * @return bool True si fin de fichier
+     * @return bool True if end of file
      */
     public function eof(): bool
     {
@@ -511,7 +511,7 @@ class FileHandler
     }
 
     /**
-     * Ferme le fichier
+     * Closes the file
      *
      * @return void
      */
@@ -532,12 +532,12 @@ class FileHandler
     }
 
     /**
-     * Supprime le BOM (Byte Order Mark) d'une chaîne
+     * Removes BOM (Byte Order Mark) from a string
      *
-     * Gère UTF-8, UTF-16 LE/BE, UTF-32 LE/BE
+     * Handles UTF-8, UTF-16 LE/BE, UTF-32 LE/BE
      *
-     * @param string $string Chaîne à nettoyer
-     * @return string Chaîne sans BOM
+     * @param string $string String to clean
+     * @return string String without BOM
      */
     public function removeBom(string $string): string
     {
@@ -570,9 +570,9 @@ class FileHandler
     }
 
     /**
-     * Récupère la taille du fichier
+     * Retrieves file size
      *
-     * @return int Taille en octets (0 pour les fichiers gzip)
+     * @return int Size in bytes (0 for gzip files)
      */
     public function getFileSize(): int
     {
@@ -580,9 +580,9 @@ class FileHandler
     }
 
     /**
-     * Vérifie si le fichier est en mode gzip
+     * Checks if file is in gzip mode
      *
-     * @return bool True si mode gzip
+     * @return bool True if gzip mode
      */
     public function isGzipMode(): bool
     {
@@ -590,9 +590,9 @@ class FileHandler
     }
 
     /**
-     * Récupère le nom du fichier courant
+     * Retrieves current filename
      *
-     * @return string Nom du fichier
+     * @return string Filename
      */
     public function getCurrentFilename(): string
     {
@@ -600,9 +600,9 @@ class FileHandler
     }
 
     /**
-     * Vérifie si le répertoire d'upload est accessible en écriture
+     * Checks if upload directory is writable
      *
-     * @return bool True si accessible en écriture
+     * @return bool True if writable
      */
     public function isUploadDirWritable(): bool
     {
@@ -610,7 +610,7 @@ class FileHandler
             return false;
         }
 
-        // Tester avec un fichier temporaire
+        // Test with temporary file
         $testFile = $this->uploadDir . '/.write_test_' . time();
         $handle = @fopen($testFile, 'w');
 
@@ -625,9 +625,9 @@ class FileHandler
     }
 
     /**
-     * Récupère le répertoire d'upload
+     * Retrieves upload directory
      *
-     * @return string Chemin du répertoire
+     * @return string Directory path
      */
     public function getUploadDir(): string
     {
@@ -635,10 +635,10 @@ class FileHandler
     }
 
     /**
-     * Vérifie si un fichier existe
+     * Checks if a file exists
      *
-     * @param string $filename Nom du fichier
-     * @return bool True si le fichier existe
+     * @param string $filename Filename
+     * @return bool True if file exists
      */
     public function exists(string $filename): bool
     {
@@ -647,10 +647,10 @@ class FileHandler
     }
 
     /**
-     * Récupère le chemin complet d'un fichier
+     * Retrieves full path of a file
      *
-     * @param string $filename Nom du fichier
-     * @return string Chemin complet
+     * @param string $filename Filename
+     * @return string Full path
      */
     public function getFullPath(string $filename): string
     {
@@ -658,7 +658,7 @@ class FileHandler
     }
 
     /**
-     * Destructeur - ferme le fichier
+     * Destructor - closes the file
      */
     public function __destruct()
     {

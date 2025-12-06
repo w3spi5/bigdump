@@ -1,1 +1,41 @@
+# Claude Code
 claude.md
+.claude/
+.serena/
+
+# Uploads directory (contains user SQL dumps)
+uploads/*.sql
+uploads/*.gz
+uploads/*.csv
+!uploads/.gitkeep
+!uploads/.htaccess
+
+# IDE
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# PHP
+vendor/
+composer.lock
+
+# Logs & Debug
+*.log
+error_log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Temp files
+*.tmp
+*.temp
+*.swp
+*~

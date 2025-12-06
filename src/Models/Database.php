@@ -10,19 +10,19 @@ use mysqli_result;
 use RuntimeException;
 
 /**
- * Classe Database - Gestionnaire de connexion MySQL
+ * Database Class - MySQL Connection Manager
  *
- * Cette classe encapsule la connexion MySQLi et fournit
- * des méthodes sécurisées pour l'exécution des requêtes.
+ * This class encapsulates the MySQLi connection and provides
+ * secure methods for query execution.
  *
  * @package BigDump\Models
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class Database
 {
     /**
-     * Instance MySQLi
+     * MySQLi Instance
      * @var mysqli|null
      */
     private ?mysqli $connection = null;
@@ -34,25 +34,25 @@ class Database
     private Config $config;
 
     /**
-     * Dernière erreur
+     * Last error
      * @var string
      */
     private string $lastError = '';
 
     /**
-     * Nombre de requêtes exécutées
+     * Number of executed queries
      * @var int
      */
     private int $queryCount = 0;
 
     /**
-     * Mode test activé
+     * Test mode enabled
      * @var bool
      */
     private bool $testMode = false;
 
     /**
-     * Constructeur
+     * Constructor
      *
      * @param Config $config Configuration
      */
@@ -63,10 +63,10 @@ class Database
     }
 
     /**
-     * Établit la connexion à la base de données
+     * Establishes the database connection
      *
-     * @return bool True si la connexion réussit
-     * @throws RuntimeException Si la connexion échoue
+     * @return bool True if connection succeeds
+     * @throws RuntimeException If connection fails
      */
     public function connect(): bool
     {
@@ -80,13 +80,13 @@ class Database
 
         $db = $this->config->getDatabase();
 
-        // Désactiver les rapports d'erreur MySQLi pour gérer les erreurs manuellement
+        // Disable MySQLi error reporting to handle errors manually
         mysqli_report(MYSQLI_REPORT_OFF);
 
-        // Parser le serveur pour extraire host, port, socket
+        // Parse server to extract host, port, socket
         $server = $this->parseServer($db['server']);
 
-        // Établir la connexion
+        // Establish connection
         $this->connection = @new mysqli(
             $server['host'],
             $db['username'],
@@ -102,7 +102,7 @@ class Database
             throw new RuntimeException("Database connection failed: {$this->lastError}");
         }
 
-        // Définir le charset
+        // Set charset
         if (!empty($db['charset'])) {
             // Validate charset name to prevent SQL injection
             // MySQL charset names only contain alphanumeric characters
@@ -112,22 +112,22 @@ class Database
             }
 
             if (!$this->connection->set_charset($safeCharset)) {
-                // Fallback avec SET NAMES
+                // Fallback with SET NAMES
                 $this->connection->query("SET NAMES `{$safeCharset}`");
             }
         }
 
-        // Exécuter les pré-requêtes
+        // Execute pre-queries
         $this->executePreQueries();
 
         return true;
     }
 
     /**
-     * Parse le serveur pour extraire host, port et socket
+     * Parses server string to extract host, port and socket
      *
-     * @param string $server Chaîne serveur
-     * @return array{host: string, port: int, socket: string} Composants parsés
+     * @param string $server Server string
+     * @return array{host: string, port: int, socket: string} Parsed components
      */
     private function parseServer(string $server): array
     {
@@ -141,9 +141,9 @@ class Database
             return $result;
         }
 
-        // Vérifier si c'est un socket Unix
+        // Check if it's a Unix socket
         if (str_contains($server, '/')) {
-            // Format: hostname:/path/to/socket ou :/path/to/socket
+            // Format: hostname:/path/to/socket or :/path/to/socket
             $parts = explode(':', $server, 2);
             if (count($parts) === 2) {
                 $result['host'] = $parts[0] ?: 'localhost';
@@ -164,10 +164,10 @@ class Database
     }
 
     /**
-     * Exécute les pré-requêtes configurées
+     * Executes configured pre-queries
      *
      * @return void
-     * @throws RuntimeException Si une pré-requête échoue
+     * @throws RuntimeException If a pre-query fails
      */
     private function executePreQueries(): void
     {
@@ -185,10 +185,10 @@ class Database
     }
 
     /**
-     * Exécute une requête SQL
+     * Executes an SQL query
      *
-     * @param string $query Requête SQL
-     * @return mysqli_result|bool Résultat de la requête
+     * @param string $query SQL query
+     * @return mysqli_result|bool Query result
      */
     public function query(string $query): mysqli_result|bool
     {
@@ -216,9 +216,9 @@ class Database
     }
 
     /**
-     * Récupère le charset de connexion actuel
+     * Retrieves current connection charset
      *
-     * @return string Charset ou chaîne vide
+     * @return string Charset or empty string
      */
     public function getConnectionCharset(): string
     {
@@ -241,9 +241,9 @@ class Database
     }
 
     /**
-     * Vérifie si la connexion est établie
+     * Checks if connection is established
      *
-     * @return bool True si connecté
+     * @return bool True if connected
      */
     public function isConnected(): bool
     {
@@ -255,9 +255,9 @@ class Database
     }
 
     /**
-     * Récupère la dernière erreur
+     * Retrieves last error
      *
-     * @return string Message d'erreur
+     * @return string Error message
      */
     public function getLastError(): string
     {
@@ -265,9 +265,9 @@ class Database
     }
 
     /**
-     * Récupère le nombre de requêtes exécutées
+     * Retrieves number of executed queries
      *
-     * @return int Nombre de requêtes
+     * @return int Number of queries
      */
     public function getQueryCount(): int
     {
@@ -275,10 +275,10 @@ class Database
     }
 
     /**
-     * Échappe une chaîne pour utilisation SQL
+     * Escapes a string for SQL usage
      *
-     * @param string $string Chaîne à échapper
-     * @return string Chaîne échappée
+     * @param string $string String to escape
+     * @return string Escaped string
      */
     public function escape(string $string): string
     {
@@ -290,7 +290,7 @@ class Database
     }
 
     /**
-     * Récupère l'ID de la dernière insertion
+     * Retrieves last insert ID
      *
      * @return int ID
      */
@@ -304,9 +304,9 @@ class Database
     }
 
     /**
-     * Récupère le nombre de lignes affectées
+     * Retrieves number of affected rows
      *
-     * @return int Nombre de lignes
+     * @return int Number of rows
      */
     public function getAffectedRows(): int
     {
@@ -318,7 +318,7 @@ class Database
     }
 
     /**
-     * Ferme la connexion
+     * Closes the connection
      *
      * @return void
      */
@@ -331,9 +331,9 @@ class Database
     }
 
     /**
-     * Récupère le nom de la base de données
+     * Retrieves database name
      *
-     * @return string Nom de la base
+     * @return string Database name
      */
     public function getDatabaseName(): string
     {
@@ -341,9 +341,9 @@ class Database
     }
 
     /**
-     * Récupère le nom du serveur
+     * Retrieves server name
      *
-     * @return string Nom du serveur
+     * @return string Server name
      */
     public function getServerName(): string
     {
@@ -351,9 +351,9 @@ class Database
     }
 
     /**
-     * Vérifie si le mode test est activé
+     * Checks if test mode is enabled
      *
-     * @return bool True si mode test
+     * @return bool True if test mode
      */
     public function isTestMode(): bool
     {
@@ -361,7 +361,7 @@ class Database
     }
 
     /**
-     * Destructeur - ferme la connexion
+     * Destructor - closes the connection
      */
     public function __destruct()
     {

@@ -5,97 +5,97 @@ declare(strict_types=1);
 namespace BigDump\Models;
 
 /**
- * Classe ImportSession - Gestion de l'état d'une session d'import
+ * ImportSession Class - Import session state management
  *
- * Cette classe encapsule toutes les données d'une session d'import,
- * incluant les statistiques et l'état de progression.
+ * This class encapsulates all data from an import session,
+ * including statistics and progression state.
  *
  * @package BigDump\Models
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class ImportSession
 {
     /**
-     * Nom du fichier en cours d'import
+     * File being imported
      * @var string
      */
     private string $filename = '';
 
     /**
-     * Numéro de ligne de départ
+     * Starting line number
      * @var int
      */
     private int $startLine = 1;
 
     /**
-     * Offset dans le fichier au départ
+     * Starting offset in file
      * @var int
      */
     private int $startOffset = 0;
 
     /**
-     * Numéro de ligne actuel
+     * Current line number
      * @var int
      */
     private int $currentLine = 1;
 
     /**
-     * Offset actuel dans le fichier
+     * Current offset in file
      * @var int
      */
     private int $currentOffset = 0;
 
     /**
-     * Nombre de requêtes exécutées dans cette session
+     * Number of queries executed in this session
      * @var int
      */
     private int $sessionQueries = 0;
 
     /**
-     * Nombre total de requêtes exécutées
+     * Total number of executed queries
      * @var int
      */
     private int $totalQueries = 0;
 
     /**
-     * Taille totale du fichier
+     * Total file size
      * @var int
      */
     private int $fileSize = 0;
 
     /**
-     * Délimiteur SQL actuel
+     * Current SQL delimiter
      * @var string
      */
     private string $delimiter = ';';
 
     /**
-     * Import terminé
+     * Import finished
      * @var bool
      */
     private bool $finished = false;
 
     /**
-     * Erreur rencontrée
+     * Error encountered
      * @var string|null
      */
     private ?string $error = null;
 
     /**
-     * Mode gzip
+     * Gzip mode
      * @var bool
      */
     private bool $gzipMode = false;
 
     /**
-     * Crée une nouvelle session à partir des paramètres de requête
+     * Creates a new session from request parameters
      *
-     * @param string $filename Nom du fichier
-     * @param int $startLine Ligne de départ
-     * @param int $startOffset Offset de départ
-     * @param int $totalQueries Total des requêtes précédentes
-     * @param string $delimiter Délimiteur SQL
+     * @param string $filename Filename
+     * @param int $startLine Starting line
+     * @param int $startOffset Starting offset
+     * @param int $totalQueries Total of previous queries
+     * @param string $delimiter SQL delimiter
      * @return self
      */
     public static function fromRequest(
@@ -118,9 +118,9 @@ class ImportSession
     }
 
     /**
-     * Récupère le nom du fichier
+     * Retrieves filename
      *
-     * @return string Nom du fichier
+     * @return string Filename
      */
     public function getFilename(): string
     {
@@ -128,9 +128,9 @@ class ImportSession
     }
 
     /**
-     * Définit le nom du fichier
+     * Sets filename
      *
-     * @param string $filename Nom du fichier
+     * @param string $filename Filename
      * @return self
      */
     public function setFilename(string $filename): self
@@ -140,9 +140,9 @@ class ImportSession
     }
 
     /**
-     * Récupère la ligne de départ
+     * Retrieves starting line
      *
-     * @return int Ligne de départ
+     * @return int Starting line
      */
     public function getStartLine(): int
     {
@@ -150,9 +150,9 @@ class ImportSession
     }
 
     /**
-     * Récupère la ligne actuelle
+     * Retrieves current line
      *
-     * @return int Ligne actuelle
+     * @return int Current line
      */
     public function getCurrentLine(): int
     {
@@ -160,7 +160,7 @@ class ImportSession
     }
 
     /**
-     * Incrémente le numéro de ligne
+     * Increments line number
      *
      * @return self
      */
@@ -171,9 +171,9 @@ class ImportSession
     }
 
     /**
-     * Récupère l'offset de départ
+     * Retrieves starting offset
      *
-     * @return int Offset de départ
+     * @return int Starting offset
      */
     public function getStartOffset(): int
     {
@@ -181,9 +181,9 @@ class ImportSession
     }
 
     /**
-     * Récupère l'offset actuel
+     * Retrieves current offset
      *
-     * @return int Offset actuel
+     * @return int Current offset
      */
     public function getCurrentOffset(): int
     {
@@ -191,7 +191,7 @@ class ImportSession
     }
 
     /**
-     * Définit l'offset actuel
+     * Sets current offset
      *
      * @param int $offset Offset
      * @return self
@@ -203,9 +203,9 @@ class ImportSession
     }
 
     /**
-     * Récupère le nombre de requêtes de la session
+     * Retrieves session query count
      *
-     * @return int Nombre de requêtes
+     * @return int Number of queries
      */
     public function getSessionQueries(): int
     {
@@ -213,7 +213,7 @@ class ImportSession
     }
 
     /**
-     * Incrémente le compteur de requêtes
+     * Increments query counter
      *
      * @return self
      */
@@ -225,9 +225,9 @@ class ImportSession
     }
 
     /**
-     * Récupère le nombre total de requêtes
+     * Retrieves total query count
      *
-     * @return int Total des requêtes
+     * @return int Total queries
      */
     public function getTotalQueries(): int
     {
@@ -235,9 +235,9 @@ class ImportSession
     }
 
     /**
-     * Récupère la taille du fichier
+     * Retrieves file size
      *
-     * @return int Taille en octets
+     * @return int Size in bytes
      */
     public function getFileSize(): int
     {
@@ -245,9 +245,9 @@ class ImportSession
     }
 
     /**
-     * Définit la taille du fichier
+     * Sets file size
      *
-     * @param int $size Taille en octets
+     * @param int $size Size in bytes
      * @return self
      */
     public function setFileSize(int $size): self
@@ -257,9 +257,9 @@ class ImportSession
     }
 
     /**
-     * Récupère le délimiteur SQL
+     * Retrieves SQL delimiter
      *
-     * @return string Délimiteur
+     * @return string Delimiter
      */
     public function getDelimiter(): string
     {
@@ -267,9 +267,9 @@ class ImportSession
     }
 
     /**
-     * Définit le délimiteur SQL
+     * Sets SQL delimiter
      *
-     * @param string $delimiter Délimiteur
+     * @param string $delimiter Delimiter
      * @return self
      */
     public function setDelimiter(string $delimiter): self
@@ -279,9 +279,9 @@ class ImportSession
     }
 
     /**
-     * Vérifie si l'import est terminé
+     * Checks if import is finished
      *
-     * @return bool True si terminé
+     * @return bool True if finished
      */
     public function isFinished(): bool
     {
@@ -289,7 +289,7 @@ class ImportSession
     }
 
     /**
-     * Marque l'import comme terminé
+     * Marks import as finished
      *
      * @return self
      */
@@ -300,9 +300,9 @@ class ImportSession
     }
 
     /**
-     * Vérifie s'il y a une erreur
+     * Checks if there is an error
      *
-     * @return bool True si erreur
+     * @return bool True if error
      */
     public function hasError(): bool
     {
@@ -310,9 +310,9 @@ class ImportSession
     }
 
     /**
-     * Récupère l'erreur
+     * Retrieves error
      *
-     * @return string|null Message d'erreur
+     * @return string|null Error message
      */
     public function getError(): ?string
     {
@@ -320,9 +320,9 @@ class ImportSession
     }
 
     /**
-     * Définit une erreur
+     * Sets error
      *
-     * @param string $error Message d'erreur
+     * @param string $error Error message
      * @return self
      */
     public function setError(string $error): self
@@ -332,9 +332,9 @@ class ImportSession
     }
 
     /**
-     * Vérifie si le mode gzip est actif
+     * Checks if gzip mode is active
      *
-     * @return bool True si mode gzip
+     * @return bool True if gzip mode
      */
     public function isGzipMode(): bool
     {
@@ -342,9 +342,9 @@ class ImportSession
     }
 
     /**
-     * Définit le mode gzip
+     * Sets gzip mode
      *
-     * @param bool $gzipMode Mode gzip
+     * @param bool $gzipMode Gzip mode
      * @return self
      */
     public function setGzipMode(bool $gzipMode): self
@@ -354,9 +354,9 @@ class ImportSession
     }
 
     /**
-     * Calcule les statistiques de la session
+     * Calculates session statistics
      *
-     * @return array<string, mixed> Statistiques
+     * @return array<string, mixed> Statistics
      */
     public function getStatistics(): array
     {
@@ -366,11 +366,11 @@ class ImportSession
         $bytesThis = $this->currentOffset - $this->startOffset;
         $bytesDone = $this->currentOffset;
 
-        // Calculs pour fichiers non-gzip uniquement
+        // Calculations for non-gzip files only
         $bytesTogo = $this->gzipMode ? null : max(0, $this->fileSize - $this->currentOffset);
         $bytesTotal = $this->gzipMode ? null : $this->fileSize;
 
-        // Pourcentages
+        // Percentages
         $pctDone = null;
         $pctThis = null;
         $pctTogo = null;
@@ -382,52 +382,52 @@ class ImportSession
         }
 
         return [
-            // Lignes
+            // Lines
             'lines_this' => $linesThis,
             'lines_done' => $linesDone,
             'lines_togo' => $this->finished ? 0 : null,
             'lines_total' => $this->finished ? $linesDone : null,
 
-            // Requêtes
+            // Queries
             'queries_this' => $this->sessionQueries,
             'queries_done' => $this->totalQueries,
             'queries_togo' => $this->finished ? 0 : null,
             'queries_total' => $this->finished ? $this->totalQueries : null,
 
-            // Octets
+            // Bytes
             'bytes_this' => $bytesThis,
             'bytes_done' => $bytesDone,
             'bytes_togo' => $bytesTogo,
             'bytes_total' => $bytesTotal,
 
-            // Kilo-octets
+            // Kilobytes
             'kb_this' => round($bytesThis / 1024, 2),
             'kb_done' => round($bytesDone / 1024, 2),
             'kb_togo' => $bytesTogo !== null ? round($bytesTogo / 1024, 2) : null,
             'kb_total' => $bytesTotal !== null ? round($bytesTotal / 1024, 2) : null,
 
-            // Méga-octets
+            // Megabytes
             'mb_this' => round($bytesThis / 1048576, 2),
             'mb_done' => round($bytesDone / 1048576, 2),
             'mb_togo' => $bytesTogo !== null ? round($bytesTogo / 1048576, 2) : null,
             'mb_total' => $bytesTotal !== null ? round($bytesTotal / 1048576, 2) : null,
 
-            // Pourcentages
+            // Percentages
             'pct_this' => $pctThis,
             'pct_done' => $pctDone,
             'pct_togo' => $pctTogo,
             'pct_total' => 100,
 
-            // État
+            // Status
             'finished' => $this->finished,
             'gzip_mode' => $this->gzipMode,
         ];
     }
 
     /**
-     * Génère les paramètres pour la prochaine session
+     * Generates parameters for next session
      *
-     * @return array<string, mixed> Paramètres
+     * @return array<string, mixed> Parameters
      */
     public function getNextSessionParams(): array
     {
@@ -441,9 +441,9 @@ class ImportSession
     }
 
     /**
-     * Convertit la session en tableau pour XML/JSON
+     * Converts session to array for XML/JSON
      *
-     * @return array<string, mixed> Données de la session
+     * @return array<string, mixed> Session data
      */
     public function toArray(): array
     {

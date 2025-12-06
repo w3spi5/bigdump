@@ -1,11 +1,11 @@
 <?php
 /**
- * Vue: Page d'erreur
+ * View: Error page
  *
- * Affiche un message d'erreur générique.
+ * Displays a generic error message.
  *
  * @var \BigDump\Core\View $view
- * @var string $error Message d'erreur
+ * @var string $error Error message
  */
 ?>
 
