@@ -1,5 +1,5 @@
-# Deny direct access to dump files
-<FilesMatch "\.(sql|gz|csv)$">
+# Deny direct access to dump files and temporary files
+<FilesMatch "\.(sql|gz|csv|tmp)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
