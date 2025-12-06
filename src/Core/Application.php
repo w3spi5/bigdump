@@ -10,62 +10,62 @@ use RuntimeException;
 use Throwable;
 
 /**
- * Classe Application - Point d'entrée principal de l'application
+ * Application Class - Main application entry point.
  *
- * Cette classe orchestre l'ensemble de l'application MVC,
- * gérant l'initialisation, le routage et l'exécution.
+ * This class orchestrates the entire MVC application,
+ * managing initialization, routing and execution.
  *
  * @package BigDump\Core
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class Application
 {
     /**
-     * Version de l'application
+     * Application version.
      */
     public const VERSION = '2.0.0';
 
     /**
-     * Instance de configuration
+     * Configuration instance.
      * @var Config
      */
     private Config $config;
 
     /**
-     * Instance de requête
+     * Request instance.
      * @var Request
      */
     private Request $request;
 
     /**
-     * Instance de réponse
+     * Response instance.
      * @var Response
      */
     private Response $response;
 
     /**
-     * Instance de router
+     * Router instance.
      * @var Router
      */
     private Router $router;
 
     /**
-     * Instance de vue
+     * View instance.
      * @var View
      */
     private View $view;
 
     /**
-     * Répertoire racine de l'application
+     * Application root directory.
      * @var string
      */
     private string $basePath;
 
     /**
-     * Constructeur
+     * Constructor.
      *
-     * @param string $basePath Répertoire racine de l'application
+     * @param string $basePath Application root directory.
      */
     public function __construct(string $basePath)
     {
@@ -74,28 +74,28 @@ class Application
     }
 
     /**
-     * Initialise l'application
+     * Initializes the application.
      *
      * @return void
      */
     private function initialize(): void
     {
-        // Configuration PHP
+        // PHP configuration
         $this->configurePhp();
 
-        // Charger la configuration
+        // Load configuration
         $this->config = new Config($this->basePath . '/config/config.php');
 
-        // Initialiser les composants
+        // Initialize components
         $this->request = new Request();
         $this->response = new Response();
         $this->view = new View($this->basePath . '/src/Views');
         $this->router = new Router();
 
-        // Configurer les routes
+        // Configure routes
         $this->setupRoutes();
 
-        // Passer les données globales à la vue
+        // Pass global data to view
         $this->view->assign([
             'version' => self::VERSION,
             'scriptUri' => $this->request->getScriptUri(),
@@ -105,13 +105,13 @@ class Application
     }
 
     /**
-     * Configure les paramètres PHP
+     * Configures PHP settings.
      *
      * @return void
      */
     private function configurePhp(): void
     {
-        // Rapport d'erreurs
+        // Error reporting
         error_reporting(E_ALL);
 
         // Timezone
@@ -119,17 +119,17 @@ class Application
             @date_default_timezone_set(@date_default_timezone_get() ?: 'UTC');
         }
 
-        // Temps d'exécution illimité si possible
+        // Unlimited execution time if possible
         @set_time_limit(0);
 
-        // Détection automatique des fins de ligne (dépréciée en PHP 8.1+)
+        // Automatic line ending detection (deprecated in PHP 8.1+)
         if (PHP_VERSION_ID < 80100) {
             @ini_set('auto_detect_line_endings', '1');
         }
     }
 
     /**
-     * Configure les routes de l'application
+     * Configures application routes.
      *
      * @return void
      */
@@ -148,17 +148,17 @@ class Application
     }
 
     /**
-     * Exécute l'application
+     * Runs the application.
      *
      * @return void
      */
     public function run(): void
     {
         try {
-            // Résoudre la route
+            // Resolve route
             $route = $this->router->resolve($this->request);
 
-            // Créer le contrôleur
+            // Create controller
             $controllerClass = $route['controller'];
             $controller = new $controllerClass(
                 $this->config,
@@ -167,7 +167,7 @@ class Application
                 $this->view
             );
 
-            // Exécuter l'action
+            // Execute action
             $action = $route['action'];
 
             if (!method_exists($controller, $action)) {
@@ -176,7 +176,7 @@ class Application
 
             $controller->$action();
 
-            // Envoyer la réponse
+            // Send response
             $this->response->send();
 
         } catch (Throwable $e) {
@@ -185,17 +185,17 @@ class Application
     }
 
     /**
-     * Gère les erreurs de l'application
+     * Handles application errors.
      *
-     * @param Throwable $e Exception ou erreur
+     * @param Throwable $e Exception or error.
      * @return void
      */
     private function handleError(Throwable $e): void
     {
-        // Log l'erreur si possible
+        // Log error if possible
         error_log("BigDump Error: " . $e->getMessage() . "\n" . $e->getTraceAsString());
 
-        // Afficher l'erreur
+        // Display error
         $this->response
             ->setStatusCode(500)
             ->asHtml()
@@ -204,10 +204,10 @@ class Application
     }
 
     /**
-     * Rend une page d'erreur
+     * Renders an error page.
      *
-     * @param Throwable $e Exception
-     * @return string HTML de l'erreur
+     * @param Throwable $e Exception.
+     * @return string Error HTML.
      */
     private function renderError(Throwable $e): string
     {
@@ -251,9 +251,9 @@ HTML;
     }
 
     /**
-     * Récupère la configuration
+     * Gets the configuration.
      *
-     * @return Config Instance de configuration
+     * @return Config Configuration instance.
      */
     public function getConfig(): Config
     {
@@ -261,9 +261,9 @@ HTML;
     }
 
     /**
-     * Récupère la requête
+     * Gets the request.
      *
-     * @return Request Instance de requête
+     * @return Request Request instance.
      */
     public function getRequest(): Request
     {
@@ -271,9 +271,9 @@ HTML;
     }
 
     /**
-     * Récupère la réponse
+     * Gets the response.
      *
-     * @return Response Instance de réponse
+     * @return Response Response instance.
      */
     public function getResponse(): Response
     {
@@ -281,9 +281,9 @@ HTML;
     }
 
     /**
-     * Récupère la vue
+     * Gets the view.
      *
-     * @return View Instance de vue
+     * @return View View instance.
      */
     public function getView(): View
     {
@@ -291,9 +291,9 @@ HTML;
     }
 
     /**
-     * Récupère le chemin de base
+     * Gets the base path.
      *
-     * @return string Chemin de base
+     * @return string Base path.
      */
     public function getBasePath(): string
     {

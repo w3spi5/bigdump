@@ -1,47 +1,47 @@
 <?php
 
 /**
- * BigDump 2.0 - Point d'entrée principal
+ * BigDump 2.0 - Main entry point
  *
- * Ce fichier est le point d'entrée de l'application BigDump refactorisée.
- * Il initialise l'autoloader et lance l'application MVC.
+ * This file is the entry point of the refactored BigDump application.
+ * It initializes the autoloader and launches the MVC application.
  *
- * UTILISATION:
- * 1. Configurez config/config.php avec vos identifiants de base de données
- * 2. Uploadez vos fichiers dump (.sql, .gz, .csv) dans le dossier uploads/
- * 3. Accédez à ce fichier via votre navigateur web
+ * USAGE:
+ * 1. Configure config/config.php with your database credentials
+ * 2. Upload your dump files (.sql, .gz, .csv) to the uploads/ directory
+ * 3. Access this file via your web browser
  *
  * @package BigDump
  * @version 2.0.0
- * @author  Refactorisation MVC
- * @license GPL-2.0-or-later
+ * @author  MVC Refactoring
+ * @license MIT
  */
 
 declare(strict_types=1);
 
-// Définir le répertoire racine de l'application
+// Define the application root directory
 define('BIGDUMP_ROOT', dirname(__DIR__));
 
-// Vérifier la version PHP
+// Check PHP version
 if (PHP_VERSION_ID < 80100) {
     die('BigDump 2.0 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
 }
 
-// Vérifier l'extension MySQLi
+// Check MySQLi extension
 if (!extension_loaded('mysqli')) {
     die('BigDump requires the MySQLi extension. Please enable it in your php.ini');
 }
 
-// Autoloader simple (sans Composer)
+// Simple autoloader (without Composer)
 spl_autoload_register(function (string $class): void {
-    // Vérifier que la classe est dans notre namespace
+    // Check that the class is in our namespace
     $prefix = 'BigDump\\';
 
     if (strncmp($prefix, $class, strlen($prefix)) !== 0) {
         return;
     }
 
-    // Construire le chemin du fichier
+    // Build the file path
     $relativeClass = substr($class, strlen($prefix));
     $file = BIGDUMP_ROOT . '/src/' . str_replace('\\', '/', $relativeClass) . '.php';
 
@@ -50,7 +50,7 @@ spl_autoload_register(function (string $class): void {
     }
 });
 
-// Gestion des erreurs
+// Error handling
 error_reporting(E_ALL);
 
 set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline): bool {
@@ -96,13 +96,13 @@ set_exception_handler(function (Throwable $e): void {
 HTML;
 });
 
-// Créer le répertoire uploads s'il n'existe pas
+// Create the uploads directory if it doesn't exist
 $uploadsDir = BIGDUMP_ROOT . '/uploads';
 if (!is_dir($uploadsDir)) {
     @mkdir($uploadsDir, 0755, true);
 }
 
-// Créer un fichier .htaccess pour protéger le répertoire uploads
+// Create an .htaccess file to protect the uploads directory
 $htaccessFile = $uploadsDir . '/.htaccess';
 if (!file_exists($htaccessFile)) {
     @file_put_contents($htaccessFile, <<<HTACCESS
@@ -115,7 +115,7 @@ HTACCESS
     );
 }
 
-// Lancer l'application
+// Launch the application
 use BigDump\Core\Application;
 
 $app = new Application(BIGDUMP_ROOT);

@@ -7,35 +7,35 @@ namespace BigDump\Core;
 use RuntimeException;
 
 /**
- * Classe Router - Gestionnaire de routes simplifié
+ * Router Class - Simplified route handler.
  *
- * Cette classe gère le routage des requêtes vers les actions
- * appropriées du contrôleur.
+ * This class manages routing of requests to appropriate
+ * controller actions.
  *
  * @package BigDump\Core
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class Router
 {
     /**
-     * Routes enregistrées
+     * Registered routes.
      * @var array<string, array{controller: string, action: string}>
      */
     private array $routes = [];
 
     /**
-     * Route par défaut
+     * Default route.
      * @var array{controller: string, action: string}|null
      */
     private ?array $defaultRoute = null;
 
     /**
-     * Enregistre une route
+     * Registers a route.
      *
-     * @param string $name Nom de la route (correspond à l'action de la requête)
-     * @param string $controller Nom de la classe contrôleur
-     * @param string $action Nom de la méthode à appeler
+     * @param string $name Route name (corresponds to request action).
+     * @param string $controller Controller class name.
+     * @param string $action Method name to call.
      * @return self
      */
     public function register(string $name, string $controller, string $action): self
@@ -49,10 +49,10 @@ class Router
     }
 
     /**
-     * Définit la route par défaut
+     * Sets the default route.
      *
-     * @param string $controller Nom de la classe contrôleur
-     * @param string $action Nom de la méthode à appeler
+     * @param string $controller Controller class name.
+     * @param string $action Method name to call.
      * @return self
      */
     public function setDefault(string $controller, string $action): self
@@ -66,11 +66,11 @@ class Router
     }
 
     /**
-     * Résout la route pour une requête donnée
+     * Resolves the route for a given request.
      *
-     * @param Request $request Requête HTTP
-     * @return array{controller: string, action: string} Route résolue
-     * @throws RuntimeException Si aucune route ne correspond
+     * @param Request $request HTTP request.
+     * @return array{controller: string, action: string} Resolved route.
+     * @throws RuntimeException If no matching route found.
      */
     public function resolve(Request $request): array
     {
@@ -88,10 +88,10 @@ class Router
     }
 
     /**
-     * Vérifie si une route existe
+     * Checks if a route exists.
      *
-     * @param string $name Nom de la route
-     * @return bool True si la route existe
+     * @param string $name Route name.
+     * @return bool True if route exists.
      */
     public function hasRoute(string $name): bool
     {
@@ -99,9 +99,9 @@ class Router
     }
 
     /**
-     * Récupère toutes les routes enregistrées
+     * Gets all registered routes.
      *
-     * @return array<string, array{controller: string, action: string}> Routes
+     * @return array<string, array{controller: string, action: string}> Routes.
      */
     public function getRoutes(): array
     {

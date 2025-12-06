@@ -8,10 +8,10 @@ use BigDump\Config\Config;
 use BigDump\Models\ImportSession;
 
 /**
- * Classe AjaxService - Service pour les réponses AJAX
+ * AjaxService Class - Service for AJAX responses.
  *
- * Ce service génère les réponses XML et JavaScript
- * pour le mode AJAX de l'import.
+ * This service generates XML and JavaScript responses
+ * for the AJAX import mode.
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
@@ -20,13 +20,13 @@ use BigDump\Models\ImportSession;
 class AjaxService
 {
     /**
-     * Configuration
+     * Configuration.
      * @var Config
      */
     private Config $config;
 
     /**
-     * Constructeur
+     * Constructor.
      *
      * @param Config $config Configuration
      */
@@ -36,10 +36,10 @@ class AjaxService
     }
 
     /**
-     * Génère une réponse XML pour AJAX
+     * Generates an XML response for AJAX.
      *
-     * @param ImportSession $session Session d'import
-     * @return string XML formaté
+     * @param ImportSession $session Import session
+     * @return string Formatted XML
      */
     public function createXmlResponse(ImportSession $session): string
     {
@@ -49,57 +49,57 @@ class AjaxService
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<root>';
 
-        // Données pour les calculs de la prochaine session
+        // Data for next session calculations
         $xml .= $this->xmlElement('linenumber', (string) $params['start']);
         $xml .= $this->xmlElement('foffset', (string) $params['foffset']);
         $xml .= $this->xmlElement('fn', $params['fn']);
         $xml .= $this->xmlElement('totalqueries', (string) $params['totalqueries']);
         $xml .= $this->xmlElement('delimiter', $params['delimiter']);
 
-        // Statistiques pour la mise à jour de l'interface
-        // Lignes
+        // Statistics for interface update
+        // Lines
         $xml .= $this->xmlElement('elem1', (string) $stats['lines_this']);
         $xml .= $this->xmlElement('elem2', (string) $stats['lines_done']);
         $xml .= $this->xmlElement('elem3', $this->formatNullable($stats['lines_togo']));
         $xml .= $this->xmlElement('elem4', $this->formatNullable($stats['lines_total']));
 
-        // Requêtes
+        // Queries
         $xml .= $this->xmlElement('elem5', (string) $stats['queries_this']);
         $xml .= $this->xmlElement('elem6', (string) $stats['queries_done']);
         $xml .= $this->xmlElement('elem7', $this->formatNullable($stats['queries_togo']));
         $xml .= $this->xmlElement('elem8', $this->formatNullable($stats['queries_total']));
 
-        // Octets
+        // Bytes
         $xml .= $this->xmlElement('elem9', (string) $stats['bytes_this']);
         $xml .= $this->xmlElement('elem10', (string) $stats['bytes_done']);
         $xml .= $this->xmlElement('elem11', $this->formatNullable($stats['bytes_togo']));
         $xml .= $this->xmlElement('elem12', $this->formatNullable($stats['bytes_total']));
 
-        // Ko
+        // KB
         $xml .= $this->xmlElement('elem13', (string) $stats['kb_this']);
         $xml .= $this->xmlElement('elem14', (string) $stats['kb_done']);
         $xml .= $this->xmlElement('elem15', $this->formatNullable($stats['kb_togo']));
         $xml .= $this->xmlElement('elem16', $this->formatNullable($stats['kb_total']));
 
-        // Mo
+        // MB
         $xml .= $this->xmlElement('elem17', (string) $stats['mb_this']);
         $xml .= $this->xmlElement('elem18', (string) $stats['mb_done']);
         $xml .= $this->xmlElement('elem19', $this->formatNullable($stats['mb_togo']));
         $xml .= $this->xmlElement('elem20', $this->formatNullable($stats['mb_total']));
 
-        // Pourcentages
+        // Percentages
         $xml .= $this->xmlElement('elem21', $this->formatNullable($stats['pct_this']));
         $xml .= $this->xmlElement('elem22', $this->formatNullable($stats['pct_done']));
         $xml .= $this->xmlElement('elem23', $this->formatNullable($stats['pct_togo']));
         $xml .= $this->xmlElement('elem24', (string) $stats['pct_total']);
 
-        // Barre de progression
+        // Progress bar
         $xml .= $this->xmlElement('elem_bar', $this->createProgressBar($stats));
 
-        // État
+        // Status
         $xml .= $this->xmlElement('finished', $stats['finished'] ? '1' : '0');
 
-        // Erreur éventuelle
+        // Possible error
         if ($session->hasError()) {
             $xml .= $this->xmlElement('error', $session->getError() ?? '');
         }
@@ -110,11 +110,11 @@ class AjaxService
     }
 
     /**
-     * Crée un élément XML
+     * Creates an XML element.
      *
-     * @param string $name Nom de l'élément
-     * @param string $value Valeur
-     * @return string Élément XML
+     * @param string $name Element name
+     * @param string $value Value
+     * @return string XML element
      */
     private function xmlElement(string $name, string $value): string
     {
@@ -123,10 +123,10 @@ class AjaxService
     }
 
     /**
-     * Formate une valeur nullable
+     * Formats a nullable value.
      *
-     * @param mixed $value Valeur
-     * @return string Valeur formatée
+     * @param mixed $value Value
+     * @return string Formatted value
      */
     private function formatNullable(mixed $value): string
     {
@@ -134,10 +134,10 @@ class AjaxService
     }
 
     /**
-     * Crée la barre de progression HTML
+     * Creates the HTML progress bar.
      *
-     * @param array<string, mixed> $stats Statistiques
-     * @return string HTML de la barre
+     * @param array<string, mixed> $stats Statistics
+     * @return string Bar HTML
      */
     private function createProgressBar(array $stats): string
     {
@@ -151,11 +151,11 @@ class AjaxService
     }
 
     /**
-     * Génère le script JavaScript AJAX initial
+     * Generates the initial AJAX JavaScript script.
      *
-     * @param ImportSession $session Session d'import
-     * @param string $scriptUri URI du script
-     * @return string Code JavaScript
+     * @param ImportSession $session Import session
+     * @param string $scriptUri Script URI
+     * @return string JavaScript code
      */
     public function createAjaxScript(ImportSession $session, string $scriptUri): string
     {
@@ -177,7 +177,7 @@ class AjaxService
     var httpRequest = null;
 
     /**
-     * Construit l'URL pour la prochaine session AJAX
+     * Builds the URL for the next AJAX session.
      */
     function buildUrl(linenumber, fn, foffset, totalqueries, delimiter) {
         return scriptUri + '?start=' + linenumber +
@@ -189,7 +189,7 @@ class AjaxService
     }
 
     /**
-     * Extrait une valeur d'un élément XML
+     * Extracts a value from an XML element.
      */
     function getXmlValue(xml, tagName) {
         var elem = xml.getElementsByTagName(tagName);
@@ -200,7 +200,7 @@ class AjaxService
     }
 
     /**
-     * Effectue une requête AJAX
+     * Performs an AJAX request.
      */
     function makeRequest(url) {
         if (window.XMLHttpRequest) {
@@ -228,7 +228,7 @@ class AjaxService
     }
 
     /**
-     * Gère la réponse AJAX
+     * Handles the AJAX response
      */
     function handleResponse() {
         if (httpRequest.readyState !== 4) {
@@ -242,7 +242,7 @@ class AjaxService
 
         var xml = httpRequest.responseXML;
 
-        // Si pas de XML valide, c'est la page finale HTML
+        // If no valid XML, it's the final HTML page
         if (!xml || !xml.getElementsByTagName('root').length) {
             document.open();
             document.write(httpRequest.responseText);
@@ -250,15 +250,15 @@ class AjaxService
             return;
         }
 
-        // Vérifier si terminé
+        // Check if finished
         var finished = getXmlValue(xml, 'finished');
         if (finished === '1') {
-            // Recharger pour afficher le message de fin
+            // Reload to display the completion message
             location.reload();
             return;
         }
 
-        // Vérifier les erreurs
+        // Check for errors
         var error = getXmlValue(xml, 'error');
         if (error) {
             alert('Import error: ' + error);
@@ -266,13 +266,13 @@ class AjaxService
             return;
         }
 
-        // Mettre à jour le numéro de ligne
+        // Update line number
         var paragraphs = document.getElementsByTagName('p');
         if (paragraphs[1]) {
             paragraphs[1].innerHTML = 'Starting from line: ' + getXmlValue(xml, 'linenumber');
         }
 
-        // Mettre à jour le tableau de statistiques
+        // Update statistics table
         var cells = document.getElementsByTagName('td');
         for (var i = 1; i <= 24; i++) {
             if (cells[i]) {
@@ -285,12 +285,12 @@ class AjaxService
             }
         }
 
-        // Mettre à jour la barre de progression
+        // Update progress bar
         if (cells[25]) {
             cells[25].innerHTML = getXmlValue(xml, 'elem_bar');
         }
 
-        // Préparer la prochaine requête
+        // Prepare the next request
         var nextUrl = buildUrl(
             getXmlValue(xml, 'linenumber'),
             getXmlValue(xml, 'fn'),
@@ -299,13 +299,13 @@ class AjaxService
             getXmlValue(xml, 'delimiter')
         );
 
-        // Lancer la prochaine session après le délai
+        // Launch the next session after the delay
         setTimeout(function() {
             makeRequest(nextUrl);
         }, 500 + delayPerSession);
     }
 
-    // Démarrer la première requête AJAX
+    // Start the first AJAX request
     var initialUrl = buildUrl(
         {$params['start']},
         '{$fn}',
@@ -325,11 +325,11 @@ JAVASCRIPT;
     }
 
     /**
-     * Génère le script de redirection automatique (mode non-AJAX)
+     * Generates the automatic redirect script (non-AJAX mode).
      *
-     * @param ImportSession $session Session d'import
-     * @param string $scriptUri URI du script
-     * @return string Code JavaScript
+     * @param ImportSession $session Import session
+     * @param string $scriptUri Script URI
+     * @return string JavaScript code
      */
     public function createRedirectScript(ImportSession $session, string $scriptUri): string
     {
@@ -349,9 +349,9 @@ JAVASCRIPT;
     }
 
     /**
-     * Vérifie si le mode AJAX est activé
+     * Checks if AJAX mode is enabled.
      *
-     * @return bool True si AJAX activé
+     * @return bool True if AJAX enabled
      */
     public function isAjaxEnabled(): bool
     {
@@ -359,9 +359,9 @@ JAVASCRIPT;
     }
 
     /**
-     * Récupère le délai entre les sessions
+     * Retrieves the delay between sessions.
      *
-     * @return int Délai en millisecondes
+     * @return int Delay in milliseconds
      */
     public function getDelay(): int
     {
@@ -369,13 +369,13 @@ JAVASCRIPT;
     }
 
     /**
-     * Échappe une chaîne pour une utilisation sûre dans du JavaScript
+     * Escapes a string for safe use in JavaScript.
      *
-     * Prévient les injections XSS en échappant les caractères spéciaux,
-     * incluant les séquences qui pourraient terminer un bloc script.
+     * Prevents XSS injections by escaping special characters,
+     * including sequences that could terminate a script block.
      *
-     * @param string $string Chaîne à échapper
-     * @return string Chaîne sécurisée pour JavaScript
+     * @param string $string String to escape
+     * @return string JavaScript-safe string
      */
     private function escapeJsString(string $string): string
     {

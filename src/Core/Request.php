@@ -5,49 +5,49 @@ declare(strict_types=1);
 namespace BigDump\Core;
 
 /**
- * Classe Request - Encapsule les données de la requête HTTP
+ * Request Class - Encapsulates HTTP request data.
  *
- * Cette classe fournit une abstraction sécurisée pour accéder aux données
- * de la requête HTTP ($_GET, $_POST, $_FILES, $_SERVER).
+ * This class provides a secure abstraction to access HTTP request data
+ * ($_GET, $_POST, $_FILES, $_SERVER).
  *
  * @package BigDump\Core
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class Request
 {
     /**
-     * Données GET nettoyées
+     * Sanitized GET data.
      * @var array<string, mixed>
      */
     private array $get;
 
     /**
-     * Données POST nettoyées
+     * Sanitized POST data.
      * @var array<string, mixed>
      */
     private array $post;
 
     /**
-     * Données FILES
+     * FILES data.
      * @var array<string, mixed>
      */
     private array $files;
 
     /**
-     * Données SERVER
+     * SERVER data.
      * @var array<string, mixed>
      */
     private array $server;
 
     /**
-     * Action demandée
+     * Requested action.
      * @var string
      */
     private string $action;
 
     /**
-     * Constructeur - Initialise la requête avec les superglobales
+     * Constructor - Initializes the request with superglobals.
      */
     public function __construct()
     {
@@ -59,21 +59,21 @@ class Request
     }
 
     /**
-     * Nettoie les données d'entrée de manière sécurisée
+     * Sanitizes input data securely.
      *
-     * Contrairement à l'original qui supprimait trop de caractères,
-     * cette version préserve les caractères UTF-8 valides tout en
-     * supprimant les caractères de contrôle dangereux.
+     * Unlike the original which removed too many characters,
+     * this version preserves valid UTF-8 characters while
+     * removing dangerous control characters.
      *
-     * @param array<string, mixed> $data Données à nettoyer
-     * @return array<string, mixed> Données nettoyées
+     * @param array<string, mixed> $data Data to sanitize.
+     * @return array<string, mixed> Sanitized data.
      */
     private function sanitizeInput(array $data): array
     {
         $sanitized = [];
 
         foreach ($data as $key => $value) {
-            // Nettoyer la clé
+            // Sanitize key
             $cleanKey = $this->sanitizeKey($key);
 
             if (is_array($value)) {
@@ -87,41 +87,41 @@ class Request
     }
 
     /**
-     * Nettoie une clé de paramètre
+     * Sanitizes a parameter key.
      *
-     * @param string $key Clé à nettoyer
-     * @return string Clé nettoyée
+     * @param string $key Key to sanitize.
+     * @return string Sanitized key.
      */
     private function sanitizeKey(string $key): string
     {
-        // Les clés ne doivent contenir que des caractères alphanumériques et underscore
+        // Keys should only contain alphanumeric characters and underscore
         return preg_replace('/[^a-zA-Z0-9_]/', '', $key) ?? '';
     }
 
     /**
-     * Nettoie une valeur de paramètre
+     * Sanitizes a parameter value.
      *
-     * Préserve les caractères UTF-8 valides, supprime uniquement
-     * les caractères de contrôle (sauf tab, newline, carriage return).
+     * Preserves valid UTF-8 characters, only removes
+     * control characters (except tab, newline, carriage return).
      *
-     * @param string $value Valeur à nettoyer
-     * @return string Valeur nettoyée
+     * @param string $value Value to sanitize.
+     * @return string Sanitized value.
      */
     private function sanitizeValue(string $value): string
     {
-        // Supprimer les caractères de contrôle sauf \t, \n, \r
+        // Remove control characters except \t, \n, \r
         $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $value) ?? '';
 
-        // Supprimer les séquences null byte (injection)
+        // Remove null byte sequences (injection)
         $value = str_replace("\0", '', $value);
 
         return $value;
     }
 
     /**
-     * Détermine l'action à exécuter basée sur les paramètres de la requête
+     * Determines the action to execute based on request parameters.
      *
-     * @return string Nom de l'action
+     * @return string Action name.
      */
     private function determineAction(): string
     {
@@ -148,11 +148,11 @@ class Request
     }
 
     /**
-     * Récupère une valeur GET
+     * Gets a GET value.
      *
-     * @param string $key Clé du paramètre
-     * @param mixed $default Valeur par défaut
-     * @return mixed Valeur du paramètre
+     * @param string $key Parameter key.
+     * @param mixed $default Default value.
+     * @return mixed Parameter value.
      */
     public function get(string $key, mixed $default = null): mixed
     {
@@ -160,11 +160,11 @@ class Request
     }
 
     /**
-     * Récupère une valeur POST
+     * Gets a POST value.
      *
-     * @param string $key Clé du paramètre
-     * @param mixed $default Valeur par défaut
-     * @return mixed Valeur du paramètre
+     * @param string $key Parameter key.
+     * @param mixed $default Default value.
+     * @return mixed Parameter value.
      */
     public function post(string $key, mixed $default = null): mixed
     {
@@ -172,11 +172,11 @@ class Request
     }
 
     /**
-     * Récupère une valeur GET ou POST (GET prioritaire)
+     * Gets a GET or POST value (GET takes priority).
      *
-     * @param string $key Clé du paramètre
-     * @param mixed $default Valeur par défaut
-     * @return mixed Valeur du paramètre
+     * @param string $key Parameter key.
+     * @param mixed $default Default value.
+     * @return mixed Parameter value.
      */
     public function input(string $key, mixed $default = null): mixed
     {
@@ -184,10 +184,10 @@ class Request
     }
 
     /**
-     * Vérifie si un paramètre existe (GET ou POST)
+     * Checks if a parameter exists (GET or POST).
      *
-     * @param string $key Clé du paramètre
-     * @return bool True si le paramètre existe
+     * @param string $key Parameter key.
+     * @return bool True if parameter exists.
      */
     public function has(string $key): bool
     {
@@ -195,11 +195,11 @@ class Request
     }
 
     /**
-     * Récupère un entier depuis les paramètres
+     * Gets an integer from parameters.
      *
-     * @param string $key Clé du paramètre
-     * @param int $default Valeur par défaut
-     * @return int Valeur entière
+     * @param string $key Parameter key.
+     * @param int $default Default value.
+     * @return int Integer value.
      */
     public function getInt(string $key, int $default = 0): int
     {
@@ -213,10 +213,10 @@ class Request
     }
 
     /**
-     * Récupère les informations d'un fichier uploadé
+     * Gets information about an uploaded file.
      *
-     * @param string $key Clé du fichier
-     * @return array<string, mixed>|null Informations du fichier ou null
+     * @param string $key File key.
+     * @return array<string, mixed>|null File information or null.
      */
     public function file(string $key): ?array
     {
@@ -224,10 +224,10 @@ class Request
     }
 
     /**
-     * Vérifie si un fichier a été uploadé correctement
+     * Checks if a file has been uploaded correctly.
      *
-     * @param string $key Clé du fichier
-     * @return bool True si le fichier est valide
+     * @param string $key File key.
+     * @return bool True if file is valid.
      */
     public function hasValidFile(string $key): bool
     {
@@ -243,9 +243,9 @@ class Request
     }
 
     /**
-     * Récupère l'action demandée
+     * Gets the requested action.
      *
-     * @return string Nom de l'action
+     * @return string Action name.
      */
     public function getAction(): string
     {
@@ -253,11 +253,11 @@ class Request
     }
 
     /**
-     * Récupère une valeur SERVER
+     * Gets a SERVER value.
      *
-     * @param string $key Clé du paramètre
-     * @param mixed $default Valeur par défaut
-     * @return mixed Valeur du paramètre
+     * @param string $key Parameter key.
+     * @param mixed $default Default value.
+     * @return mixed Parameter value.
      */
     public function server(string $key, mixed $default = null): mixed
     {
@@ -265,9 +265,9 @@ class Request
     }
 
     /**
-     * Récupère le nom du script PHP
+     * Gets the PHP script name.
      *
-     * @return string Nom du script
+     * @return string Script name.
      */
     public function getScriptName(): string
     {
@@ -275,9 +275,9 @@ class Request
     }
 
     /**
-     * Récupère l'URI du script
+     * Gets the script URI.
      *
-     * @return string URI du script
+     * @return string Script URI.
      */
     public function getScriptUri(): string
     {
@@ -285,9 +285,9 @@ class Request
     }
 
     /**
-     * Vérifie si la requête est de type AJAX
+     * Checks if the request is an AJAX request.
      *
-     * @return bool True si requête AJAX
+     * @return bool True if AJAX request.
      */
     public function isAjax(): bool
     {
@@ -296,9 +296,9 @@ class Request
     }
 
     /**
-     * Récupère toutes les données GET
+     * Gets all GET data.
      *
-     * @return array<string, mixed> Données GET
+     * @return array<string, mixed> GET data.
      */
     public function getAllGet(): array
     {
@@ -306,9 +306,9 @@ class Request
     }
 
     /**
-     * Récupère toutes les données POST
+     * Gets all POST data.
      *
-     * @return array<string, mixed> Données POST
+     * @return array<string, mixed> POST data.
      */
     public function getAllPost(): array
     {

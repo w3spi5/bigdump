@@ -3,8 +3,8 @@
 /**
  * BigDump 2.0 - Configuration
  *
- * Modifiez ce fichier pour configurer votre importation MySQL.
- * Toutes les options sont documentées ci-dessous.
+ * Modify this file to configure your MySQL import.
+ * All options are documented below.
  *
  * @package BigDump
  * @version 2.0.0
@@ -12,185 +12,186 @@
 
 return [
     // =========================================================================
-    // CONFIGURATION BASE DE DONNÉES (OBLIGATOIRE)
+    // DATABASE CONFIGURATION (REQUIRED)
     // =========================================================================
 
     /**
-     * Serveur MySQL
-     * Format: 'hostname' ou 'hostname:port' ou 'localhost:/path/to/socket'
+     * MySQL server.
+     * Format: 'hostname' or 'hostname:port' or 'localhost:/path/to/socket'
      */
     'db_server' => 'localhost',
 
     /**
-     * Nom de la base de données
+     * Database name.
      */
     'db_name' => '',
 
     /**
-     * Nom d'utilisateur MySQL
+     * MySQL username.
      */
     'db_username' => '',
 
     /**
-     * Mot de passe MySQL
+     * MySQL password.
      */
     'db_password' => '',
 
     /**
-     * Charset de la connexion
-     * Doit correspondre au charset du fichier dump
-     * Valeurs courantes: 'utf8mb4', 'utf8', 'latin1', 'cp1251', 'koi8r'
-     * Voir: https://dev.mysql.com/doc/refman/8.0/en/charset-charsets.html
+     * Connection charset.
+     * Must match the dump file charset.
+     * Common values: 'utf8mb4', 'utf8', 'latin1', 'cp1251', 'koi8r'
+     * See: https://dev.mysql.com/doc/refman/8.0/en/charset-charsets.html
      */
     'db_connection_charset' => 'utf8mb4',
 
     // =========================================================================
-    // CONFIGURATION DE L'IMPORT (OPTIONNEL)
+    // IMPORT CONFIGURATION (OPTIONAL)
     // =========================================================================
 
     /**
-     * Nom du fichier dump à importer
-     * Laissez vide pour afficher la liste des fichiers disponibles
+     * Dump filename to import.
+     * Leave empty to display the list of available files.
      */
     'filename' => '',
 
     /**
-     * Mode AJAX
-     * true: Import sans rafraîchissement de la page (recommandé)
-     * false: Import avec rafraîchissement classique
+     * AJAX mode.
+     * true: Import without page refresh (recommended)
+     * false: Import with classic refresh
      */
     'ajax' => true,
 
     /**
-     * Nombre de lignes à traiter par session
-     * Réduisez cette valeur si vous avez des erreurs de timeout
-     * Augmentez pour des imports plus rapides sur serveurs puissants
+     * Number of lines to process per session.
+     * Reduce this value if you have timeout errors.
+     * Increase for faster imports on powerful servers.
      */
     'linespersession' => 3000,
 
     /**
-     * Délai en millisecondes entre chaque session
-     * Utilisez pour réduire la charge serveur (0 = pas de délai)
+     * Delay in milliseconds between each session.
+     * Use to reduce server load (0 = no delay).
      */
     'delaypersession' => 0,
 
     // =========================================================================
-    // CONFIGURATION CSV (OPTIONNEL - uniquement pour fichiers .csv)
+    // CSV CONFIGURATION (OPTIONAL - only for .csv files)
     // =========================================================================
 
     /**
-     * Table de destination pour les fichiers CSV
-     * OBLIGATOIRE si vous importez un fichier CSV
+     * Destination table for CSV files.
+     * REQUIRED if you import a CSV file.
      */
     'csv_insert_table' => '',
 
     /**
-     * Vider la table avant l'import CSV
+     * Empty the table before CSV import.
      */
     'csv_preempty_table' => false,
 
     /**
-     * Délimiteur de champs CSV
+     * CSV field delimiter.
      */
     'csv_delimiter' => ',',
 
     /**
-     * Caractère d'encadrement des champs CSV
+     * CSV field enclosure character.
      */
     'csv_enclosure' => '"',
 
     /**
-     * Ajouter des quotes autour des valeurs CSV
-     * Mettez false si vos données CSV ont déjà des quotes
+     * Add quotes around CSV values.
+     * Set to false if your CSV data already has quotes.
      */
     'csv_add_quotes' => true,
 
     /**
-     * Ajouter des slashes d'échappement pour CSV
-     * Mettez false si vos données CSV sont déjà échappées
+     * Add escape slashes for CSV.
+     * Set to false if your CSV data is already escaped.
      */
     'csv_add_slashes' => true,
 
     // =========================================================================
-    // CONFIGURATION AVANCÉE (OPTIONNEL)
+    // ADVANCED CONFIGURATION (OPTIONAL)
     // =========================================================================
 
     /**
-     * Marqueurs de commentaires SQL
-     * Les lignes commençant par ces chaînes seront ignorées
+     * SQL comment markers.
+     * Lines starting with these strings will be ignored.
      */
     'comment_markers' => [
         '#',
         '-- ',
         'DELIMITER',
         '/*!',
-        // Décommentez si nécessaire:
-        // '---',           // Pour certains dumps propriétaires
-        // 'CREATE DATABASE', // Pour ignorer les CREATE DATABASE
+        // Uncomment if needed:
+        // '---',           // For some proprietary dumps
+        // 'CREATE DATABASE', // To ignore CREATE DATABASE
     ],
 
     /**
-     * Requêtes SQL à exécuter au début de chaque session
-     * Utile pour désactiver les vérifications de clés étrangères
+     * SQL queries to execute at the beginning of each session.
+     * Useful to disable foreign key checks.
      */
     'pre_queries' => [
-        // Décommentez si nécessaire:
+        // Uncomment if needed:
         // 'SET foreign_key_checks = 0',
         // 'SET unique_checks = 0',
         // 'SET autocommit = 0',
     ],
 
     /**
-     * Délimiteur de fin de requête par défaut
-     * Peut être modifié par DELIMITER dans le dump
+     * Default query end delimiter.
+     * Can be modified by DELIMITER in the dump.
      */
     'delimiter' => ';',
 
     /**
-     * Caractère de quote des chaînes SQL
-     * Changez en '"' si votre dump utilise des guillemets doubles
+     * SQL string quote character.
+     * Change to '"' if your dump uses double quotes.
      */
     'string_quotes' => "'",
 
     /**
-     * Nombre maximum de lignes par requête SQL
-     * Augmentez si vous avez des requêtes très longues (procédures stockées)
+     * Maximum number of lines per SQL query.
+     * Increase if you have very long queries (extended inserts, stored procedures).
+     * mysqldump with --extended-insert can produce very long INSERT statements.
      */
-    'max_query_lines' => 300,
+    'max_query_lines' => 10000,
 
     /**
-     * Répertoire des fichiers uploadés
-     * Laissez vide pour utiliser le répertoire 'uploads' par défaut
+     * Uploaded files directory.
+     * Leave empty to use the default 'uploads' directory.
      */
     'upload_dir' => '',
 
     /**
-     * Mode test
-     * true: Lit le fichier sans exécuter les requêtes SQL
-     * Utile pour vérifier que le fichier est lisible
+     * Test mode.
+     * true: Reads the file without executing SQL queries.
+     * Useful to verify that the file is readable.
      */
     'test_mode' => false,
 
     /**
-     * Mode debug
-     * true: Affiche les traces d'erreurs détaillées
+     * Debug mode.
+     * true: Displays detailed error traces.
      */
     'debug' => false,
 
     /**
-     * Taille du buffer de lecture (en octets)
-     * Ne modifiez que si vous avez des problèmes de mémoire
+     * Read buffer size (in bytes).
+     * Only modify if you have memory issues.
      */
     'data_chunk_length' => 16384,
 
     /**
-     * Extensions de fichiers autorisées
+     * Allowed file extensions.
      */
     'allowed_extensions' => ['sql', 'gz', 'csv'],
 
     /**
-     * Taille mémoire maximale pour une requête (en octets)
-     * Protection contre les requêtes infinies (10 MB par défaut)
+     * Maximum memory size for a query (in bytes).
+     * Protection against infinite queries (10 MB by default).
      */
     'max_query_memory' => 10485760,
 ];

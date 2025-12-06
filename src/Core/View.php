@@ -7,45 +7,45 @@ namespace BigDump\Core;
 use RuntimeException;
 
 /**
- * Classe View - Moteur de rendu des vues
+ * View Class - View rendering engine.
  *
- * Cette classe gère le rendu des templates PHP avec support
- * du layout, des partials et de l'échappement automatique.
+ * This class handles rendering of PHP templates with support
+ * for layout, partials and automatic escaping.
  *
  * @package BigDump\Core
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class View
 {
     /**
-     * Répertoire des vues
+     * Views directory.
      * @var string
      */
     private string $viewsPath;
 
     /**
-     * Layout par défaut
+     * Default layout.
      * @var string|null
      */
     private ?string $layout = 'layout';
 
     /**
-     * Données passées à la vue
+     * Data passed to the view.
      * @var array<string, mixed>
      */
     private array $data = [];
 
     /**
-     * Contenu de la section principale
+     * Main section content.
      * @var string
      */
     private string $sectionContent = '';
 
     /**
-     * Constructeur
+     * Constructor.
      *
-     * @param string $viewsPath Chemin vers le répertoire des vues
+     * @param string $viewsPath Path to views directory.
      */
     public function __construct(string $viewsPath)
     {
@@ -53,9 +53,9 @@ class View
     }
 
     /**
-     * Définit le layout à utiliser
+     * Sets the layout to use.
      *
-     * @param string|null $layout Nom du layout (null pour désactiver)
+     * @param string|null $layout Layout name (null to disable).
      * @return self
      */
     public function setLayout(?string $layout): self
@@ -65,10 +65,10 @@ class View
     }
 
     /**
-     * Assigne des données à la vue
+     * Assigns data to the view.
      *
-     * @param string|array<string, mixed> $key Clé ou tableau associatif
-     * @param mixed $value Valeur (ignorée si $key est un tableau)
+     * @param string|array<string, mixed> $key Key or associative array.
+     * @param mixed $value Value (ignored if $key is an array).
      * @return self
      */
     public function assign(string|array $key, mixed $value = null): self
@@ -83,11 +83,11 @@ class View
     }
 
     /**
-     * Récupère une donnée assignée
+     * Gets an assigned data value.
      *
-     * @param string $key Clé
-     * @param mixed $default Valeur par défaut
-     * @return mixed Valeur
+     * @param string $key Key.
+     * @param mixed $default Default value.
+     * @return mixed Value.
      */
     public function get(string $key, mixed $default = null): mixed
     {
@@ -95,12 +95,12 @@ class View
     }
 
     /**
-     * Rend une vue et retourne le HTML
+     * Renders a view and returns HTML.
      *
-     * @param string $view Nom de la vue (sans extension)
-     * @param array<string, mixed> $data Données supplémentaires
-     * @return string HTML rendu
-     * @throws RuntimeException Si la vue n'existe pas
+     * @param string $view View name (without extension).
+     * @param array<string, mixed> $data Additional data.
+     * @return string Rendered HTML.
+     * @throws RuntimeException If view does not exist.
      */
     public function render(string $view, array $data = []): string
     {
@@ -110,13 +110,13 @@ class View
             throw new RuntimeException("View not found: {$view}");
         }
 
-        // Fusionner les données
+        // Merge data
         $allData = array_merge($this->data, $data);
 
-        // Capturer le contenu de la vue
+        // Capture view content
         $content = $this->capture($viewFile, $allData);
 
-        // Si un layout est défini, l'utiliser
+        // If layout is defined, use it
         if ($this->layout !== null) {
             $layoutFile = $this->viewsPath . '/' . $this->layout . '.php';
 
@@ -131,18 +131,18 @@ class View
     }
 
     /**
-     * Capture la sortie d'un fichier PHP
+     * Captures output from a PHP file.
      *
-     * @param string $file Chemin du fichier
-     * @param array<string, mixed> $data Données à extraire
-     * @return string Sortie capturée
+     * @param string $file File path.
+     * @param array<string, mixed> $data Data to extract.
+     * @return string Captured output.
      */
     private function capture(string $file, array $data): string
     {
-        // Extraire les données comme variables locales
+        // Extract data as local variables
         extract($data, EXTR_SKIP);
 
-        // Variable $view accessible dans les templates
+        // $view variable accessible in templates
         $view = $this;
 
         ob_start();
@@ -157,11 +157,11 @@ class View
     }
 
     /**
-     * Rend un partial (vue partielle)
+     * Renders a partial (partial view).
      *
-     * @param string $partial Nom du partial (préfixé avec partials/)
-     * @param array<string, mixed> $data Données pour le partial
-     * @return string HTML rendu
+     * @param string $partial Partial name (prefixed with partials/).
+     * @param array<string, mixed> $data Data for partial.
+     * @return string Rendered HTML.
      */
     public function partial(string $partial, array $data = []): string
     {
@@ -175,10 +175,10 @@ class View
     }
 
     /**
-     * Échappe une chaîne pour l'affichage HTML
+     * Escapes a string for HTML display.
      *
-     * @param mixed $value Valeur à échapper
-     * @return string Valeur échappée
+     * @param mixed $value Value to escape.
+     * @return string Escaped value.
      */
     public function escape(mixed $value): string
     {
@@ -190,10 +190,10 @@ class View
     }
 
     /**
-     * Alias court pour escape()
+     * Short alias for escape().
      *
-     * @param mixed $value Valeur à échapper
-     * @return string Valeur échappée
+     * @param mixed $value Value to escape.
+     * @return string Escaped value.
      */
     public function e(mixed $value): string
     {
@@ -201,12 +201,12 @@ class View
     }
 
     /**
-     * Échappe une chaîne pour une utilisation sûre dans du JavaScript
+     * Escapes a string for safe use in JavaScript.
      *
-     * Utile pour les attributs onclick et autres contextes JavaScript inline.
+     * Useful for onclick attributes and other inline JavaScript contexts.
      *
-     * @param mixed $value Valeur à échapper
-     * @return string Valeur échappée pour JavaScript
+     * @param mixed $value Value to escape.
+     * @return string Value escaped for JavaScript.
      */
     public function escapeJs(mixed $value): string
     {
@@ -226,9 +226,9 @@ class View
     }
 
     /**
-     * Récupère le contenu de la section principale (pour le layout)
+     * Gets the main section content (for layout).
      *
-     * @return string Contenu
+     * @return string Content.
      */
     public function content(): string
     {
@@ -236,10 +236,10 @@ class View
     }
 
     /**
-     * Génère une URL avec des paramètres
+     * Generates a URL with parameters.
      *
-     * @param array<string, mixed> $params Paramètres de l'URL
-     * @return string URL générée
+     * @param array<string, mixed> $params URL parameters.
+     * @return string Generated URL.
      */
     public function url(array $params = []): string
     {
@@ -252,11 +252,11 @@ class View
     }
 
     /**
-     * Formate un nombre d'octets en format lisible
+     * Formats a number of bytes in readable format.
      *
-     * @param int|float $bytes Nombre d'octets
-     * @param int $precision Précision décimale
-     * @return string Taille formatée
+     * @param int|float $bytes Number of bytes.
+     * @param int $precision Decimal precision.
+     * @return string Formatted size.
      */
     public function formatBytes(int|float $bytes, int $precision = 2): string
     {
@@ -272,10 +272,10 @@ class View
     }
 
     /**
-     * Vérifie si une variable est définie et non vide
+     * Checks if a variable is defined and not empty.
      *
-     * @param string $key Clé de la variable
-     * @return bool True si définie et non vide
+     * @param string $key Variable key.
+     * @return bool True if defined and not empty.
      */
     public function has(string $key): bool
     {

@@ -7,22 +7,22 @@ namespace BigDump\Models;
 use BigDump\Config\Config;
 
 /**
- * Classe SqlParser - Analyseur de requêtes SQL
+ * SqlParser Class - SQL Query Parser
  *
- * Cette classe parse les lignes SQL pour extraire les requêtes complètes,
- * en gérant correctement:
- * - Les chaînes de caractères multi-lignes
- * - Les délimiteurs personnalisés (procédures stockées)
- * - Les commentaires SQL
- * - Les caractères d'échappement
+ * This class parses SQL lines to extract complete queries,
+ * properly handling:
+ * - Multi-line strings
+ * - Custom delimiters (stored procedures)
+ * - SQL comments
+ * - Escape characters
  *
- * Corrections par rapport à l'original:
- * - Gestion correcte de \\\\ (double backslash) avant les quotes
- * - Détection de DELIMITER uniquement hors des chaînes
- * - Protection contre l'accumulation mémoire infinie
+ * Improvements over original:
+ * - Proper handling of \\\\ (double backslash) before quotes
+ * - DELIMITER detection only outside strings
+ * - Protection against infinite memory accumulation
  *
  * @package BigDump\Models
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class SqlParser
@@ -34,55 +34,55 @@ class SqlParser
     private Config $config;
 
     /**
-     * Délimiteur de requête actuel
+     * Current query delimiter
      * @var string
      */
     private string $delimiter;
 
     /**
-     * Caractère de quote des chaînes
+     * String quote character
      * @var string
      */
     private string $stringQuote;
 
     /**
-     * Marqueurs de commentaires
+     * Comment markers
      * @var array<int, string>
      */
     private array $commentMarkers;
 
     /**
-     * Indique si on est dans une chaîne de caractères
+     * Indicates if we are inside a string
      * @var bool
      */
     private bool $inString = false;
 
     /**
-     * Requête en cours de construction
+     * Query being built
      * @var string
      */
     private string $currentQuery = '';
 
     /**
-     * Nombre de lignes de la requête en cours
+     * Number of lines in current query
      * @var int
      */
     private int $queryLineCount = 0;
 
     /**
-     * Nombre maximum de lignes par requête
+     * Maximum number of lines per query
      * @var int
      */
     private int $maxQueryLines;
 
     /**
-     * Taille mémoire maximale pour une requête
+     * Maximum memory size for a query
      * @var int
      */
     private int $maxQueryMemory;
 
     /**
-     * Constructeur
+     * Constructor
      *
      * @param Config $config Configuration
      */
@@ -92,12 +92,12 @@ class SqlParser
         $this->delimiter = $config->get('delimiter', ';');
         $this->stringQuote = $config->get('string_quotes', "'");
         $this->commentMarkers = $config->get('comment_markers', ['#', '-- ', '/*!']);
-        $this->maxQueryLines = $config->get('max_query_lines', 300);
+        $this->maxQueryLines = $config->get('max_query_lines', 10000);
         $this->maxQueryMemory = $config->get('max_query_memory', 10485760);
     }
 
     /**
-     * Réinitialise l'état du parser
+     * Resets parser state
      *
      * @return void
      */
@@ -109,9 +109,9 @@ class SqlParser
     }
 
     /**
-     * Définit le délimiteur de requête
+     * Sets query delimiter
      *
-     * @param string $delimiter Nouveau délimiteur
+     * @param string $delimiter New delimiter
      * @return void
      */
     public function setDelimiter(string $delimiter): void
@@ -120,9 +120,9 @@ class SqlParser
     }
 
     /**
-     * Récupère le délimiteur actuel
+     * Retrieves current delimiter
      *
-     * @return string Délimiteur
+     * @return string Delimiter
      */
     public function getDelimiter(): string
     {
@@ -130,10 +130,10 @@ class SqlParser
     }
 
     /**
-     * Parse une ligne et retourne une requête complète si disponible
+     * Parses a line and returns complete query if available
      *
-     * @param string $line Ligne à parser
-     * @return array{query: string|null, error: string|null, delimiter_changed: bool} Résultat du parsing
+     * @param string $line Line to parse
+     * @return array{query: string|null, error: string|null, delimiter_changed: bool} Parsing result
      */
     public function parseLine(string $line): array
     {
@@ -143,10 +143,10 @@ class SqlParser
             'delimiter_changed' => false,
         ];
 
-        // Normaliser les fins de ligne
+        // Normalize line endings
         $line = str_replace(["\r\n", "\r"], "\n", $line);
 
-        // Détecter les commandes DELIMITER (seulement si pas dans une chaîne)
+        // Detect DELIMITER commands (only if not in a string)
         if (!$this->inString && $this->isDelimiterCommand($line)) {
             $newDelimiter = $this->extractDelimiter($line);
 
@@ -158,30 +158,30 @@ class SqlParser
             return $result;
         }
 
-        // Ignorer les commentaires et lignes vides (seulement si pas dans une chaîne)
+        // Ignore comments and empty lines (only if not in a string)
         if (!$this->inString && $this->isCommentOrEmpty($line)) {
             return $result;
         }
 
-        // Vérifier la limite de mémoire
+        // Check memory limit
         if (strlen($this->currentQuery) + strlen($line) > $this->maxQueryMemory) {
             $result['error'] = "Query exceeds maximum memory limit ({$this->maxQueryMemory} bytes)";
             $this->reset();
             return $result;
         }
 
-        // Analyser les quotes pour savoir si on entre/sort d'une chaîne
+        // Analyze quotes to know if we enter/exit a string
         $this->analyzeQuotes($line);
 
-        // Ajouter la ligne à la requête en cours
+        // Add line to current query
         $this->currentQuery .= $line;
 
-        // Compter les lignes seulement si pas dans une chaîne
+        // Count lines only if not in a string
         if (!$this->inString) {
             $this->queryLineCount++;
         }
 
-        // Vérifier la limite de lignes
+        // Check line limit
         if ($this->queryLineCount > $this->maxQueryLines) {
             $result['error'] = "Query exceeds maximum line count ({$this->maxQueryLines} lines). " .
                 "This may indicate extended inserts or a very long procedure. " .
@@ -190,7 +190,7 @@ class SqlParser
             return $result;
         }
 
-        // Vérifier si la requête est complète (délimiteur à la fin, hors chaîne)
+        // Check if query is complete (delimiter at end, outside string)
         if (!$this->inString && $this->isQueryComplete()) {
             $query = $this->extractQuery();
             $this->reset();
@@ -204,10 +204,10 @@ class SqlParser
     }
 
     /**
-     * Vérifie si une ligne est une commande DELIMITER
+     * Checks if a line is a DELIMITER command
      *
-     * @param string $line Ligne à vérifier
-     * @return bool True si c'est une commande DELIMITER
+     * @param string $line Line to check
+     * @return bool True if DELIMITER command
      */
     private function isDelimiterCommand(string $line): bool
     {
@@ -216,10 +216,10 @@ class SqlParser
     }
 
     /**
-     * Extrait le nouveau délimiteur d'une commande DELIMITER
+     * Extracts new delimiter from a DELIMITER command
      *
-     * @param string $line Ligne contenant la commande
-     * @return string|null Nouveau délimiteur ou null
+     * @param string $line Line containing the command
+     * @return string|null New delimiter or null
      */
     private function extractDelimiter(string $line): ?string
     {
@@ -238,10 +238,10 @@ class SqlParser
     }
 
     /**
-     * Vérifie si une ligne est un commentaire ou vide
+     * Checks if a line is a comment or empty
      *
-     * @param string $line Ligne à vérifier
-     * @return bool True si commentaire ou vide
+     * @param string $line Line to check
+     * @return bool True if comment or empty
      */
     private function isCommentOrEmpty(string $line): bool
     {
@@ -261,14 +261,14 @@ class SqlParser
     }
 
     /**
-     * Analyse les quotes dans une ligne pour déterminer l'état in-string
+     * Analyzes quotes in a line to determine in-string state
      *
-     * Cette méthode corrige le bug de l'original qui ne gérait pas
-     * correctement les doubles backslashes (\\) avant les quotes.
-     * Elle gère également les quotes doublées comme mécanisme d'échappement SQL
-     * (ex: 'It''s OK' représente la chaîne "It's OK").
+     * This method fixes the bug in the original that did not properly
+     * handle double backslashes (\\) before quotes.
+     * It also handles doubled quotes as SQL escape mechanism
+     * (e.g., 'It''s OK' represents the string "It's OK").
      *
-     * @param string $line Ligne à analyser
+     * @param string $line Line to analyze
      * @return void
      */
     private function analyzeQuotes(string $line): void
@@ -280,16 +280,16 @@ class SqlParser
             $char = $line[$i];
 
             if ($this->inString) {
-                // Dans une chaîne, chercher la fin
+                // In a string, look for the end
                 if ($char === $this->stringQuote) {
-                    // Vérifier si c'est une quote doublée (échappement SQL: '' -> ')
+                    // Check if it's a doubled quote (SQL escape: '' -> ')
                     if ($i + 1 < $length && $line[$i + 1] === $this->stringQuote) {
-                        // Quote doublée, sauter les deux caractères, reste dans la chaîne
+                        // Doubled quote, skip both characters, stay in string
                         $i += 2;
                         continue;
                     }
 
-                    // Compter les backslashes précédents
+                    // Count preceding backslashes
                     $backslashes = 0;
                     $j = $i - 1;
 
@@ -298,14 +298,14 @@ class SqlParser
                         $j--;
                     }
 
-                    // Si nombre pair de backslashes (ou zéro), la quote ferme la chaîne
-                    // Si nombre impair, la quote est échappée
+                    // If even number of backslashes (or zero), quote closes the string
+                    // If odd number, quote is escaped
                     if ($backslashes % 2 === 0) {
                         $this->inString = false;
                     }
                 }
             } else {
-                // Hors chaîne, chercher le début
+                // Outside string, look for the beginning
                 if ($char === $this->stringQuote) {
                     $this->inString = true;
                 }
@@ -316,9 +316,9 @@ class SqlParser
     }
 
     /**
-     * Vérifie si la requête en cours est complète
+     * Checks if current query is complete
      *
-     * @return bool True si la requête est complète
+     * @return bool True if query is complete
      */
     private function isQueryComplete(): bool
     {
@@ -332,15 +332,15 @@ class SqlParser
     }
 
     /**
-     * Extrait la requête complète (sans le délimiteur final)
+     * Extracts complete query (without final delimiter)
      *
-     * @return string Requête extraite
+     * @return string Extracted query
      */
     private function extractQuery(): string
     {
         $query = $this->currentQuery;
 
-        // Supprimer le délimiteur final
+        // Remove final delimiter
         if ($this->delimiter !== '') {
             $query = rtrim($query);
             $delimiterLength = strlen($this->delimiter);
@@ -354,12 +354,12 @@ class SqlParser
     }
 
     /**
-     * Retourne une requête en attente incomplète
+     * Returns pending incomplete query
      *
-     * Utilisé à la fin du fichier pour récupérer une éventuelle
-     * requête non terminée par un délimiteur.
+     * Used at end of file to retrieve a possible
+     * query not terminated by a delimiter.
      *
-     * @return string|null Requête ou null si vide
+     * @return string|null Query or null if empty
      */
     public function getPendingQuery(): ?string
     {
@@ -369,7 +369,7 @@ class SqlParser
             return null;
         }
 
-        // Supprimer un éventuel délimiteur final
+        // Remove possible final delimiter
         if ($this->delimiter !== '' && str_ends_with($query, $this->delimiter)) {
             $query = substr($query, 0, -strlen($this->delimiter));
             $query = trim($query);
@@ -379,9 +379,9 @@ class SqlParser
     }
 
     /**
-     * Vérifie si le parser est dans une chaîne
+     * Checks if parser is inside a string
      *
-     * @return bool True si dans une chaîne
+     * @return bool True if in string
      */
     public function isInString(): bool
     {
@@ -389,9 +389,9 @@ class SqlParser
     }
 
     /**
-     * Récupère le nombre de lignes de la requête en cours
+     * Retrieves line count of current query
      *
-     * @return int Nombre de lignes
+     * @return int Number of lines
      */
     public function getQueryLineCount(): int
     {
@@ -399,11 +399,11 @@ class SqlParser
     }
 
     /**
-     * Convertit une ligne CSV en requête INSERT
+     * Converts a CSV line to INSERT query
      *
-     * @param string $line Ligne CSV
-     * @param string $table Table de destination
-     * @return string Requête INSERT
+     * @param string $line CSV line
+     * @param string $table Destination table
+     * @return string INSERT query
      */
     public function csvToInsert(string $line, string $table): string
     {
@@ -420,10 +420,10 @@ class SqlParser
         $addQuotes = $csvConfig['add_quotes'];
         $addSlashes = $csvConfig['add_slashes'];
 
-        // Parser la ligne CSV correctement (gère les champs avec délimiteurs)
+        // Parse CSV line correctly (handles fields with delimiters)
         $fields = $this->parseCsvLine($line, $delimiter, $enclosure);
 
-        // Préparer les valeurs
+        // Prepare values
         $values = [];
 
         foreach ($fields as $field) {
@@ -442,41 +442,41 @@ class SqlParser
     }
 
     /**
-     * Parse une ligne CSV correctement
+     * Parses a CSV line correctly
      *
-     * Gère les cas où le délimiteur apparaît dans un champ encadré.
+     * Handles cases where delimiter appears in an enclosed field.
      *
-     * @param string $line Ligne CSV
-     * @param string $delimiter Délimiteur
-     * @param string $enclosure Caractère d'encadrement
-     * @return array<int, string> Champs parsés
+     * @param string $line CSV line
+     * @param string $delimiter Delimiter
+     * @param string $enclosure Enclosure character
+     * @return array<int, string> Parsed fields
      */
     private function parseCsvLine(string $line, string $delimiter, string $enclosure): array
     {
-        // Supprimer les fins de ligne
+        // Remove line endings
         $line = rtrim($line, "\r\n");
 
-        // Utiliser str_getcsv pour un parsing correct
-        // Note: str_getcsv retourne toujours un tableau (jamais false)
+        // Use str_getcsv for correct parsing
+        // Note: str_getcsv always returns an array (never false)
         return str_getcsv($line, $delimiter, $enclosure);
     }
 
     /**
-     * Vérifie si une ligne est une ligne CSV valide
+     * Checks if a line is a valid CSV line
      *
-     * @param string $line Ligne à vérifier
-     * @return bool True si CSV valide
+     * @param string $line Line to check
+     * @return bool True if valid CSV
      */
     public function isValidCsvLine(string $line): bool
     {
         $trimmed = trim($line);
 
-        // Ignorer les lignes vides
+        // Ignore empty lines
         if ($trimmed === '') {
             return false;
         }
 
-        // Ignorer les lignes de commentaires CSV
+        // Ignore CSV comment lines
         if (str_starts_with($trimmed, '#')) {
             return false;
         }

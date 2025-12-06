@@ -5,52 +5,52 @@ declare(strict_types=1);
 namespace BigDump\Core;
 
 /**
- * Classe Response - Gère les réponses HTTP
+ * Response Class - Manages HTTP responses.
  *
- * Cette classe encapsule la création et l'envoi des réponses HTTP,
- * incluant les headers, le contenu et les réponses AJAX/XML.
+ * This class encapsulates creation and sending of HTTP responses,
+ * including headers, content and AJAX/XML responses.
  *
  * @package BigDump\Core
- * @author  Refactorisation MVC
+ * @author  MVC Refactoring
  * @version 2.0.0
  */
 class Response
 {
     /**
-     * Contenu de la réponse
+     * Response content.
      * @var string
      */
     private string $content = '';
 
     /**
-     * Headers HTTP
+     * HTTP headers.
      * @var array<string, string>
      */
     private array $headers = [];
 
     /**
-     * Code de statut HTTP
+     * HTTP status code.
      * @var int
      */
     private int $statusCode = 200;
 
     /**
-     * Type de contenu
+     * Content type.
      * @var string
      */
     private string $contentType = 'text/html';
 
     /**
-     * Charset
+     * Charset.
      * @var string
      */
     private string $charset = 'UTF-8';
 
     /**
-     * Constructeur
+     * Constructor.
      *
-     * @param string $content Contenu initial
-     * @param int $statusCode Code de statut HTTP
+     * @param string $content Initial content.
+     * @param int $statusCode HTTP status code.
      */
     public function __construct(string $content = '', int $statusCode = 200)
     {
@@ -60,7 +60,7 @@ class Response
     }
 
     /**
-     * Configure les headers pour désactiver le cache
+     * Configures headers to disable cache.
      *
      * @return self
      */
@@ -75,9 +75,9 @@ class Response
     }
 
     /**
-     * Définit le contenu de la réponse
+     * Sets the response content.
      *
-     * @param string $content Contenu
+     * @param string $content Content.
      * @return self
      */
     public function setContent(string $content): self
@@ -87,9 +87,9 @@ class Response
     }
 
     /**
-     * Ajoute du contenu à la réponse
+     * Appends content to the response.
      *
-     * @param string $content Contenu à ajouter
+     * @param string $content Content to append.
      * @return self
      */
     public function appendContent(string $content): self
@@ -99,9 +99,9 @@ class Response
     }
 
     /**
-     * Récupère le contenu de la réponse
+     * Gets the response content.
      *
-     * @return string Contenu
+     * @return string Content.
      */
     public function getContent(): string
     {
@@ -109,10 +109,10 @@ class Response
     }
 
     /**
-     * Définit un header HTTP
+     * Sets an HTTP header.
      *
-     * @param string $name Nom du header
-     * @param string $value Valeur du header
+     * @param string $name Header name.
+     * @param string $value Header value.
      * @return self
      */
     public function setHeader(string $name, string $value): self
@@ -122,9 +122,9 @@ class Response
     }
 
     /**
-     * Définit le code de statut HTTP
+     * Sets the HTTP status code.
      *
-     * @param int $statusCode Code de statut
+     * @param int $statusCode Status code.
      * @return self
      */
     public function setStatusCode(int $statusCode): self
@@ -134,9 +134,9 @@ class Response
     }
 
     /**
-     * Définit le type de contenu
+     * Sets the content type.
      *
-     * @param string $contentType Type de contenu
+     * @param string $contentType Content type.
      * @return self
      */
     public function setContentType(string $contentType): self
@@ -146,7 +146,7 @@ class Response
     }
 
     /**
-     * Configure la réponse pour du XML
+     * Configures the response for XML.
      *
      * @return self
      */
@@ -157,7 +157,7 @@ class Response
     }
 
     /**
-     * Configure la réponse pour du JSON
+     * Configures the response for JSON.
      *
      * @return self
      */
@@ -168,7 +168,7 @@ class Response
     }
 
     /**
-     * Configure la réponse pour du HTML
+     * Configures the response for HTML.
      *
      * @return self
      */
@@ -179,7 +179,7 @@ class Response
     }
 
     /**
-     * Envoie les headers HTTP
+     * Sends HTTP headers.
      *
      * @return self
      */
@@ -201,7 +201,7 @@ class Response
     }
 
     /**
-     * Envoie la réponse complète (headers + contenu)
+     * Sends the complete response (headers + content).
      *
      * @return void
      */
@@ -212,9 +212,9 @@ class Response
     }
 
     /**
-     * Crée une réponse XML pour AJAX
+     * Creates an XML response for AJAX.
      *
-     * @param array<string, mixed> $data Données à inclure dans le XML
+     * @param array<string, mixed> $data Data to include in XML.
      * @return self
      */
     public function createXmlResponse(array $data): self
@@ -237,9 +237,9 @@ class Response
     }
 
     /**
-     * Crée une réponse JSON
+     * Creates a JSON response.
      *
-     * @param array<string, mixed> $data Données à encoder
+     * @param array<string, mixed> $data Data to encode.
      * @return self
      */
     public function createJsonResponse(array $data): self
@@ -251,10 +251,10 @@ class Response
     }
 
     /**
-     * Redirige vers une URL
+     * Redirects to a URL.
      *
-     * @param string $url URL de redirection
-     * @param int $statusCode Code de statut (301, 302, 303, 307, 308)
+     * @param string $url Redirect URL.
+     * @param int $statusCode Status code (301, 302, 303, 307, 308).
      * @return never
      */
     public function redirect(string $url, int $statusCode = 302): never
@@ -266,10 +266,10 @@ class Response
     }
 
     /**
-     * Crée une réponse d'erreur
+     * Creates an error response.
      *
-     * @param string $message Message d'erreur
-     * @param int $statusCode Code de statut HTTP
+     * @param string $message Error message.
+     * @param int $statusCode HTTP status code.
      * @return self
      */
     public function error(string $message, int $statusCode = 500): self

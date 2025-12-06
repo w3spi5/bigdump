@@ -2,7 +2,7 @@
     "name": "w3spi5/bigdump",
     "description": "Staggered MySQL Dump Importer - Import large MySQL dumps on servers with execution time limits",
     "type": "project",
-    "license": "GPL-2.0-or-later",
+    "license": "MIT",
     "keywords": [
         "mysql",
         "dump",

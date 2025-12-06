@@ -1,20 +1,20 @@
 <?php
 /**
- * Vue: Page d'accueil
+ * View: Home page
  *
- * Affiche la liste des fichiers disponibles et le formulaire d'upload.
+ * Displays the list of available files and the upload form.
  *
  * @var \BigDump\Core\View $view
- * @var array $files Liste des fichiers
- * @var bool $dbConfigured Base de données configurée
- * @var array|null $connectionInfo Informations de connexion
- * @var bool $uploadEnabled Upload activé
- * @var int $uploadMaxSize Taille maximale d'upload
- * @var string $uploadDir Répertoire d'upload
- * @var string $predefinedFile Fichier prédéfini
- * @var string $dbName Nom de la base de données
- * @var string $dbServer Serveur de base de données
- * @var bool $testMode Mode test
+ * @var array $files List of files
+ * @var bool $dbConfigured Database configured
+ * @var array|null $connectionInfo Connection information
+ * @var bool $uploadEnabled Upload enabled
+ * @var int $uploadMaxSize Maximum upload size
+ * @var string $uploadDir Upload directory
+ * @var string $predefinedFile Predefined file
+ * @var string $dbName Database name
+ * @var string $dbServer Database server
+ * @var bool $testMode Test mode
  */
 ?>
 

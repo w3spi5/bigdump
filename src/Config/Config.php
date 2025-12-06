@@ -7,10 +7,10 @@ namespace BigDump\Config;
 use RuntimeException;
 
 /**
- * Classe Config - Gestionnaire de configuration
+ * Config Class - Configuration Manager
  *
- * Cette classe charge et gère la configuration de l'application
- * depuis un fichier PHP externe.
+ * This class loads and manages the application configuration
+ * from an external PHP file.
  *
  * @package BigDump\Config
  * @author  Refactorisation MVC
@@ -19,30 +19,30 @@ use RuntimeException;
 class Config
 {
     /**
-     * Valeurs de configuration
+     * Configuration values
      * @var array<string, mixed>
      */
     private array $values = [];
 
     /**
-     * Valeurs par défaut
+     * Default values
      * @var array<string, mixed>
      */
     private static array $defaults = [
-        // Configuration base de données
+        // Database configuration
         'db_server' => 'localhost',
         'db_name' => '',
         'db_username' => '',
         'db_password' => '',
         'db_connection_charset' => 'utf8mb4',
 
-        // Configuration de l'import
+        // Import configuration
         'filename' => '',
         'ajax' => true,
         'linespersession' => 3000,
         'delaypersession' => 0,
 
-        // Configuration CSV
+        // CSV configuration
         'csv_insert_table' => '',
         'csv_preempty_table' => false,
         'csv_delimiter' => ',',
@@ -50,7 +50,7 @@ class Config
         'csv_add_quotes' => true,
         'csv_add_slashes' => true,
 
-        // Marqueurs de commentaires SQL
+        // SQL comment markers
         'comment_markers' => [
             '#',
             '-- ',
@@ -58,98 +58,98 @@ class Config
             '/*!',
         ],
 
-        // Pré-requêtes SQL
+        // SQL pre-queries
         'pre_queries' => [],
 
-        // Délimiteur de requête par défaut
+        // Default query delimiter
         'delimiter' => ';',
 
-        // Caractère de quote des chaînes
+        // String quote character
         'string_quotes' => "'",
 
-        // Nombre maximum de lignes par requête
+        // Maximum number of lines per query
         'max_query_lines' => 300,
 
-        // Répertoire d'upload
+        // Upload directory
         'upload_dir' => '',
 
-        // Mode test (ne pas exécuter les requêtes)
+        // Test mode (do not execute queries)
         'test_mode' => false,
 
-        // Mode debug
+        // Debug mode
         'debug' => false,
 
-        // Taille du chunk de lecture
+        // Read chunk size
         'data_chunk_length' => 16384,
 
-        // Extensions de fichiers autorisées
+        // Allowed file extensions
         'allowed_extensions' => ['sql', 'gz', 'csv'],
 
-        // Taille maximale de mémoire pour une requête (en octets)
+        // Maximum memory size for a query (in bytes)
         'max_query_memory' => 10485760, // 10 MB
     ];
 
     /**
-     * Constructeur
+     * Constructor
      *
-     * @param string $configFile Chemin vers le fichier de configuration
-     * @throws RuntimeException Si le fichier de configuration n'existe pas
+     * @param string $configFile Path to the configuration file
+     * @throws RuntimeException If the configuration file does not exist
      */
     public function __construct(string $configFile)
     {
-        // Initialiser avec les valeurs par défaut
+        // Initialize with default values
         $this->values = self::$defaults;
 
-        // Charger la configuration utilisateur
+        // Load user configuration
         if (file_exists($configFile)) {
             $userConfig = $this->loadConfigFile($configFile);
             $this->values = array_merge($this->values, $userConfig);
         }
 
-        // Définir le répertoire d'upload par défaut si non spécifié
+        // Set default upload directory if not specified
         if (empty($this->values['upload_dir'])) {
             $this->values['upload_dir'] = dirname($configFile, 2) . '/uploads';
         }
 
-        // Valider la configuration
+        // Validate configuration
         $this->validate();
     }
 
     /**
-     * Charge un fichier de configuration PHP
+     * Loads a PHP configuration file
      *
-     * @param string $file Chemin du fichier
-     * @return array<string, mixed> Configuration chargée
+     * @param string $file File path
+     * @return array<string, mixed> Loaded configuration
      */
     private function loadConfigFile(string $file): array
     {
         $config = [];
 
-        // Le fichier de config peut définir des variables
-        // qui seront récupérées dans $config
+        // The config file may define variables
+        // that will be retrieved in $config
         ob_start();
         $result = include $file;
         ob_end_clean();
 
-        // Si le fichier retourne un tableau, l'utiliser
+        // If the file returns an array, use it
         if (is_array($result)) {
             return $result;
         }
 
-        // Sinon, extraire les variables définies
-        // (compatibilité avec l'ancien format)
+        // Otherwise, extract defined variables
+        // (compatibility with old format)
         return $config;
     }
 
     /**
-     * Valide la configuration
+     * Validates the configuration
      *
      * @return void
-     * @throws RuntimeException Si la configuration est invalide
+     * @throws RuntimeException If the configuration is invalid
      */
     private function validate(): void
     {
-        // Vérifier que le charset est valide
+        // Check that the charset is valid
         $validCharsets = [
             'utf8', 'utf8mb4', 'latin1', 'latin2', 'ascii',
             'cp1250', 'cp1251', 'cp1252', 'cp1256', 'cp1257',
@@ -159,11 +159,11 @@ class Config
 
         $charset = strtolower($this->values['db_connection_charset']);
         if (!empty($charset) && !in_array($charset, $validCharsets, true)) {
-            // Ne pas bloquer, juste avertir
+            // Do not block, just warn
             error_log("BigDump Warning: Unknown charset '{$charset}'");
         }
 
-        // Vérifier les valeurs numériques
+        // Check numeric values
         if ($this->values['linespersession'] < 1) {
             $this->values['linespersession'] = 3000;
         }
@@ -178,11 +178,11 @@ class Config
     }
 
     /**
-     * Récupère une valeur de configuration
+     * Retrieves a configuration value
      *
-     * @param string $key Clé de configuration
-     * @param mixed $default Valeur par défaut si non trouvée
-     * @return mixed Valeur de configuration
+     * @param string $key Configuration key
+     * @param mixed $default Default value if not found
+     * @return mixed Configuration value
      */
     public function get(string $key, mixed $default = null): mixed
     {
@@ -190,10 +190,10 @@ class Config
     }
 
     /**
-     * Définit une valeur de configuration
+     * Sets a configuration value
      *
-     * @param string $key Clé de configuration
-     * @param mixed $value Valeur
+     * @param string $key Configuration key
+     * @param mixed $value Value
      * @return self
      */
     public function set(string $key, mixed $value): self
@@ -203,10 +203,10 @@ class Config
     }
 
     /**
-     * Vérifie si une clé de configuration existe
+     * Checks if a configuration key exists
      *
-     * @param string $key Clé de configuration
-     * @return bool True si la clé existe
+     * @param string $key Configuration key
+     * @return bool True if the key exists
      */
     public function has(string $key): bool
     {
@@ -214,9 +214,9 @@ class Config
     }
 
     /**
-     * Récupère toutes les valeurs de configuration
+     * Retrieves all configuration values
      *
-     * @return array<string, mixed> Toutes les valeurs
+     * @return array<string, mixed> All values
      */
     public function all(): array
     {
@@ -224,7 +224,7 @@ class Config
     }
 
     /**
-     * Récupère la configuration de base de données
+     * Retrieves the database configuration
      *
      * @return array{server: string, name: string, username: string, password: string, charset: string}
      */
@@ -240,7 +240,7 @@ class Config
     }
 
     /**
-     * Récupère la configuration CSV
+     * Retrieves the CSV configuration
      *
      * @return array{table: string, preempty: bool, delimiter: string, enclosure: string, add_quotes: bool, add_slashes: bool}
      */
@@ -257,9 +257,9 @@ class Config
     }
 
     /**
-     * Vérifie si la configuration de base de données est complète
+     * Checks if the database configuration is complete
      *
-     * @return bool True si la configuration est complète
+     * @return bool True if the configuration is complete
      */
     public function isDatabaseConfigured(): bool
     {
@@ -268,9 +268,9 @@ class Config
     }
 
     /**
-     * Récupère la taille maximale d'upload PHP
+     * Retrieves the PHP maximum upload size
      *
-     * @return int Taille en octets
+     * @return int Size in bytes
      */
     public function getUploadMaxFilesize(): int
     {
@@ -279,9 +279,9 @@ class Config
     }
 
     /**
-     * Récupère la taille maximale de POST PHP
+     * Retrieves the PHP maximum POST size
      *
-     * @return int Taille en octets
+     * @return int Size in bytes
      */
     public function getPostMaxSize(): int
     {
@@ -290,10 +290,10 @@ class Config
     }
 
     /**
-     * Parse une taille PHP (ex: "10M", "1G")
+     * Parses a PHP size (e.g., "10M", "1G")
      *
-     * @param string $size Taille à parser
-     * @return int Taille en octets
+     * @param string $size Size to parse
+     * @return int Size in bytes
      */
     private function parseSize(string $size): int
     {
@@ -317,9 +317,9 @@ class Config
     }
 
     /**
-     * Récupère le répertoire d'upload
+     * Retrieves the upload directory
      *
-     * @return string Chemin du répertoire
+     * @return string Directory path
      */
     public function getUploadDir(): string
     {
@@ -327,10 +327,10 @@ class Config
     }
 
     /**
-     * Vérifie si une extension de fichier est autorisée
+     * Checks if a file extension is allowed
      *
-     * @param string $extension Extension à vérifier
-     * @return bool True si autorisée
+     * @param string $extension Extension to check
+     * @return bool True if allowed
      */
     public function isExtensionAllowed(string $extension): bool
     {

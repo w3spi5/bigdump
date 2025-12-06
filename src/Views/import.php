@@ -1,18 +1,18 @@
 <?php
 /**
- * Vue: Page d'import
+ * View: Import page
  *
- * Affiche la progression de l'import et les statistiques.
+ * Displays the import progress and statistics.
  *
  * @var \BigDump\Core\View $view
- * @var \BigDump\Models\ImportSession $session Session d'import
- * @var array $statistics Statistiques
- * @var bool $testMode Mode test
- * @var bool $ajaxEnabled AJAX activé
- * @var int $delay Délai entre sessions
- * @var array $nextParams Paramètres pour la session suivante
- * @var string|null $ajaxScript Script AJAX (si applicable)
- * @var string|null $redirectScript Script de redirection (si applicable)
+ * @var \BigDump\Models\ImportSession $session Import session
+ * @var array $statistics Statistics
+ * @var bool $testMode Test mode
+ * @var bool $ajaxEnabled AJAX enabled
+ * @var int $delay Delay between sessions
+ * @var array $nextParams Parameters for the next session
+ * @var string|null $ajaxScript AJAX script (if applicable)
+ * @var string|null $redirectScript Redirect script (if applicable)
  */
 ?>
 
