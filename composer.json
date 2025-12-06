@@ -1,0 +1,41 @@
+{
+    "name": "w3spi5/bigdump",
+    "description": "Staggered MySQL Dump Importer - Import large MySQL dumps on servers with execution time limits",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "keywords": [
+        "mysql",
+        "dump",
+        "import",
+        "sql",
+        "database",
+        "migration",
+        "bigdump"
+    ],
+    "authors": [
+        {
+            "name": "Alexey Ozerov",
+            "homepage": "http://www.ozerov.de/bigdump",
+            "role": "Original Author"
+        },
+        {
+            "name": "w3spi5",
+            "email": "github@wespify.com",
+            "role": "Maintainer"
+        }
+    ],
+    "homepage": "https://github.com/w3spi5/bigdump",
+    "require": {
+        "php": ">=8.1",
+        "ext-mysqli": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "BigDump\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "minimum-stability": "stable"
+}
