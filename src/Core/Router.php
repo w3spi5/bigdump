@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * @package BigDump\Core
  * @author  MVC Refactoring
- * @version 2.0.0
+ * @version 2.2
  */
 class Router
 {
