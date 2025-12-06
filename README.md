@@ -1,122 +1,125 @@
 # BigDump 2.0 - Staggered MySQL Dump Importer
 
-BigDump est un outil PHP permettant d'importer des dumps MySQL volumineux sur des serveurs web avec des limites de temps d'exécution strictes. Cette version 2.0 est une refactorisation complète en architecture MVC orientée objet.
+[![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-## Fonctionnalités
+BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This version 2.0 is a complete refactoring using object-oriented MVC architecture.
 
-- **Import échelonné** : Importe les dumps par sessions pour contourner les limites de timeout
-- **Support multi-format** : Fichiers `.sql`, `.gz` (gzip), et `.csv`
-- **Mode AJAX** : Import sans rafraîchissement de page (recommandé)
-- **Interface moderne** : Design responsive et intuitif
-- **Sécurité renforcée** : Protection contre path traversal, XSS, et autres vulnérabilités
-- **Gestion des erreurs** : Messages d'erreur clairs et détaillés
-- **Support UTF-8** : Gestion correcte des caractères multi-octets et BOM
+## Features
 
-## Prérequis
+- **Staggered Import**: Imports dumps in sessions to bypass timeout limits
+- **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
+- **AJAX Mode**: Import without page refresh (recommended)
+- **Modern Interface**: Responsive and intuitive design
+- **Enhanced Security**: Protection against path traversal, XSS, and other vulnerabilities
+- **Error Handling**: Clear and detailed error messages
+- **UTF-8 Support**: Proper handling of multi-byte characters and BOM
 
-- PHP 8.1 ou supérieur
-- Extension MySQLi
-- Serveur MySQL/MariaDB
-- Permissions d'écriture sur le dossier `uploads/`
+## Requirements
+
+- PHP 8.1 or higher
+- MySQLi extension
+- MySQL/MariaDB server
+- Write permissions on the `uploads/` directory
 
 ## Installation
 
-1. **Télécharger** le projet sur votre serveur web :
+1. **Download** the project to your web server:
    ```bash
-   git clone <repository> bigdump
-   # ou télécharger et extraire l'archive
+   git clone https://github.com/w3spi5/bigdump.git
+   # or download and extract the archive
    ```
 
-2. **Configurer** la base de données dans `config/config.php` :
+2. **Configure** the database in `config/config.php`:
    ```php
    return [
        'db_server' => 'localhost',
-       'db_name' => 'votre_base',
-       'db_username' => 'votre_utilisateur',
-       'db_password' => 'votre_mot_de_passe',
+       'db_name' => 'your_database',
+       'db_username' => 'your_username',
+       'db_password' => 'your_password',
        'db_connection_charset' => 'utf8mb4',
    ];
    ```
 
-3. **Définir les permissions** :
+3. **Set permissions**:
    ```bash
    chmod 755 uploads/
    ```
 
-4. **Accéder** à BigDump via votre navigateur :
+4. **Access** BigDump via your browser:
    ```
-   http://votre-site.com/bigdump/public/index.php
+   http://your-site.com/bigdump/public/index.php
    ```
 
-## Structure du projet
+## Project Structure
 
 ```
 bigdump/
 ├── config/
-│   └── config.php          # Configuration utilisateur
+│   └── config.php          # User configuration
 ├── public/
-│   └── index.php           # Point d'entrée
+│   └── index.php           # Entry point
 ├── src/
 │   ├── Config/
-│   │   └── Config.php      # Gestionnaire de configuration
+│   │   └── Config.php      # Configuration manager
 │   ├── Controllers/
 │   │   └── BigDumpController.php
 │   ├── Core/
-│   │   ├── Application.php # Application principale
-│   │   ├── Request.php     # Encapsulation requête HTTP
-│   │   ├── Response.php    # Encapsulation réponse HTTP
-│   │   ├── Router.php      # Routeur
-│   │   └── View.php        # Moteur de templates
+│   │   ├── Application.php # Main application
+│   │   ├── Request.php     # HTTP request wrapper
+│   │   ├── Response.php    # HTTP response wrapper
+│   │   ├── Router.php      # Router
+│   │   └── View.php        # Template engine
 │   ├── Models/
-│   │   ├── Database.php    # Connexion MySQL
-│   │   ├── FileHandler.php # Gestion des fichiers
-│   │   ├── ImportSession.php # État d'une session
-│   │   └── SqlParser.php   # Analyseur SQL
+│   │   ├── Database.php    # MySQL connection
+│   │   ├── FileHandler.php # File management
+│   │   ├── ImportSession.php # Session state
+│   │   └── SqlParser.php   # SQL parser
 │   ├── Services/
-│   │   ├── AjaxService.php # Réponses AJAX
-│   │   └── ImportService.php # Service d'import
+│   │   ├── AjaxService.php # AJAX responses
+│   │   └── ImportService.php # Import service
 │   └── Views/
-│       ├── error.php       # Page d'erreur
-│       ├── home.php        # Page d'accueil
-│       ├── import.php      # Page d'import
-│       └── layout.php      # Template principal
-├── uploads/                # Dossier des dumps
+│       ├── error.php       # Error page
+│       ├── home.php        # Home page
+│       ├── import.php      # Import page
+│       └── layout.php      # Main template
+├── uploads/                # Dump files directory
 ├── LICENSE
 └── README.md
 ```
 
-## Configuration avancée
+## Advanced Configuration
 
-### Options d'import
+### Import Options
 
 ```php
 return [
-    // Nombre de lignes par session (réduire si timeout)
+    // Lines per session (reduce if timeout occurs)
     'linespersession' => 3000,
 
-    // Délai entre sessions (ms) pour réduire la charge
+    // Delay between sessions (ms) to reduce server load
     'delaypersession' => 0,
 
-    // Mode AJAX (recommandé)
+    // AJAX mode (recommended)
     'ajax' => true,
 
-    // Mode test (parse sans exécuter)
+    // Test mode (parse without executing)
     'test_mode' => false,
 ];
 ```
 
-### Configuration CSV
+### CSV Configuration
 
 ```php
 return [
-    'csv_insert_table' => 'ma_table',
+    'csv_insert_table' => 'my_table',
     'csv_preempty_table' => false,
     'csv_delimiter' => ',',
     'csv_enclosure' => '"',
 ];
 ```
 
-### Requêtes préliminaires
+### Pre-queries
 
 ```php
 return [
@@ -127,31 +130,31 @@ return [
 ];
 ```
 
-## Bugs corrigés par rapport à l'original
+## Bug Fixes Compared to Original
 
-1. **Sanitization excessive** : Les caractères UTF-8 valides sont maintenant préservés
-2. **Gestion des quotes** : Détection correcte de `\\'` (backslash échappé)
-3. **Fichiers gzip** : Correction de la gestion du seek
-4. **Path traversal** : Protection contre les attaques `../`
-5. **XSS** : Échappement systématique des sorties HTML
-6. **Race conditions** : Gestion atomique des uploads
-7. **Mémoire** : Limite configurable par requête
-8. **BOM** : Support UTF-8, UTF-16 et UTF-32
-9. **DELIMITER** : Détection uniquement hors des chaînes
-10. **CSV** : Parsing correct des champs avec délimiteurs internes
+1. **Excessive Sanitization**: Valid UTF-8 characters are now preserved
+2. **Quote Handling**: Correct detection of `\\'` (escaped backslash)
+3. **Gzip Files**: Fixed seek handling
+4. **Path Traversal**: Protection against `../` attacks
+5. **XSS**: Systematic escaping of HTML output
+6. **Race Conditions**: Atomic upload handling
+7. **Memory**: Configurable limit per query
+8. **BOM**: UTF-8, UTF-16, and UTF-32 support
+9. **DELIMITER**: Detection only outside strings
+10. **CSV**: Correct parsing of fields with internal delimiters
 
-## Sécurité
+## Security
 
-- **Ne laissez JAMAIS** BigDump et vos fichiers dump sur un serveur de production après usage
-- Les fichiers dump peuvent contenir des données sensibles
-- Le répertoire `uploads/` est protégé par `.htaccess`
-- Supprimez l'application dès que l'import est terminé
+- **NEVER** leave BigDump and your dump files on a production server after use
+- Dump files may contain sensitive data
+- The `uploads/` directory is protected by `.htaccess`
+- Delete the application as soon as the import is complete
 
-## Licence
+## License
 
-GPL-2.0-or-later
+[MIT](LICENSE)
 
-## Crédits
+## Credits
 
-- **Original** : Alexey Ozerov (http://www.ozerov.de/bigdump)
-- **Refactorisation MVC** : Version 2.0 avec architecture orientée objet
+- **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump)
+- **MVC Refactoring**: Version 2.0 with object-oriented architecture by [w3spi5](https://github.com/w3spi5)
