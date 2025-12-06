@@ -15,7 +15,7 @@ use BigDump\Models\ImportSession;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.4
+ * @version 2.5
  */
 class AjaxService
 {
@@ -104,6 +104,17 @@ class AjaxService
         if ($session->hasError()) {
             $xml .= $this->xmlElement('error', $session->getError() ?? '');
         }
+
+        // AutoTuner metrics
+        $batchSize = $stats['batch_size'] ?? 3000;
+        $memoryPct = $stats['memory_percentage'] ?? 0;
+        $speedLps = $stats['speed_lps'] ?? 0;
+        $adjustment = $stats['auto_tune_adjustment'] ?? '';
+
+        $xml .= $this->xmlElement('batch_size', (string) $batchSize);
+        $xml .= $this->xmlElement('memory_pct', (string) $memoryPct);
+        $xml .= $this->xmlElement('speed_lps', number_format($speedLps, 0));
+        $xml .= $this->xmlElement('adjustment', $adjustment);
 
         $xml .= '</root>';
 
@@ -325,6 +336,32 @@ class AjaxService
             statBoxes[2].textContent = getXmlValue(xml, 'elem18'); // mb_done
             if (statBoxes[3]) {
                 statBoxes[3].textContent = getXmlValue(xml, 'elem22') + '%'; // pct_done
+            }
+        }
+
+        // AutoTuner updates
+        var batchSize = getXmlValue(xml, 'batch_size');
+        var memoryPct = getXmlValue(xml, 'memory_pct');
+        var speedLps = getXmlValue(xml, 'speed_lps');
+        var adjustment = getXmlValue(xml, 'adjustment');
+
+        if (batchSize) {
+            var batchEl = document.getElementById('perf-batch');
+            if (batchEl) batchEl.textContent = parseInt(batchSize).toLocaleString() + ' (auto)';
+        }
+        if (memoryPct) {
+            var memEl = document.getElementById('perf-memory');
+            if (memEl) memEl.textContent = memoryPct + '%';
+        }
+        if (speedLps) {
+            var speedEl = document.getElementById('perf-speed');
+            if (speedEl) speedEl.textContent = speedLps + ' l/s';
+        }
+        if (adjustment && adjustment !== '') {
+            var adjEl = document.getElementById('adjustment-notice');
+            if (adjEl) {
+                adjEl.textContent = adjustment;
+                adjEl.style.display = 'block';
             }
         }
 

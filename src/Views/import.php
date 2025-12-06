@@ -13,8 +13,60 @@
  * @var array $nextParams Parameters for the next session
  * @var string|null $ajaxScript AJAX script (if applicable)
  * @var string|null $redirectScript Redirect script (if applicable)
+ * @var array|null $autoTuner Auto-tuner performance data (if enabled)
  */
 ?>
+
+<style>
+/* Performance Section Styles */
+.performance-section {
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+.performance-section h3 {
+    margin: 0 0 15px 0;
+    color: #495057;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.performance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+}
+.perf-box {
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.perf-label {
+    display: block;
+    font-size: 11px;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+.perf-value {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #212529;
+}
+.adjustment-notice {
+    margin-top: 10px;
+    padding: 8px 12px;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    border-radius: 4px;
+    color: #155724;
+    font-size: 13px;
+}
+</style>
 
 <?php if ($testMode): ?>
 <div class="alert alert-warning">
@@ -77,7 +129,7 @@
     <div class="error-header">
         <div class="error-header__icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.409 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.509 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
             </svg>
         </div>
         <div class="error-header__content">
@@ -205,6 +257,42 @@
         <?php endif; ?>
     </tbody>
 </table>
+
+<!-- Performance Section (Auto-Tuner) -->
+<?php if (isset($autoTuner) && $autoTuner['enabled']): ?>
+<div class="performance-section">
+    <h3>Performance (Auto-Tuner)</h3>
+    <div class="performance-grid">
+        <div class="perf-box">
+            <span class="perf-label">System</span>
+            <span class="perf-value" id="perf-system"><?= htmlspecialchars($autoTuner['os']) ?></span>
+        </div>
+        <div class="perf-box">
+            <span class="perf-label">RAM Available</span>
+            <span class="perf-value" id="perf-ram"><?= htmlspecialchars($autoTuner['available_ram_formatted']) ?></span>
+        </div>
+        <div class="perf-box">
+            <span class="perf-label">Batch Size</span>
+            <span class="perf-value" id="perf-batch"><?= number_format($autoTuner['batch_size']) ?> (auto)</span>
+        </div>
+        <div class="perf-box">
+            <span class="perf-label">Memory</span>
+            <span class="perf-value" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
+        </div>
+        <div class="perf-box">
+            <span class="perf-label">Speed</span>
+            <span class="perf-value" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
+        </div>
+    </div>
+    <?php if (!empty($autoTuner['adjustment'])): ?>
+    <div class="adjustment-notice" id="adjustment-notice">
+        <?= htmlspecialchars($autoTuner['adjustment']) ?>
+    </div>
+    <?php else: ?>
+    <div class="adjustment-notice" id="adjustment-notice" style="display:none;"></div>
+    <?php endif; ?>
+</div>
+<?php endif; ?>
 
 <?php if ($session->isFinished() && !$session->hasError()): ?>
 <div class="alert alert-success text-center">

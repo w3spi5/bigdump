@@ -1,22 +1,25 @@
-# BigDump 2.4 - Staggered MySQL Dump Importer
+# BigDump 2.5 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Package Version](https://img.shields.io/badge/version-2.5-blue.svg)](https://php.net/)
 
 <p align="center">
-  <img src="2025-12-06_04h29_29.png" alt="BigDump 2.4 Screenshot" width="800">
+  <img src="2025-12-06_04h29_29.png" alt="BigDump Screenshot" width="800">
 </p>
 
-BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This version 2.4 is a complete refactoring using object-oriented MVC architecture.
+BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This major version 2 is a complete refactoring using object-oriented MVC architecture.
+
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## Features
 
 - **Staggered Import**: Imports dumps in sessions to bypass timeout limits
 - **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
 - **AJAX Mode**: Import without page refresh (recommended)
-- **Modern Interface**: Responsive and intuitive design
+- **Modern Interface**: Drag & drop upload with progress bars
+- **Auto-Tuning**: Dynamic batch size based on available RAM
 - **Enhanced Security**: Protection against path traversal, XSS, and other vulnerabilities
-- **Error Handling**: Clear and detailed error messages
 - **UTF-8 Support**: Proper handling of multi-byte characters and BOM
 
 ## Requirements
@@ -31,7 +34,6 @@ BigDump is a PHP tool for importing large MySQL dumps on web servers with strict
 1. **Download** the project to your web server:
    ```bash
    git clone https://github.com/w3spi5/bigdump.git
-   # or download and extract the archive
    ```
 
 2. **Configure** the database:
@@ -59,65 +61,46 @@ BigDump is a PHP tool for importing large MySQL dumps on web servers with strict
    http://your-site.com/bigdump/public/index.php
    ```
 
-## Project Structure
+## Configuration
 
-```
-bigdump/
-├── config/
-│   ├── config.example.php  # Configuration template
-│   └── config.php          # User configuration (create from example)
-├── public/
-│   └── index.php           # Entry point
-├── src/
-│   ├── Config/
-│   │   └── Config.php      # Configuration manager
-│   ├── Controllers/
-│   │   └── BigDumpController.php
-│   ├── Core/
-│   │   ├── Application.php # Main application
-│   │   ├── Request.php     # HTTP request wrapper
-│   │   ├── Response.php    # HTTP response wrapper
-│   │   ├── Router.php      # Router
-│   │   └── View.php        # Template engine
-│   ├── Models/
-│   │   ├── Database.php    # MySQL connection
-│   │   ├── FileHandler.php # File management
-│   │   ├── ImportSession.php # Session state
-│   │   └── SqlParser.php   # SQL parser
-│   ├── Services/
-│   │   ├── AjaxService.php # AJAX responses
-│   │   └── ImportService.php # Import service
-│   └── Views/
-│       ├── error.php       # Error page
-│       ├── home.php        # Home page
-│       ├── import.php      # Import page
-│       └── layout.php      # Main template
-├── uploads/                # Dump files directory
-├── LICENSE
-└── README.md
+### Auto-Tuning (RAM-based)
+
+```php
+return [
+    'auto_tuning' => true,      // Enable dynamic batch sizing
+    'min_batch_size' => 3000,   // Safety floor
+    'max_batch_size' => 50000,  // Ceiling
+];
 ```
 
-## Advanced Configuration
+| Available RAM | Batch Size |
+|---------------|------------|
+| < 512 MB | 3,000 |
+| 512 MB - 1 GB | 8,000 |
+| 1 GB - 2 GB | 15,000 |
+| 2 GB - 4 GB | 25,000 |
+| > 4 GB | 40,000 |
+
+### Windows Optimization
+
+For accurate RAM detection on Windows, enable the COM extension in `php.ini`:
+
+```ini
+extension=com_dotnet
+```
 
 ### Import Options
 
 ```php
 return [
-    // Lines per session (reduce if timeout occurs)
-    'linespersession' => 3000,
-
-    // Delay between sessions (ms) to reduce server load
-    'delaypersession' => 0,
-
-    // AJAX mode (recommended)
-    'ajax' => true,
-
-    // Test mode (parse without executing)
-    'test_mode' => false,
+    'linespersession' => 3000,  // Lines per session (if auto_tuning disabled)
+    'delaypersession' => 0,     // Delay between sessions (ms)
+    'ajax' => true,             // AJAX mode (recommended)
+    'test_mode' => false,       // Parse without executing
 ];
 ```
 
-### CSV Configuration
+### CSV Import
 
 ```php
 return [
@@ -139,18 +122,43 @@ return [
 ];
 ```
 
-## Bug Fixes Compared to Original
+## Project Structure
 
-1. **Excessive Sanitization**: Valid UTF-8 characters are now preserved
-2. **Quote Handling**: Correct detection of `\\'` (escaped backslash)
-3. **Gzip Files**: Fixed seek handling
-4. **Path Traversal**: Protection against `../` attacks
-5. **XSS**: Systematic escaping of HTML output
-6. **Race Conditions**: Atomic upload handling
-7. **Memory**: Configurable limit per query
-8. **BOM**: UTF-8, UTF-16, and UTF-32 support
-9. **DELIMITER**: Detection only outside strings
-10. **CSV**: Correct parsing of fields with internal delimiters
+```
+bigdump/
+├── config/
+│   ├── config.example.php
+│   └── config.php
+├── public/
+│   └── index.php
+├── src/
+│   ├── Config/Config.php
+│   ├── Controllers/BigDumpController.php
+│   ├── Core/
+│   │   ├── Application.php
+│   │   ├── Request.php
+│   │   ├── Response.php
+│   │   ├── Router.php
+│   │   └── View.php
+│   ├── Models/
+│   │   ├── Database.php
+│   │   ├── FileHandler.php
+│   │   ├── ImportSession.php
+│   │   └── SqlParser.php
+│   ├── Services/
+│   │   ├── AjaxService.php
+│   │   ├── AutoTunerService.php
+│   │   └── ImportService.php
+│   └── Views/
+│       ├── error.php
+│       ├── home.php
+│       ├── import.php
+│       └── layout.php
+├── uploads/
+├── CHANGELOG.md
+├── LICENSE
+└── README.md
+```
 
 ## Security
 
@@ -166,4 +174,4 @@ return [
 ## Credits
 
 - **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump)
-- **MVC Refactoring**: Version 2.4 with object-oriented architecture by [w3spi5](https://github.com/w3spi5)
+- **MVC Refactoring**: Version 2 by [w3spi5](https://github.com/w3spi5)

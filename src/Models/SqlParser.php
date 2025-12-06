@@ -23,7 +23,7 @@ use BigDump\Config\Config;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.4
+ * @version 2.5
  */
 class SqlParser
 {
@@ -40,10 +40,16 @@ class SqlParser
     private string $delimiter;
 
     /**
-     * String quote character
+     * Valid string quote characters (both single and double quotes in SQL)
+     * @var array<int, string>
+     */
+    private array $stringQuotes = ["'", '"'];
+
+    /**
+     * Current active quote character (when inside a string)
      * @var string
      */
-    private string $stringQuote;
+    private string $activeQuote = '';
 
     /**
      * Comment markers
@@ -90,7 +96,8 @@ class SqlParser
     {
         $this->config = $config;
         $this->delimiter = $config->get('delimiter', ';');
-        $this->stringQuote = $config->get('string_quotes', "'");
+        // Support both single and double quotes for SQL strings
+        $this->stringQuotes = ["'", '"'];
         $this->commentMarkers = $config->get('comment_markers', ['#', '-- ', '/*!']);
         $this->maxQueryLines = $config->get('max_query_lines', 10000);
         $this->maxQueryMemory = $config->get('max_query_memory', 10485760);
@@ -104,6 +111,7 @@ class SqlParser
     public function reset(): void
     {
         $this->inString = false;
+        $this->activeQuote = '';
         $this->currentQuery = '';
         $this->queryLineCount = 0;
     }
@@ -263,10 +271,11 @@ class SqlParser
     /**
      * Analyzes quotes in a line to determine in-string state
      *
-     * This method fixes the bug in the original that did not properly
-     * handle double backslashes (\\) before quotes.
-     * It also handles doubled quotes as SQL escape mechanism
-     * (e.g., 'It''s OK' represents the string "It's OK").
+     * This method properly handles:
+     * - Both single quotes (') and double quotes (")
+     * - Double backslashes (\\) before quotes
+     * - Doubled quotes as SQL escape mechanism (e.g., 'It''s OK')
+     * - Matching quote types (a string opened with ' must close with ')
      *
      * @param string $line Line to analyze
      * @return void
@@ -280,10 +289,10 @@ class SqlParser
             $char = $line[$i];
 
             if ($this->inString) {
-                // In a string, look for the end
-                if ($char === $this->stringQuote) {
-                    // Check if it's a doubled quote (SQL escape: '' -> ')
-                    if ($i + 1 < $length && $line[$i + 1] === $this->stringQuote) {
+                // In a string, look for the matching closing quote
+                if ($char === $this->activeQuote) {
+                    // Check if it's a doubled quote (SQL escape: '' -> ' or "" -> ")
+                    if ($i + 1 < $length && $line[$i + 1] === $this->activeQuote) {
                         // Doubled quote, skip both characters, stay in string
                         $i += 2;
                         continue;
@@ -302,12 +311,15 @@ class SqlParser
                     // If odd number, quote is escaped
                     if ($backslashes % 2 === 0) {
                         $this->inString = false;
+                        $this->activeQuote = '';
                     }
                 }
             } else {
-                // Outside string, look for the beginning
-                if ($char === $this->stringQuote) {
+                // Outside string, look for the beginning of a string
+                // Check both single and double quotes
+                if (in_array($char, $this->stringQuotes, true)) {
                     $this->inString = true;
+                    $this->activeQuote = $char;
                 }
             }
 
@@ -393,11 +405,23 @@ class SqlParser
      * Sets in-string state (for session restoration)
      *
      * @param bool $inString In-string state
+     * @param string $activeQuote The quote character that opened the string ('' or "")
      * @return void
      */
-    public function setInString(bool $inString): void
+    public function setInString(bool $inString, string $activeQuote = "'"): void
     {
         $this->inString = $inString;
+        $this->activeQuote = $inString ? $activeQuote : '';
+    }
+
+    /**
+     * Gets active quote character
+     *
+     * @return string Active quote character ('' or ""), empty if not in string
+     */
+    public function getActiveQuote(): string
+    {
+        return $this->activeQuote;
     }
 
     /**
