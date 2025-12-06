@@ -3,6 +3,9 @@ claude.md
 .claude/
 .serena/
 
+# Custom
+config/config.php
+
 # Uploads directory (contains user SQL dumps)
 uploads/*.sql
 uploads/*.gz
