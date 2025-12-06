@@ -15,7 +15,7 @@ use BigDump\Models\ImportSession;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.3
+ * @version 2.4
  */
 class AjaxService
 {
@@ -49,13 +49,12 @@ class AjaxService
         $xml = '<?xml version="1.0" encoding="UTF-8"?>';
         $xml .= '<root>';
 
-        // Data for next session calculations
+        // Data for next session calculations (pendingQuery stored in PHP session)
         $xml .= $this->xmlElement('linenumber', (string) $params['start']);
         $xml .= $this->xmlElement('foffset', (string) $params['foffset']);
         $xml .= $this->xmlElement('fn', $params['fn']);
         $xml .= $this->xmlElement('totalqueries', (string) $params['totalqueries']);
         $xml .= $this->xmlElement('delimiter', $params['delimiter']);
-        $xml .= $this->xmlElement('pendingquery', $params['pendingquery'] ?? '');
         $xml .= $this->xmlElement('instring', $params['instring'] ?? '0');
 
         // Statistics for interface update
@@ -167,7 +166,6 @@ class AjaxService
         // Escape values for safe JavaScript string embedding (prevents XSS)
         $fn = $this->escapeJsString($params['fn']);
         $delimiter = $this->escapeJsString($params['delimiter']);
-        $pendingQuery = $this->escapeJsString($params['pendingquery'] ?? '');
         $inString = $params['instring'] ?? '0';
         $safeScriptUri = $this->escapeJsString($scriptUri);
 
@@ -182,14 +180,14 @@ class AjaxService
 
     /**
      * Builds the URL for the next AJAX session.
+     * Note: pendingQuery is stored server-side in PHP session to avoid URL length limits.
      */
-    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter, pendingquery, instring) {
+    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter, instring) {
         return scriptUri + '?start=' + linenumber +
             '&fn=' + encodeURIComponent(fn) +
             '&foffset=' + foffset +
             '&totalqueries=' + totalqueries +
             '&delimiter=' + encodeURIComponent(delimiter) +
-            '&pendingquery=' + encodeURIComponent(pendingquery || '') +
             '&instring=' + (instring || '0') +
             '&ajaxrequest=true';
     }
@@ -203,6 +201,18 @@ class AjaxService
             return elem[0].firstChild.nodeValue;
         }
         return '';
+    }
+
+    /**
+     * Updates a table cell's text content.
+     */
+    function updateCell(cell, value) {
+        if (!cell) return;
+        if (cell.firstChild && cell.firstChild.nodeType === 3) {
+            cell.firstChild.nodeValue = value;
+        } else {
+            cell.textContent = value;
+        }
     }
 
     /**
@@ -272,38 +282,59 @@ class AjaxService
             return;
         }
 
-        // Update line number
+        // Update line number display
         var paragraphs = document.getElementsByTagName('p');
         if (paragraphs[1]) {
             paragraphs[1].innerHTML = 'Starting from line: ' + getXmlValue(xml, 'linenumber');
         }
 
         // Update statistics table
-        var cells = document.getElementsByTagName('td');
-        for (var i = 1; i <= 24; i++) {
-            if (cells[i]) {
-                var value = getXmlValue(xml, 'elem' + i);
-                if (cells[i].firstChild) {
-                    cells[i].firstChild.nodeValue = value;
-                } else {
-                    cells[i].textContent = value;
+        // Table structure: 6 rows x 5 cols (label + 4 values per row)
+        // Each row: [label, this_session, total_done, remaining, total]
+        // elem1-4: Lines, elem5-8: Queries, elem9-12: Bytes, elem13-16: KB, elem17-20: MB, elem21-24: %
+        var table = document.querySelector('table tbody');
+        if (table) {
+            var rows = table.getElementsByTagName('tr');
+            var elemIndex = 1;
+            
+            for (var row = 0; row < rows.length && elemIndex <= 24; row++) {
+                var cells = rows[row].getElementsByTagName('td');
+                // Skip first cell (label), update cells 1-4 (values)
+                for (var col = 1; col < cells.length && elemIndex <= 24; col++) {
+                    updateCell(cells[col], getXmlValue(xml, 'elem' + elemIndex));
+                    elemIndex++;
                 }
             }
         }
 
         // Update progress bar
-        if (cells[25]) {
-            cells[25].innerHTML = getXmlValue(xml, 'elem_bar');
+        var progressBar = document.querySelector('.progress-bar');
+        if (progressBar) {
+            var pctDone = getXmlValue(xml, 'elem22'); // pct_done
+            if (pctDone) {
+                progressBar.style.width = pctDone + '%';
+                progressBar.textContent = pctDone + '%';
+            }
         }
 
-        // Prepare the next request
+        // Update stat boxes
+        var statBoxes = document.querySelectorAll('.stat-box .stat-value');
+        if (statBoxes.length >= 3) {
+            statBoxes[0].textContent = getXmlValue(xml, 'elem2');  // lines_done
+            statBoxes[1].textContent = getXmlValue(xml, 'elem6');  // queries_done
+            statBoxes[2].textContent = getXmlValue(xml, 'elem18'); // mb_done
+            if (statBoxes[3]) {
+                statBoxes[3].textContent = getXmlValue(xml, 'elem22') + '%'; // pct_done
+            }
+        }
+
+        // Prepare the next request (pendingQuery handled server-side)
         var nextUrl = buildUrl(
             getXmlValue(xml, 'linenumber'),
             getXmlValue(xml, 'fn'),
             getXmlValue(xml, 'foffset'),
             getXmlValue(xml, 'totalqueries'),
             getXmlValue(xml, 'delimiter'),
-            getXmlValue(xml, 'pendingquery'),
             getXmlValue(xml, 'instring')
         );
 
@@ -320,7 +351,6 @@ class AjaxService
         {$params['foffset']},
         {$params['totalqueries']},
         '{$delimiter}',
-        '{$pendingQuery}',
         '{$inString}'
     );
 
