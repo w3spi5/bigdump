@@ -1,7 +1,7 @@
 <?php
 
 /**
- * BigDump 2.0 - Configuration
+ * BigDump 2.2 - Configuration
  *
  * Modify this file to configure your MySQL import.
  * All options are documented below.

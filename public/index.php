@@ -1,7 +1,7 @@
 <?php
 
 /**
- * BigDump 2.0 - Main entry point
+ * BigDump 2.2 - Main entry point
  *
  * This file is the entry point of the refactored BigDump application.
  * It initializes the autoloader and launches the MVC application.
@@ -24,7 +24,7 @@ define('BIGDUMP_ROOT', dirname(__DIR__));
 
 // Check PHP version
 if (PHP_VERSION_ID < 80100) {
-    die('BigDump 2.0 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
+    die('BigDump 2.2 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
 }
 
 // Check MySQLi extension
