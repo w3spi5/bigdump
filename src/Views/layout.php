@@ -17,7 +17,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #a29d4b 100%);
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -292,6 +292,241 @@
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+        }
+
+        /* FileUpload Component Styles */
+        .file-upload {
+            margin-top: 10px;
+        }
+
+        .file-upload__dropzone {
+            border: 2px dashed #cbd5e0;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            position: relative;
+        }
+
+        .file-upload__dropzone:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ebf4ff 0%, #e6e6fa 100%);
+        }
+
+        .file-upload__dropzone--active {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #ebf4ff 0%, #e6e6fa 100%);
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+        }
+
+        .file-upload__dropzone--error {
+            border-color: #e53e3e;
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        }
+
+        .file-upload__icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 15px;
+            opacity: 0.6;
+        }
+
+        .file-upload__icon svg {
+            width: 100%;
+            height: 100%;
+            fill: #667eea;
+        }
+
+        .file-upload__text {
+            color: #4a5568;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .file-upload__text strong {
+            color: #667eea;
+        }
+
+        .file-upload__hint {
+            color: #718096;
+            font-size: 13px;
+        }
+
+        .file-upload__input {
+            display: none;
+        }
+
+        /* File List */
+        .file-upload__list {
+            margin-top: 20px;
+        }
+
+        .file-upload__item {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .file-upload__item--uploading {
+            background: linear-gradient(135deg, #ebf4ff 0%, #f7fafc 100%);
+        }
+
+        .file-upload__item--success {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+
+        .file-upload__item--error {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+        }
+
+        .file-upload__item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .file-upload__item-icon--sql {
+            background: #ebf8ff;
+            color: #2b6cb0;
+        }
+
+        .file-upload__item-icon--gz {
+            background: #faf5ff;
+            color: #6b46c1;
+        }
+
+        .file-upload__item-icon--csv {
+            background: #f0fff4;
+            color: #276749;
+        }
+
+        .file-upload__item-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .file-upload__item-name {
+            font-weight: 500;
+            color: #2d3748;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-upload__item-meta {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .file-upload__item-progress {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .file-upload__progress-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .file-upload__progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .file-upload__progress-text {
+            font-size: 11px;
+            color: #718096;
+            text-align: right;
+            margin-top: 3px;
+        }
+
+        .file-upload__item-status {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-upload__item-status svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .file-upload__item-remove {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .file-upload__item-remove:hover {
+            opacity: 1;
+        }
+
+        .file-upload__item-remove svg {
+            width: 16px;
+            height: 16px;
+            fill: #e53e3e;
+        }
+
+        /* Upload Actions */
+        .file-upload__actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .file-upload__actions .btn {
+            flex: 1;
+        }
+
+        /* Spinner Animation */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .file-upload__spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        /* Validation Error */
+        .file-upload__error {
+            color: #e53e3e;
+            font-size: 13px;
+            margin-top: 5px;
         }
     </style>
 </head>
