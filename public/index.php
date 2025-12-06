@@ -106,8 +106,8 @@ if (!is_dir($uploadsDir)) {
 $htaccessFile = $uploadsDir . '/.htaccess';
 if (!file_exists($htaccessFile)) {
     @file_put_contents($htaccessFile, <<<HTACCESS
-# Deny direct access to dump files
-<FilesMatch "\.(sql|gz|csv)$">
+# Deny direct access to dump files and temporary files
+<FilesMatch "\.(sql|gz|csv|tmp)$">
     Order Allow,Deny
     Deny from all
 </FilesMatch>
