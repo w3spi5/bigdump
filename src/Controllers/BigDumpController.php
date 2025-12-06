@@ -24,7 +24,7 @@ use BigDump\Services\AjaxService;
  *
  * @package BigDump\Controllers
  * @author  Refactorisation MVC
- * @version 2.4
+ * @version 2.5
  */
 class BigDumpController
 {
@@ -269,7 +269,8 @@ class BigDumpController
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
             '', // pendingQuery now in $_SESSION
-            $this->request->getInt('instring', 0) === 1
+            $this->request->getInt('instring', 0) === 1,
+            $this->request->input('activequote', '')
         );
 
         // Validate parameters
@@ -291,6 +292,7 @@ class BigDumpController
             'ajaxEnabled' => $this->ajaxService->isAjaxEnabled(),
             'delay' => $this->ajaxService->getDelay(),
             'nextParams' => $session->getNextSessionParams(),
+            'autoTuner' => $this->importService->getAutoTunerMetrics($session->getCurrentLine()),
         ]);
 
         // Add the AJAX script if necessary
@@ -331,7 +333,8 @@ class BigDumpController
             $this->request->getInt('totalqueries', 0),
             $this->request->input('delimiter', ';'),
             '', // pendingQuery now in $_SESSION
-            $this->request->getInt('instring', 0) === 1
+            $this->request->getInt('instring', 0) === 1,
+            $this->request->input('activequote', '')
         );
 
         // Validate parameters
