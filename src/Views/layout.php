@@ -17,7 +17,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #a29d4b 100%);
+            background: #212830;
             min-height: 100vh;
             padding: 20px;
             line-height: 1.6;
@@ -37,7 +37,7 @@
         }
 
         .card-header {
-            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            background: linear-gradient(135deg, #0096be 0%, #531f15 100%);
             color: white;
             padding: 20px 25px;
         }
@@ -527,6 +527,183 @@
             color: #e53e3e;
             font-size: 13px;
             margin-top: 5px;
+        }
+
+        /* Enhanced Error Display */
+        .error-container {
+            background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
+            border: 2px solid #fc8181;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(229, 62, 62, 0.15);
+        }
+
+        .error-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px 24px;
+            background: linear-gradient(135deg, #c53030 0%, #9b2c2c 100%);
+            color: white;
+        }
+
+        .error-header__icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .error-header__icon svg {
+            width: 28px;
+            height: 28px;
+            color: #fff;
+        }
+
+        .error-header__content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .error-header__title {
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .error-header__summary {
+            font-size: 15px;
+            line-height: 1.5;
+            opacity: 0.95;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            word-break: break-word;
+        }
+
+        .error-header__line {
+            margin-top: 4px;
+        }
+
+        .error-line-badge {
+            display: inline-block;
+            background: #fff;
+            color: #c53030;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .error-details {
+            border-top: 1px solid rgba(197, 48, 48, 0.2);
+        }
+
+        .error-details__toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: rgba(197, 48, 48, 0.08);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #c53030;
+            user-select: none;
+            list-style: none;
+        }
+
+        .error-details__toggle::-webkit-details-marker {
+            display: none;
+        }
+
+        .error-details__toggle::marker {
+            display: none;
+        }
+
+        .error-details__toggle:hover {
+            background: rgba(197, 48, 48, 0.12);
+        }
+
+        .error-details__chevron {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .error-details[open] .error-details__chevron {
+            transform: rotate(180deg);
+        }
+
+        .error-details__content {
+            padding: 16px 24px 20px;
+            background: #fff;
+        }
+
+        .error-details__pre {
+            margin: 0;
+            padding: 16px;
+            background: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Responsive adjustments for error display */
+        @media (max-width: 600px) {
+            .error-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                padding: 16px;
+                gap: 12px;
+            }
+
+            .error-header__icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .error-header__icon svg {
+                width: 24px;
+                height: 24px;
+            }
+
+            .error-header__title {
+                font-size: 20px;
+            }
+
+            .error-header__summary {
+                font-size: 14px;
+            }
+
+            .error-details__toggle {
+                padding: 14px 16px;
+                font-size: 13px;
+                min-height: 44px;
+            }
+
+            .error-details__content {
+                padding: 12px 16px 16px;
+            }
+
+            .error-details__pre {
+                font-size: 12px;
+                padding: 12px;
+            }
         }
     </style>
 </head>

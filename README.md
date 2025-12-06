@@ -34,7 +34,11 @@ BigDump is a PHP tool for importing large MySQL dumps on web servers with strict
    # or download and extract the archive
    ```
 
-2. **Configure** the database in `config/config.php`:
+2. **Configure** the database:
+   ```bash
+   cp config/config.example.php config/config.php
+   ```
+   Then edit `config/config.php` with your database credentials:
    ```php
    return [
        'db_server' => 'localhost',
@@ -60,7 +64,8 @@ BigDump is a PHP tool for importing large MySQL dumps on web servers with strict
 ```
 bigdump/
 ├── config/
-│   └── config.php          # User configuration
+│   ├── config.example.php  # Configuration template
+│   └── config.php          # User configuration (create from example)
 ├── public/
 │   └── index.php           # Entry point
 ├── src/

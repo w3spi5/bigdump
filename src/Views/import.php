@@ -23,9 +23,90 @@
 <?php endif; ?>
 
 <?php if ($session->hasError()): ?>
-<div class="alert alert-error">
-    <strong>Import Error</strong><br>
-    <pre style="white-space: pre-wrap; margin-top: 10px;"><?= $view->e($session->getError()) ?></pre>
+<?php
+    /**
+     * Parse error message to extract display components
+     *
+     * Expected format from ImportService:
+     * SQL Error at line {lineNum}:
+     * Query: {displayQuery}
+     * MySQL Error: {error}
+     */
+    $errorText = $session->getError() ?? '';
+    $errorSummary = '';
+    $errorLine = null;
+    $mysqlError = '';
+
+    if (!empty($errorText)) {
+        $errorLines = explode("\n", $errorText);
+        $mysqlErrorFound = false;
+        $lineNumberFound = false;
+
+        // Extract MySQL error for summary (look for "MySQL Error:" line)
+        foreach ($errorLines as $line) {
+            if (!$mysqlErrorFound && preg_match('/^MySQL Error:\s*(.+)$/i', $line, $matches)) {
+                $mysqlError = trim($matches[1]);
+                // Truncate if too long for summary
+                $errorSummary = strlen($mysqlError) > 100
+                    ? substr($mysqlError, 0, 100) . '...'
+                    : $mysqlError;
+                $mysqlErrorFound = true;
+            }
+            if (!$lineNumberFound && preg_match('/at line\s+(\d+)/i', $line, $matches)) {
+                $errorLine = (int)$matches[1];
+                $lineNumberFound = true;
+            }
+            // Early exit if both patterns found
+            if ($mysqlErrorFound && $lineNumberFound) {
+                break;
+            }
+        }
+
+        // Fallback summary if no MySQL Error found
+        if (empty($errorSummary) && isset($errorLines[0]) && $errorLines[0] !== '') {
+            $errorSummary = strlen($errorLines[0]) > 100
+                ? substr($errorLines[0], 0, 100) . '...'
+                : $errorLines[0];
+        }
+    } else {
+        $errorSummary = 'Unknown error occurred';
+    }
+?>
+<div class="error-container" id="error-alert" tabindex="-1" role="alert" aria-live="assertive">
+    <!-- Error Header with Icon and Summary -->
+    <div class="error-header">
+        <div class="error-header__icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+            </svg>
+        </div>
+        <div class="error-header__content">
+            <h2 class="error-header__title">Import Error</h2>
+            <?php if ($errorSummary): ?>
+            <div class="error-header__summary">
+                MySQL Error: <?= $view->e($errorSummary) ?>
+            </div>
+            <?php endif; ?>
+            <?php if ($errorLine): ?>
+            <div class="error-header__line">
+                <span class="error-line-badge">Line <?= number_format($errorLine) ?></span>
+            </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <!-- Collapsible Error Details -->
+    <details class="error-details" open>
+        <summary class="error-details__toggle">
+            <span class="error-details__toggle-text">Show Full Error Details</span>
+            <svg class="error-details__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>
+            </svg>
+        </summary>
+        <div class="error-details__content">
+            <pre class="error-details__pre"><?= $view->e($errorText) ?></pre>
+        </div>
+    </details>
 </div>
 <?php endif; ?>
 
