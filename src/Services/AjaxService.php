@@ -15,7 +15,7 @@ use BigDump\Models\ImportSession;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.2
+ * @version 2.3
  */
 class AjaxService
 {
