@@ -89,6 +89,16 @@ class ImportSession
     private bool $gzipMode = false;
 
     /**
+     * Pending incomplete query from previous session
+     */
+    private string $pendingQuery = '';
+
+    /**
+     * Whether parser was inside a string at end of session
+     */
+    private bool $inString = false;
+
+    /**
      * Creates a new session from request parameters
      *
      * @param string $filename Filename
@@ -96,6 +106,8 @@ class ImportSession
      * @param int $startOffset Starting offset
      * @param int $totalQueries Total of previous queries
      * @param string $delimiter SQL delimiter
+     * @param string $pendingQuery Pending incomplete query from previous session
+     * @param bool $inString Whether parser was inside a string
      * @return self
      */
     public static function fromRequest(
@@ -103,7 +115,9 @@ class ImportSession
         int $startLine = 1,
         int $startOffset = 0,
         int $totalQueries = 0,
-        string $delimiter = ';'
+        string $delimiter = ';',
+        string $pendingQuery = '',
+        bool $inString = false
     ): self {
         $session = new self();
         $session->filename = $filename;
@@ -113,6 +127,8 @@ class ImportSession
         $session->currentOffset = $session->startOffset;
         $session->totalQueries = max(0, $totalQueries);
         $session->delimiter = $delimiter;
+        $session->pendingQuery = $pendingQuery;
+        $session->inString = $inString;
 
         return $session;
     }
@@ -353,6 +369,51 @@ class ImportSession
         return $this;
     }
 
+
+    /**
+     * Gets pending query from previous session
+     *
+     * @return string Pending query
+     */
+    public function getPendingQuery(): string
+    {
+        return $this->pendingQuery;
+    }
+
+    /**
+     * Sets pending query for next session
+     *
+     * @param string $pendingQuery Pending query
+     * @return self
+     */
+    public function setPendingQuery(string $pendingQuery): self
+    {
+        $this->pendingQuery = $pendingQuery;
+        return $this;
+    }
+
+    /**
+     * Gets in-string state from previous session
+     *
+     * @return bool In-string state
+     */
+    public function getInString(): bool
+    {
+        return $this->inString;
+    }
+
+    /**
+     * Sets in-string state for next session
+     *
+     * @param bool $inString In-string state
+     * @return self
+     */
+    public function setInString(bool $inString): self
+    {
+        $this->inString = $inString;
+        return $this;
+    }
+
     /**
      * Calculates session statistics
      *
@@ -437,6 +498,8 @@ class ImportSession
             'foffset' => $this->currentOffset,
             'totalqueries' => $this->totalQueries,
             'delimiter' => $this->delimiter,
+            'pendingquery' => $this->pendingQuery,
+            'instring' => $this->inString ? '1' : '0',
         ];
     }
 

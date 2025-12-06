@@ -90,6 +90,13 @@ class ImportService
             $this->sqlParser->setDelimiter($session->getDelimiter());
             $this->sqlParser->reset();
 
+            // Restore parser state from previous session
+            $pendingQuery = $session->getPendingQuery();
+            if ($pendingQuery !== '') {
+                $this->sqlParser->setCurrentQuery($pendingQuery);
+                $this->sqlParser->setInString($session->getInString());
+            }
+
             // Empty the CSV table if needed
             $this->emptyCsvTableIfNeeded($session);
 
@@ -101,6 +108,10 @@ class ImportService
 
             // Update the delimiter if changed
             $session->setDelimiter($this->sqlParser->getDelimiter());
+
+            // Save parser state for next session
+            $session->setPendingQuery($this->sqlParser->getCurrentQuery());
+            $session->setInString($this->sqlParser->isInString());
 
         } catch (RuntimeException $e) {
             $session->setError($e->getMessage());

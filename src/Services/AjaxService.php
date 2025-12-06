@@ -55,6 +55,8 @@ class AjaxService
         $xml .= $this->xmlElement('fn', $params['fn']);
         $xml .= $this->xmlElement('totalqueries', (string) $params['totalqueries']);
         $xml .= $this->xmlElement('delimiter', $params['delimiter']);
+        $xml .= $this->xmlElement('pendingquery', $params['pendingquery'] ?? '');
+        $xml .= $this->xmlElement('instring', $params['instring'] ?? '0');
 
         // Statistics for interface update
         // Lines
@@ -165,6 +167,8 @@ class AjaxService
         // Escape values for safe JavaScript string embedding (prevents XSS)
         $fn = $this->escapeJsString($params['fn']);
         $delimiter = $this->escapeJsString($params['delimiter']);
+        $pendingQuery = $this->escapeJsString($params['pendingquery'] ?? '');
+        $inString = $params['instring'] ?? '0';
         $safeScriptUri = $this->escapeJsString($scriptUri);
 
         $js = <<<JAVASCRIPT
@@ -179,12 +183,14 @@ class AjaxService
     /**
      * Builds the URL for the next AJAX session.
      */
-    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter) {
+    function buildUrl(linenumber, fn, foffset, totalqueries, delimiter, pendingquery, instring) {
         return scriptUri + '?start=' + linenumber +
             '&fn=' + encodeURIComponent(fn) +
             '&foffset=' + foffset +
             '&totalqueries=' + totalqueries +
             '&delimiter=' + encodeURIComponent(delimiter) +
+            '&pendingquery=' + encodeURIComponent(pendingquery || '') +
+            '&instring=' + (instring || '0') +
             '&ajaxrequest=true';
     }
 
@@ -296,7 +302,9 @@ class AjaxService
             getXmlValue(xml, 'fn'),
             getXmlValue(xml, 'foffset'),
             getXmlValue(xml, 'totalqueries'),
-            getXmlValue(xml, 'delimiter')
+            getXmlValue(xml, 'delimiter'),
+            getXmlValue(xml, 'pendingquery'),
+            getXmlValue(xml, 'instring')
         );
 
         // Launch the next session after the delay
@@ -311,7 +319,9 @@ class AjaxService
         '{$fn}',
         {$params['foffset']},
         {$params['totalqueries']},
-        '{$delimiter}'
+        '{$delimiter}',
+        '{$pendingQuery}',
+        '{$inString}'
     );
 
     setTimeout(function() {

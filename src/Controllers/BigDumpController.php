@@ -262,7 +262,9 @@ class BigDumpController
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
-            $this->request->input('delimiter', ';')
+            $this->request->input('delimiter', ';'),
+            $this->request->input('pendingquery', ''),
+            $this->request->getInt('instring', 0) === 1
         );
 
         // Validate parameters
@@ -322,7 +324,9 @@ class BigDumpController
             $this->request->getInt('start', 1),
             $this->request->getInt('foffset', 0),
             $this->request->getInt('totalqueries', 0),
-            $this->request->input('delimiter', ';')
+            $this->request->input('delimiter', ';'),
+            $this->request->input('pendingquery', ''),
+            $this->request->getInt('instring', 0) === 1
         );
 
         // Validate parameters

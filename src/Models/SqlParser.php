@@ -388,6 +388,41 @@ class SqlParser
         return $this->inString;
     }
 
+
+    /**
+     * Sets in-string state (for session restoration)
+     *
+     * @param bool $inString In-string state
+     * @return void
+     */
+    public function setInString(bool $inString): void
+    {
+        $this->inString = $inString;
+    }
+
+    /**
+     * Gets current query buffer
+     *
+     * @return string Current query buffer
+     */
+    public function getCurrentQuery(): string
+    {
+        return $this->currentQuery;
+    }
+
+    /**
+     * Sets current query buffer (for session restoration)
+     *
+     * @param string $query Query to restore
+     * @return void
+     */
+    public function setCurrentQuery(string $query): void
+    {
+        $this->currentQuery = $query;
+        // Count lines in restored query
+        $this->queryLineCount = substr_count($query, "\n");
+    }
+
     /**
      * Retrieves line count of current query
      *
