@@ -3,6 +3,10 @@
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
+<p align="center">
+  <img src="2025-12-06_04h29_29.png" alt="BigDump 2.0 Screenshot" width="800">
+</p>
+
 BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This version 2.0 is a complete refactoring using object-oriented MVC architecture.
 
 ## Features
