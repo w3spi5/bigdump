@@ -544,7 +544,7 @@
 
         <div class="footer">
             BigDump v<?= $view->e($version) ?> - Refactored MVC Edition<br>
-            Original by Alexey Ozerov | Refactored with improved stability and security
+            Original by Alexey Ozerov | Refactored with improved stability and security with ❤️ by w3spi5 (wespify.com)
         </div>
     </div>
 </body>
