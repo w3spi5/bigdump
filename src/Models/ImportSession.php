@@ -12,7 +12,7 @@ namespace BigDump\Models;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.4
+ * @version 2.5
  */
 class ImportSession
 {
@@ -99,6 +99,42 @@ class ImportSession
     private bool $inString = false;
 
     /**
+     * Active quote character when in string (' or ")
+     * @var string
+     */
+    private string $activeQuote = '';
+
+    /**
+     * Current batch size (lines per session)
+     * @var int
+     */
+    private int $batchSize = 3000;
+
+    /**
+     * Memory usage in bytes
+     * @var int
+     */
+    private int $memoryUsage = 0;
+
+    /**
+     * Memory usage percentage
+     * @var int
+     */
+    private int $memoryPercentage = 0;
+
+    /**
+     * Processing speed in lines per second
+     * @var float
+     */
+    private float $speedLps = 0.0;
+
+    /**
+     * AutoTune adjustment message
+     * @var string|null
+     */
+    private ?string $autoTuneAdjustment = null;
+
+    /**
      * Creates a new session from request parameters
      *
      * @param string $filename Filename
@@ -108,6 +144,7 @@ class ImportSession
      * @param string $delimiter SQL delimiter
      * @param string $pendingQuery Pending incomplete query from previous session
      * @param bool $inString Whether parser was inside a string
+     * @param string $activeQuote Active quote character when in string
      * @return self
      */
     public static function fromRequest(
@@ -117,7 +154,8 @@ class ImportSession
         int $totalQueries = 0,
         string $delimiter = ';',
         string $pendingQuery = '',
-        bool $inString = false
+        bool $inString = false,
+        string $activeQuote = ''
     ): self {
         $session = new self();
         $session->filename = $filename;
@@ -129,6 +167,7 @@ class ImportSession
         $session->delimiter = $delimiter;
         $session->pendingQuery = $pendingQuery;
         $session->inString = $inString;
+        $session->activeQuote = $activeQuote;
 
         return $session;
     }
@@ -415,6 +454,138 @@ class ImportSession
     }
 
     /**
+     * Gets active quote character
+     *
+     * @return string Active quote character ('' or "")
+     */
+    public function getActiveQuote(): string
+    {
+        return $this->activeQuote;
+    }
+
+    /**
+     * Sets active quote character
+     *
+     * @param string $activeQuote Quote character
+     * @return self
+     */
+    public function setActiveQuote(string $activeQuote): self
+    {
+        $this->activeQuote = $activeQuote;
+        return $this;
+    }
+
+    /**
+     * Gets current batch size
+     *
+     * @return int Batch size
+     */
+    public function getBatchSize(): int
+    {
+        return $this->batchSize;
+    }
+
+    /**
+     * Sets batch size
+     *
+     * @param int $batchSize Batch size
+     * @return self
+     */
+    public function setBatchSize(int $batchSize): self
+    {
+        $this->batchSize = $batchSize;
+        return $this;
+    }
+
+    /**
+     * Gets memory usage
+     *
+     * @return int Memory usage in bytes
+     */
+    public function getMemoryUsage(): int
+    {
+        return $this->memoryUsage;
+    }
+
+    /**
+     * Sets memory usage
+     *
+     * @param int $usage Memory usage in bytes
+     * @return self
+     */
+    public function setMemoryUsage(int $usage): self
+    {
+        $this->memoryUsage = $usage;
+        return $this;
+    }
+
+    /**
+     * Gets memory usage percentage
+     *
+     * @return int Memory percentage
+     */
+    public function getMemoryPercentage(): int
+    {
+        return $this->memoryPercentage;
+    }
+
+    /**
+     * Sets memory usage percentage
+     *
+     * @param int $pct Memory percentage
+     * @return self
+     */
+    public function setMemoryPercentage(int $pct): self
+    {
+        $this->memoryPercentage = $pct;
+        return $this;
+    }
+
+    /**
+     * Gets processing speed
+     *
+     * @return float Speed in lines per second
+     */
+    public function getSpeedLps(): float
+    {
+        return $this->speedLps;
+    }
+
+    /**
+     * Sets processing speed
+     *
+     * @param float $speed Speed in lines per second
+     * @return self
+     */
+    public function setSpeedLps(float $speed): self
+    {
+        $this->speedLps = $speed;
+        return $this;
+    }
+
+    /**
+     * Gets AutoTune adjustment message
+     *
+     * @return string|null Adjustment message
+     */
+    public function getAutoTuneAdjustment(): ?string
+    {
+        return $this->autoTuneAdjustment;
+    }
+
+    /**
+     * Sets AutoTune adjustment message
+     *
+     * @param string|null $adj Adjustment message
+     * @return self
+     */
+    public function setAutoTuneAdjustment(?string $adj): self
+    {
+        $this->autoTuneAdjustment = $adj;
+        return $this;
+    }
+
+    /**
      * Calculates session statistics
      *
      * @return array<string, mixed> Statistics
@@ -482,6 +653,13 @@ class ImportSession
             // Status
             'finished' => $this->finished,
             'gzip_mode' => $this->gzipMode,
+
+            // AutoTuner metrics
+            'batch_size' => $this->batchSize,
+            'memory_usage' => $this->memoryUsage,
+            'memory_percentage' => $this->memoryPercentage,
+            'speed_lps' => $this->speedLps,
+            'auto_tune_adjustment' => $this->autoTuneAdjustment,
         ];
     }
 
@@ -499,6 +677,7 @@ class ImportSession
             'totalqueries' => $this->totalQueries,
             'delimiter' => $this->delimiter,
             'instring' => $this->inString ? '1' : '0',
+            'activequote' => $this->activeQuote,
         ];
     }
 

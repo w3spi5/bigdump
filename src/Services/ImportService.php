@@ -9,6 +9,7 @@ use BigDump\Models\Database;
 use BigDump\Models\FileHandler;
 use BigDump\Models\SqlParser;
 use BigDump\Models\ImportSession;
+use BigDump\Services\AutoTunerService;
 use RuntimeException;
 
 /**
@@ -22,7 +23,7 @@ use RuntimeException;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.4
+ * @version 2.5
  */
 class ImportService
 {
@@ -57,6 +58,23 @@ class ImportService
     private int $linesPerSession;
 
     /**
+     * Auto-tuning service.
+     * @var AutoTunerService
+     */
+    private AutoTunerService $autoTuner;
+
+    /**
+     * Get AutoTuner metrics for UI display.
+     *
+     * @param int $currentLines Current line count for speed calculation
+     * @return array AutoTuner metrics array
+     */
+    public function getAutoTunerMetrics(int $currentLines = 0): array
+    {
+        return $this->autoTuner->getMetrics($currentLines);
+    }
+
+    /**
      * Constructor.
      *
      * @param Config $config Configuration
@@ -68,6 +86,12 @@ class ImportService
         $this->fileHandler = new FileHandler($config);
         $this->sqlParser = new SqlParser($config);
         $this->linesPerSession = $config->get('linespersession', 3000);
+
+        // Initialize AutoTuner
+        $this->autoTuner = new AutoTunerService($config);
+        if ($this->autoTuner->isEnabled()) {
+            $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
+        }
     }
 
     /**
@@ -81,6 +105,9 @@ class ImportService
     {
         // Generate unique session key based on filename
         $sessionKey = 'bigdump_pending_' . md5($session->getFilename());
+
+        // Start AutoTuner timing
+        $this->autoTuner->startTiming($session->getStartLine());
 
         try {
             // Connect to the database
@@ -97,7 +124,7 @@ class ImportService
             $pendingQuery = $_SESSION[$sessionKey] ?? '';
             if ($pendingQuery !== '') {
                 $this->sqlParser->setCurrentQuery($pendingQuery);
-                $this->sqlParser->setInString($session->getInString());
+                $this->sqlParser->setInString($session->getInString(), $session->getActiveQuote());
             }
 
             // Empty the CSV table if needed
@@ -120,10 +147,25 @@ class ImportService
                 unset($_SESSION[$sessionKey]);
             }
             $session->setInString($this->sqlParser->isInString());
+            $session->setActiveQuote($this->sqlParser->getActiveQuote());
 
             // Clean up session on completion
             if ($session->isFinished() || $session->hasError()) {
                 unset($_SESSION[$sessionKey]);
+            }
+
+            // AutoTuner metrics
+            $metrics = $this->autoTuner->getMetrics($session->getCurrentLine());
+            $session->setBatchSize($metrics['batch_size']);
+            $session->setMemoryUsage($metrics['php_memory_usage']);
+            $session->setMemoryPercentage($metrics['memory_percentage']);
+            $session->setSpeedLps($metrics['speed_lps']);
+            $session->setAutoTuneAdjustment($metrics['adjustment']);
+
+            // Check memory pressure for next session
+            $pressure = $this->autoTuner->checkMemoryPressure();
+            if ($pressure['adjustment']) {
+                $this->linesPerSession = $this->autoTuner->getCurrentBatchSize();
             }
 
         } catch (RuntimeException $e) {

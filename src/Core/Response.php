@@ -12,7 +12,7 @@ namespace BigDump\Core;
  *
  * @package BigDump\Core
  * @author  MVC Refactoring
- * @version 2.4
+ * @version 2.5
  */
 class Response
 {

@@ -14,7 +14,7 @@ use RuntimeException;
  *
  * @package BigDump\Config
  * @author  Refactorisation MVC
- * @version 2.4
+ * @version 2.5
  */
 class Config
 {
@@ -40,6 +40,9 @@ class Config
         'filename' => '',
         'ajax' => true,
         'linespersession' => 3000,
+        'auto_tuning' => true,        // Enable automatic batch size optimization
+        'min_batch_size' => 3000,     // Minimum batch size (safety floor)
+        'max_batch_size' => 50000,    // Maximum batch size (ceiling)
         'delaypersession' => 0,
 
         // CSV configuration
