@@ -238,7 +238,7 @@ class BigDumpController
         }
 
         // Clear any pending query file from previous import of this file
-        $uploadsDir = $this->config->get('uploads_dir', 'uploads');
+        $uploadsDir = $this->config->getUploadDir();
         $pendingFile = $uploadsDir . '/.pending_' . md5($filename) . '.tmp';
         if (file_exists($pendingFile)) {
             @unlink($pendingFile);
