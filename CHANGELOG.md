@@ -2,6 +2,54 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.6.1] - 2025-12-07
+
+### Added
+
+- **INSERT Batching (x10-50 speedup)**: Groups consecutive simple INSERTs into multi-value queries
+  - New `InsertBatcherService.php` transforms individual INSERTs into batched queries
+  - `insert_batch_size` config option (default: 1000)
+  - Automatic detection of compatible INSERT statements
+  - Seamless integration with existing import flow
+- **Force Batch Size Option**: Override auto-tuning with specific batch size
+  - `force_batch_size` config option bypasses RAM-based calculations
+  - Useful for known server capacity or testing
+- **Statistics Estimation**: Real-time estimates during import
+  - Lines/queries remaining estimated from bytes/line ratio
+  - Displayed with "~" prefix to indicate estimation
+  - Exact values shown upon completion
+
+### Changed
+
+- **Increased Batch Size Profiles**: More aggressive defaults for modern servers
+  - < 512 MB: 3,000 → 5,000
+  - < 1 GB: 8,000 → 15,000
+  - < 2 GB: 15,000 → 30,000
+  - < 4 GB: 25,000 → 50,000
+  - > 4 GB: 40,000 → 80,000
+- **Max Batch Size**: Increased from 50,000 to 100,000
+- **Pre-queries**: Now enabled by default in config template
+
+### Fixed
+
+- **Stale Pending Query Bug**: Fixed corruption when `foffset=0` with existing pending file
+  - Fresh imports now delete stale `.pending_*.tmp` files
+  - Prevents SQL fragment merging from previous aborted imports
+
+### Configuration
+
+```php
+'insert_batch_size' => 1000,   // Group INSERTs (0 = disabled)
+'force_batch_size' => 0,       // Override auto-tuning (0 = auto)
+'pre_queries' => [
+    'SET autocommit = 0',
+    'SET unique_checks = 0',
+    'SET foreign_key_checks = 0',
+],
+```
+
+---
+
 ## [2.6] - 2025-12-06
 
 ### Added
