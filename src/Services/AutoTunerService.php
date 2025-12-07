@@ -27,13 +27,15 @@ class AutoTunerService
 
     /**
      * RAM profiles: threshold (bytes) => batch size
+     * Aggressive profiles optimized for NVMe SSD systems
      */
     private const PROFILES = [
-        536870912   => 5000,   // < 512 MB → 5,000
-        1073741824  => 15000,  // < 1 GB   → 15,000
-        2147483648  => 30000,  // < 2 GB   → 30,000
-        4294967296  => 50000,  // < 4 GB   → 50,000
-        PHP_INT_MAX => 80000,  // > 4 GB   → 80,000
+        536870912   => 10000,   // < 512 MB → 10,000  (was 5,000)
+        1073741824  => 30000,   // < 1 GB   → 30,000  (was 15,000)
+        2147483648  => 60000,   // < 2 GB   → 60,000  (was 30,000)
+        4294967296  => 100000,  // < 4 GB   → 100,000 (was 50,000)
+        8589934592  => 150000,  // < 8 GB   → 150,000 (NEW)
+        PHP_INT_MAX => 200000,  // > 8 GB   → 200,000 (was 80,000)
     ];
 
     public function __construct(Config $config)
@@ -118,11 +120,11 @@ class AutoTunerService
         // Take minimum of both constraints
         $effectiveLimit = min($availableRam, $phpHeadroom);
 
-        // Apply 70% safety margin
-        $safeBuffer = (int) ($effectiveLimit * 0.7);
+        // Apply 50% safety margin (aggressive for NVMe systems)
+        $safeBuffer = (int) ($effectiveLimit * 0.5);
 
-        // Estimate ~500 bytes per SQL line (conservative average)
-        $bytesPerLine = 500;
+        // Estimate ~300 bytes per SQL line (optimized for INSERT dumps)
+        $bytesPerLine = 300;
         $calculatedLines = (int) floor($safeBuffer / $bytesPerLine);
 
         // Lookup profile based on available RAM

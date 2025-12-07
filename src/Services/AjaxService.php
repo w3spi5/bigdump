@@ -189,6 +189,74 @@ class AjaxService
     var delayPerSession = {$delay};
     var httpRequest = null;
 
+    // ETA calculation variables
+    var startTime = Date.now();
+    var lastPctDone = 0;
+    var etaSeconds = null;
+    var etaHistory = [];
+
+    /**
+     * Formats seconds into human-readable time string.
+     */
+    function formatEta(seconds) {
+        if (seconds === null || seconds < 0 || !isFinite(seconds)) {
+            return 'Calculating...';
+        }
+        if (seconds < 60) {
+            return Math.round(seconds) + 's';
+        }
+        if (seconds < 3600) {
+            var mins = Math.floor(seconds / 60);
+            var secs = Math.round(seconds % 60);
+            return mins + 'm ' + secs + 's';
+        }
+        var hours = Math.floor(seconds / 3600);
+        var mins = Math.floor((seconds % 3600) / 60);
+        return hours + 'h ' + mins + 'm';
+    }
+
+    /**
+     * Updates the ETA display based on progress.
+     */
+    function updateEta(pctDone) {
+        var etaEl = document.getElementById('eta-value');
+        if (!etaEl) return;
+
+        pctDone = parseFloat(pctDone) || 0;
+        if (pctDone <= 0) {
+            etaEl.textContent = 'Calculating...';
+            return;
+        }
+
+        var elapsed = (Date.now() - startTime) / 1000;
+        var pctRemaining = 100 - pctDone;
+
+        // Calculate instantaneous ETA
+        var rate = pctDone / elapsed; // % per second
+        if (rate > 0) {
+            var instantEta = pctRemaining / rate;
+
+            // Smooth ETA using moving average
+            etaHistory.push(instantEta);
+            if (etaHistory.length > 5) {
+                etaHistory.shift();
+            }
+            etaSeconds = etaHistory.reduce(function(a, b) { return a + b; }, 0) / etaHistory.length;
+        }
+
+        etaEl.textContent = formatEta(etaSeconds);
+        lastPctDone = pctDone;
+    }
+
+    // Update ETA every second
+    setInterval(function() {
+        if (etaSeconds !== null && etaSeconds > 0) {
+            etaSeconds = Math.max(0, etaSeconds - 1);
+            var etaEl = document.getElementById('eta-value');
+            if (etaEl) etaEl.textContent = formatEta(etaSeconds);
+        }
+    }, 1000);
+
     /**
      * Builds the URL for the next AJAX session.
      * Note: pendingQuery is stored server-side in PHP session to avoid URL length limits.
@@ -318,15 +386,16 @@ class AjaxService
             }
         }
 
-        // Update progress bar
+        // Update progress bar and ETA
         var progressBar = document.querySelector('.progress-bar');
-        if (progressBar) {
-            var pctDone = getXmlValue(xml, 'elem22'); // pct_done
-            if (pctDone) {
-                progressBar.style.width = pctDone + '%';
-                progressBar.textContent = pctDone + '%';
-            }
+        var pctDone = getXmlValue(xml, 'elem22'); // pct_done
+        if (progressBar && pctDone) {
+            var pctFormatted = parseFloat(pctDone).toFixed(2);
+            progressBar.style.width = pctDone + '%';
+            progressBar.textContent = pctFormatted + '%';
         }
+        // Update ETA based on new progress
+        updateEta(pctDone);
 
         // Update stat boxes
         var statBoxes = document.querySelectorAll('.stat-box .stat-value');
@@ -335,7 +404,8 @@ class AjaxService
             statBoxes[1].textContent = getXmlValue(xml, 'elem6');  // queries_done
             statBoxes[2].textContent = getXmlValue(xml, 'elem18'); // mb_done
             if (statBoxes[3]) {
-                statBoxes[3].textContent = getXmlValue(xml, 'elem22') + '%'; // pct_done
+                var pctValue = parseFloat(getXmlValue(xml, 'elem22')).toFixed(2);
+                statBoxes[3].textContent = pctValue + '%'; // pct_done
             }
         }
 

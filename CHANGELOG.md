@@ -2,7 +2,105 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.6] - 2025-12-06
+## [2.7] - 2025-12-07
+
+### Added
+
+- **Post-queries Support**: Restore database constraints after import completion
+  - New `post_queries` config option for constraint restoration
+  - `Database::executePostQueries()` method
+  - Auto-COMMIT at each session end (critical with `autocommit=0`)
+  - Restores `autocommit`, `unique_checks`, `foreign_key_checks` automatically
+- **Byte-based Batch Limit**: 16MB safety limit per INSERT batch
+  - Respects MySQL `max_allowed_packet` setting
+  - Prevents oversized queries from failing
+
+### Changed
+
+- **NVMe/SSD Optimizations**: Aggressive RAM profiles for modern storage
+  - < 512 MB: 5,000 → 10,000 lines
+  - < 1 GB: 15,000 → 30,000 lines
+  - < 2 GB: 30,000 → 60,000 lines
+  - < 4 GB: 50,000 → 100,000 lines
+  - **New** < 8 GB: 150,000 lines
+  - > 8 GB: 80,000 → 200,000 lines
+- **AutoTuner Aggressiveness**: 50% safety margin (was 70%), 300 bytes/line estimate (was 500)
+- **Default insert_batch_size**: 1,000 → 10,000 (10x larger batches)
+- **max_query_memory**: 10 MB → 100 MB for high-speed imports
+- **Pre-queries**: Added `SET sql_log_bin = 0` for binary logging bypass
+- **Progress Precision**: 2 decimal places (was integer) across all views
+
+### Configuration
+
+```php
+'insert_batch_size' => 10000,     // Group INSERTs (was 1000)
+'max_batch_size' => 300000,       // NVMe ceiling (was 100000)
+'max_query_memory' => 104857600,  // 100 MB (was 10 MB)
+'pre_queries' => [
+    'SET autocommit = 0',
+    'SET unique_checks = 0',
+    'SET foreign_key_checks = 0',
+    'SET sql_log_bin = 0',        // NEW
+],
+'post_queries' => [               // NEW
+    'COMMIT',
+    'SET autocommit = 1',
+    'SET unique_checks = 1',
+    'SET foreign_key_checks = 1',
+],
+```
+
+---
+
+## [2.6] - 2025-12-07
+
+### Added
+
+- **INSERT Batching (x10-50 speedup)**: Groups consecutive simple INSERTs into multi-value queries
+  - New `InsertBatcherService.php` transforms individual INSERTs into batched queries
+  - `insert_batch_size` config option (default: 1000)
+  - Automatic detection of compatible INSERT statements
+  - Seamless integration with existing import flow
+- **Force Batch Size Option**: Override auto-tuning with specific batch size
+  - `force_batch_size` config option bypasses RAM-based calculations
+  - Useful for known server capacity or testing
+- **Statistics Estimation**: Real-time estimates during import
+  - Lines/queries remaining estimated from bytes/line ratio
+  - Displayed with "~" prefix to indicate estimation
+  - Exact values shown upon completion
+
+### Changed
+
+- **Increased Batch Size Profiles**: More aggressive defaults for modern servers
+  - < 512 MB: 3,000 → 5,000
+  - < 1 GB: 8,000 → 15,000
+  - < 2 GB: 15,000 → 30,000
+  - < 4 GB: 25,000 → 50,000
+  - > 4 GB: 40,000 → 80,000
+- **Max Batch Size**: Increased from 50,000 to 100,000
+- **Pre-queries**: Now enabled by default in config template
+
+### Fixed
+
+- **Stale Pending Query Bug**: Fixed corruption when `foffset=0` with existing pending file
+  - Fresh imports now delete stale `.pending_*.tmp` files
+  - Prevents SQL fragment merging from previous aborted imports
+
+### Configuration
+
+```php
+'insert_batch_size' => 1000,   // Group INSERTs (0 = disabled)
+'force_batch_size' => 0,       // Override auto-tuning (0 = auto)
+'pre_queries' => [
+    'SET autocommit = 0',
+    'SET unique_checks = 0',
+    'SET foreign_key_checks = 0',
+],
+```
+
+---
+
+## [2.5] - 2025-12-06
 
 ### Added
 
