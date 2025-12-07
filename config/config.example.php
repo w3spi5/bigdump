@@ -62,11 +62,24 @@ return [
     'ajax' => true,
 
     /**
-     * Number of lines to process per session.
-     * Reduce this value if you have timeout errors.
-     * Increase for faster imports on powerful servers.
+     * Number of lines to process per session (base value).
+     * With auto-tuning enabled (default), this is dynamically adjusted
+     * based on available RAM:
+     *   < 512 MB  →  5,000 lines
+     *   < 1 GB    → 15,000 lines
+     *   < 2 GB    → 30,000 lines
+     *   < 4 GB    → 50,000 lines
+     *   > 4 GB    → 80,000 lines
      */
     'linespersession' => 3000,
+
+    /**
+     * Force a specific batch size (bypasses auto-tuning).
+     * Set to 0 to use auto-tuning (recommended).
+     * Use this only if you know your server can handle it.
+     * Example: 100000 for very powerful servers.
+     */
+    'force_batch_size' => 0,
 
     /**
      * Delay in milliseconds between each session.
