@@ -17,7 +17,7 @@ use RuntimeException;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.5
+ * @version 2.6
  */
 class Database
 {

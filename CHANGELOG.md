@@ -2,7 +2,7 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.5] - 2025-12-06
+## [2.6] - 2025-12-06
 
 ### Added
 
@@ -24,6 +24,11 @@ All notable changes to BigDump are documented in this file.
 - **SQL Parser Dual Quote Support**: Parser now correctly handles both single (`'`) and double (`"`) quotes
   - Prevents query fusion when double-quoted strings appear in SQL
   - Cross-session persistence of active quote state
+- **Multi-line INSERT Session Persistence**: Extended INSERT statements no longer corrupt across AJAX sessions
+  - Replaced unreliable PHP `$_SESSION` with file-based storage for pending queries
+  - Pending queries stored in `uploads/.pending_*.tmp` files
+  - Automatic cleanup on import completion or error
+  - Fixes "SET SQL_MODE" appearing inside INSERT VALUES error
 
 ### Configuration
 
@@ -35,7 +40,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.5] - 2025-12-06
+## [2.4] - 2025-12-06
 
 ### Fixed
 

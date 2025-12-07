@@ -19,6 +19,7 @@ class AutoTunerService
     private int $minBatchSize;
     private int $maxBatchSize;
     private int $currentBatchSize;
+    private ?int $forcedBatchSize = null;
     private ?array $systemResources = null;
     private ?string $lastAdjustment = null;
     private float $sessionStartTime = 0;
@@ -28,11 +29,11 @@ class AutoTunerService
      * RAM profiles: threshold (bytes) => batch size
      */
     private const PROFILES = [
-        536870912   => 3000,   // < 512 MB → 3,000
-        1073741824  => 8000,   // < 1 GB   → 8,000
-        2147483648  => 15000,  // < 2 GB   → 15,000
-        4294967296  => 25000,  // < 4 GB   → 25,000
-        PHP_INT_MAX => 40000,  // > 4 GB   → 40,000
+        536870912   => 5000,   // < 512 MB → 5,000
+        1073741824  => 15000,  // < 1 GB   → 15,000
+        2147483648  => 30000,  // < 2 GB   → 30,000
+        4294967296  => 50000,  // < 4 GB   → 50,000
+        PHP_INT_MAX => 80000,  // > 4 GB   → 80,000
     ];
 
     public function __construct(Config $config)
@@ -40,8 +41,15 @@ class AutoTunerService
         $this->config = $config;
         $this->enabled = (bool) $config->get('auto_tuning', true);
         $this->minBatchSize = (int) $config->get('min_batch_size', 3000);
-        $this->maxBatchSize = (int) $config->get('max_batch_size', 50000);
+        $this->maxBatchSize = (int) $config->get('max_batch_size', 100000);
         $this->currentBatchSize = (int) $config->get('linespersession', 3000);
+
+        // Force batch size bypasses all auto-tuning calculations
+        $forcedSize = $config->get('force_batch_size', 0);
+        if ($forcedSize > 0) {
+            $this->forcedBatchSize = (int) $forcedSize;
+            $this->currentBatchSize = $this->forcedBatchSize;
+        }
     }
 
     /**
@@ -90,6 +98,11 @@ class AutoTunerService
      */
     public function calculateOptimalBatchSize(): int
     {
+        // Force batch size bypasses all calculations
+        if ($this->forcedBatchSize !== null) {
+            return $this->forcedBatchSize;
+        }
+
         if (!$this->enabled) {
             return $this->currentBatchSize;
         }

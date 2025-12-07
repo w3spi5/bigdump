@@ -12,7 +12,7 @@ namespace BigDump\Models;
  *
  * @package BigDump\Models
  * @author  MVC Refactoring
- * @version 2.5
+ * @version 2.6
  */
 class ImportSession
 {
@@ -602,6 +602,31 @@ class ImportSession
         $bytesTogo = $this->gzipMode ? null : max(0, $this->fileSize - $this->currentOffset);
         $bytesTotal = $this->gzipMode ? null : $this->fileSize;
 
+        // Estimate lines/queries total based on observed ratio (bytes per line/query)
+        $linesTotal = null;
+        $linesTogo = null;
+        $queriesTotal = null;
+        $queriesTogo = null;
+
+        if ($this->finished) {
+            // Exact values when finished
+            $linesTotal = $linesDone;
+            $linesTogo = 0;
+            $queriesTotal = $this->totalQueries;
+            $queriesTogo = 0;
+        } elseif (!$this->gzipMode && $bytesDone > 0 && $this->fileSize > 0) {
+            // Estimate based on observed ratio
+            $bytesPerLine = $bytesDone / max(1, $linesDone);
+            $linesTotal = (int) ceil($this->fileSize / $bytesPerLine);
+            $linesTogo = max(0, $linesTotal - $linesDone);
+
+            if ($this->totalQueries > 0) {
+                $bytesPerQuery = $bytesDone / $this->totalQueries;
+                $queriesTotal = (int) ceil($this->fileSize / $bytesPerQuery);
+                $queriesTogo = max(0, $queriesTotal - $this->totalQueries);
+            }
+        }
+
         // Percentages
         $pctDone = null;
         $pctThis = null;
@@ -617,14 +642,14 @@ class ImportSession
             // Lines
             'lines_this' => $linesThis,
             'lines_done' => $linesDone,
-            'lines_togo' => $this->finished ? 0 : null,
-            'lines_total' => $this->finished ? $linesDone : null,
+            'lines_togo' => $linesTogo,
+            'lines_total' => $linesTotal,
 
             // Queries
             'queries_this' => $this->sessionQueries,
             'queries_done' => $this->totalQueries,
-            'queries_togo' => $this->finished ? 0 : null,
-            'queries_total' => $this->finished ? $this->totalQueries : null,
+            'queries_togo' => $queriesTogo,
+            'queries_total' => $queriesTotal,
 
             // Bytes
             'bytes_this' => $bytesThis,
