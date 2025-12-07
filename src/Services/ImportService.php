@@ -121,10 +121,15 @@ class ImportService
             $this->sqlParser->reset();
 
             // Restore parser state from file (more reliable than PHP sessions)
+            // CRITICAL: Only restore pendingQuery if foffset > 0 (continuation session)
+            // If foffset = 0, this is a fresh start - any existing pendingQuery is stale
             $pendingQuery = $this->loadPendingQuery($pendingFile);
-            if ($pendingQuery !== '') {
+            if ($pendingQuery !== '' && $session->getStartOffset() > 0) {
                 $this->sqlParser->setCurrentQuery($pendingQuery);
                 $this->sqlParser->setInString($session->getInString(), $session->getActiveQuote());
+            } elseif ($pendingQuery !== '' && $session->getStartOffset() === 0) {
+                // Stale pending file from previous import - clean it up
+                $this->deletePendingQuery($pendingFile);
             }
 
             // Empty the CSV table if needed
@@ -183,7 +188,7 @@ class ImportService
      */
     private function getPendingFilePath(string $filename): string
     {
-        $uploadsDir = $this->config->get('uploads_dir', 'uploads');
+        $uploadsDir = $this->config->getUploadDir();
         return $uploadsDir . '/.pending_' . md5($filename) . '.tmp';
     }
 
