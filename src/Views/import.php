@@ -215,15 +215,15 @@
             <td><strong>Lines</strong></td>
             <td><?= number_format($statistics['lines_this']) ?></td>
             <td><?= number_format($statistics['lines_done']) ?></td>
-            <td><?= $statistics['lines_togo'] !== null ? number_format($statistics['lines_togo']) : '?' ?></td>
-            <td><?= $statistics['lines_total'] !== null ? number_format($statistics['lines_total']) : '?' ?></td>
+            <td><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
+            <td><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Queries</strong></td>
             <td><?= number_format($statistics['queries_this']) ?></td>
             <td><?= number_format($statistics['queries_done']) ?></td>
-            <td><?= $statistics['queries_togo'] !== null ? number_format($statistics['queries_togo']) : '?' ?></td>
-            <td><?= $statistics['queries_total'] !== null ? number_format($statistics['queries_total']) : '?' ?></td>
+            <td><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
+            <td><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Bytes</strong></td>
