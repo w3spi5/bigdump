@@ -5,12 +5,12 @@
 [![Package Version](https://img.shields.io/badge/version-2.7-blue.svg)](https://php.net/)
 
 <p align="center">
-  <img src="2025-12-06_04h29_29.png" alt="BigDump Screenshot" width="800">
+  <img src="docs/2025-12-06_04h29_29.png" alt="BigDump Screenshot" width="800">
 </p>
 
 BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This major version 2 is a complete refactoring using object-oriented MVC architecture.
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 ## Features
 
@@ -154,20 +154,6 @@ return [
 ```
 
 Pre-queries disable constraints for speed; post-queries restore them automatically after import.
-        'SET unique_checks = 1',
-        'SET foreign_key_checks = 1',
-    ],
-];
-```
-
-Pre-queries disable constraints for speed; post-queries restore them automatically after import.
-
-## Project Structure
-
-```
-bigdump/
-├── config/
-│   ├── config.example.php
 │   └── config.php
 ├── public/
 │   └── index.php
@@ -195,7 +181,9 @@ bigdump/
 │       ├── import.php
 │       └── layout.php
 ├── uploads/
-├── CHANGELOG.md
+├── docs/
+│   ├── CHANGELOG.md
+│   └── screenshot.png
 ├── LICENSE
 └── README.md
 ```
