@@ -67,19 +67,41 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ```php
 return [
-    'auto_tuning' => true,      // Enable dynamic batch sizing
-    'min_batch_size' => 3000,   // Safety floor
-    'max_batch_size' => 50000,  // Ceiling
+    'auto_tuning' => true,       // Enable dynamic batch sizing
+    'min_batch_size' => 3000,    // Safety floor
+    'max_batch_size' => 100000,  // Ceiling
+    'force_batch_size' => 0,     // Force specific size (0 = auto)
 ];
 ```
 
 | Available RAM | Batch Size |
 |---------------|------------|
-| < 512 MB | 3,000 |
-| 512 MB - 1 GB | 8,000 |
-| 1 GB - 2 GB | 15,000 |
-| 2 GB - 4 GB | 25,000 |
-| > 4 GB | 40,000 |
+| < 512 MB | 5,000 |
+| 512 MB - 1 GB | 15,000 |
+| 1 GB - 2 GB | 30,000 |
+| 2 GB - 4 GB | 50,000 |
+| > 4 GB | 80,000 |
+
+### INSERT Batching (x10-50 speedup)
+
+For dumps with simple INSERT statements, BigDump can group them into multi-value INSERTs:
+
+```php
+return [
+    'insert_batch_size' => 1000,  // Group 1000 INSERTs into 1 query
+];
+```
+
+This transforms:
+```sql
+INSERT INTO t VALUES (1);
+INSERT INTO t VALUES (2);
+-- ... 1000 more
+```
+Into:
+```sql
+INSERT INTO t VALUES (1), (2), ... ;  -- Single query
+```
 
 ### Windows Optimization
 
@@ -111,16 +133,19 @@ return [
 ];
 ```
 
-### Pre-queries
+### Pre-queries (Recommended for large imports)
 
 ```php
 return [
     'pre_queries' => [
-        'SET foreign_key_checks = 0',
+        'SET autocommit = 0',
         'SET unique_checks = 0',
+        'SET foreign_key_checks = 0',
     ],
 ];
 ```
+
+These settings significantly speed up imports by reducing MySQL overhead.
 
 ## Project Structure
 
