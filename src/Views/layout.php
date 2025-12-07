@@ -218,6 +218,22 @@
             font-weight: 600;
         }
 
+        .eta-container {
+            font-size: 14px;
+            color: #4a5568;
+        }
+        .eta-icon {
+            margin-right: 5px;
+        }
+        .eta-label {
+            color: #718096;
+        }
+        .eta-value {
+            font-weight: 600;
+            color: #2d3748;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
