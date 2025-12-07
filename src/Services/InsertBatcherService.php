@@ -22,12 +22,16 @@ class InsertBatcherService
     private int $batchSize;
     private bool $enabled;
 
+    // Maximum batch size in bytes (16MB - safe for MySQL max_allowed_packet)
+    private int $maxBatchBytes = 16777216;
+
     // Current batch state
     private ?string $currentTable = null;
     private ?string $currentPrefix = null;
     private array $currentValues = [];
     private int $batchedCount = 0;
     private int $executedCount = 0;
+    private int $currentBatchBytes = 0;
 
     public function __construct(int $batchSize = 1000)
     {
@@ -130,8 +134,9 @@ class InsertBatcherService
      */
     private function addToBatch(string $table, string $prefix, string $values): array
     {
-        // Check if we need to flush (different table/prefix or batch full)
+        // Check if we need to flush (different table/prefix, batch count full, or byte limit)
         $needsFlush = false;
+        $valuesBytes = strlen($values);
 
         if ($this->currentTable !== null && $this->currentTable !== $table) {
             $needsFlush = true;
@@ -145,6 +150,11 @@ class InsertBatcherService
             $needsFlush = true;
         }
 
+        // Byte-based limit: flush if adding this value would exceed maxBatchBytes
+        if ($this->currentBatchBytes + $valuesBytes + 2 > $this->maxBatchBytes) {
+            $needsFlush = true;
+        }
+
         $result = ['queries' => [], 'batched' => false];
 
         if ($needsFlush) {
@@ -155,6 +165,7 @@ class InsertBatcherService
         $this->currentTable = $table;
         $this->currentPrefix = $prefix;
         $this->currentValues[] = $values;
+        $this->currentBatchBytes += $valuesBytes + 2; // +2 for ", "
         $this->batchedCount++;
 
         return $result;
@@ -178,6 +189,7 @@ class InsertBatcherService
         $this->currentTable = null;
         $this->currentPrefix = null;
         $this->currentValues = [];
+        $this->currentBatchBytes = 0;
     }
 
     /**

@@ -152,6 +152,9 @@ class ImportService
             // Flush any remaining batched INSERTs before ending session
             $this->flushInsertBatcher($session);
 
+            // COMMIT at end of each session (critical with autocommit=0)
+            $this->database->query('COMMIT');
+
             // Update the final offset
             $session->setCurrentOffset($this->fileHandler->tell());
 
@@ -517,6 +520,9 @@ class ImportService
 
         // Flush any remaining batched INSERTs
         $this->flushInsertBatcher($session);
+
+        // Execute post-queries to restore constraints
+        $this->database->executePostQueries();
 
         // Check that we're not inside an unclosed string
         if ($this->sqlParser->isInString()) {

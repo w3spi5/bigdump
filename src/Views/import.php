@@ -129,7 +129,7 @@
     <div class="error-header">
         <div class="error-header__icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.699 4.5H4.645c-2.609 0-3.752-2.6-2.698-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.648c1.154 2-.29 4.5-2.699 4.5H4.645c-2.609 0-3.752-2.6-2.698-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
             </svg>
         </div>
         <div class="error-header__content">
@@ -170,9 +170,16 @@
 <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
 <div class="progress-container mb-3">
     <div class="progress-bar" style="width: <?= $statistics['pct_done'] ?>%">
-        <?= $statistics['pct_done'] ?>%
+        <?= number_format($statistics['pct_done'], 2) ?>%
     </div>
 </div>
+<!-- ETA disabled - needs stabilization
+<div class="eta-container text-center mb-3" id="eta-display">
+    <span class="eta-icon">⏱️</span>
+    <span class="eta-label">Estimated time remaining:</span>
+    <span class="eta-value" id="eta-value">Calculating...</span>
+</div>
+-->
 <?php elseif ($statistics['gzip_mode']): ?>
 <div class="alert alert-info text-center">
     Progress bar not available for gzipped files
@@ -194,7 +201,7 @@
     </div>
     <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
     <div class="stat-box">
-        <div class="stat-value"><?= $statistics['pct_done'] ?>%</div>
+        <div class="stat-value"><?= number_format($statistics['pct_done'], 2) ?>%</div>
         <div class="stat-label">Complete</div>
     </div>
     <?php endif; ?>
@@ -249,10 +256,10 @@
         <?php if (!$statistics['gzip_mode']): ?>
         <tr>
             <td><strong>%</strong></td>
-            <td><?= $statistics['pct_this'] ?? '?' ?></td>
-            <td><?= $statistics['pct_done'] ?? '?' ?></td>
-            <td><?= $statistics['pct_togo'] ?? '?' ?></td>
-            <td>100</td>
+            <td><?= isset($statistics['pct_this']) ? number_format($statistics['pct_this'], 2) : '?' ?></td>
+            <td><?= isset($statistics['pct_done']) ? number_format($statistics['pct_done'], 2) : '?' ?></td>
+            <td><?= isset($statistics['pct_togo']) ? number_format($statistics['pct_togo'], 2) : '?' ?></td>
+            <td>100.00</td>
         </tr>
         <?php endif; ?>
     </tbody>
