@@ -64,12 +64,13 @@ return [
     /**
      * Number of lines to process per session (base value).
      * With auto-tuning enabled (default), this is dynamically adjusted
-     * based on available RAM:
-     *   < 512 MB  →  5,000 lines
-     *   < 1 GB    → 15,000 lines
-     *   < 2 GB    → 30,000 lines
-     *   < 4 GB    → 50,000 lines
-     *   > 4 GB    → 80,000 lines
+     * based on available RAM (NVMe-optimized profiles):
+     *   < 512 MB  →  10,000 lines
+     *   < 1 GB    →  30,000 lines
+     *   < 2 GB    →  60,000 lines
+     *   < 4 GB    → 100,000 lines
+     *   < 8 GB    → 150,000 lines
+     *   > 8 GB    → 200,000 lines
      */
     'linespersession' => 3000,
 
@@ -150,16 +151,28 @@ return [
         'SET autocommit = 0',
         'SET unique_checks = 0',
         'SET foreign_key_checks = 0',
+        'SET sql_log_bin = 0',  // Disable binary logging for speed
+    ],
+
+    /**
+     * SQL queries to execute after import completion.
+     * Restores normal database constraints.
+     */
+    'post_queries' => [
+        'COMMIT',
+        'SET autocommit = 1',
+        'SET unique_checks = 1',
+        'SET foreign_key_checks = 1',
     ],
 
     /**
      * Batch INSERT optimization.
      * Groups consecutive simple INSERTs into multi-value INSERTs.
-     * Example: 1000 single INSERTs become 1 INSERT with 1000 value sets.
+     * Example: 10000 single INSERTs become 1 INSERT with 10000 value sets.
      * Provides x10-50 speed improvement for dumps with simple INSERTs.
-     * Set to 0 to disable.
+     * Set to 0 to disable. Higher values = faster (10000 recommended for NVMe).
      */
-    'insert_batch_size' => 1000,
+    'insert_batch_size' => 10000,
 
     /**
      * Default query end delimiter.
@@ -212,7 +225,22 @@ return [
 
     /**
      * Maximum memory size for a query (in bytes).
-     * Protection against infinite queries (10 MB by default).
+     * Protection against infinite queries (100 MB for high-speed imports).
      */
-    'max_query_memory' => 10485760,
+    'max_query_memory' => 104857600,
+
+    // =========================================================================
+    // PERFORMANCE OPTIMIZATION (NVMe/SSD)
+    // =========================================================================
+
+    /**
+     * Maximum batch size for auto-tuner (lines per session).
+     * NVMe SSD can handle 300,000+ lines per session.
+     */
+    'max_batch_size' => 300000,
+
+    /**
+     * Minimum batch size for auto-tuner.
+     */
+    'min_batch_size' => 5000,
 ];

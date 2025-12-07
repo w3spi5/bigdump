@@ -185,6 +185,26 @@ class Database
     }
 
     /**
+     * Executes configured post-queries (called after import completion)
+     * Non-fatal: logs errors but continues
+     *
+     * @return void
+     */
+    public function executePostQueries(): void
+    {
+        $postQueries = $this->config->get('post_queries', []);
+
+        if (!is_array($postQueries) || empty($postQueries)) {
+            return;
+        }
+
+        foreach ($postQueries as $query) {
+            // Non-fatal: we attempt to restore constraints but don't throw
+            $this->query($query);
+        }
+    }
+
+    /**
      * Executes an SQL query
      *
      * @param string $query SQL query
