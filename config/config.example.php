@@ -144,14 +144,22 @@ return [
 
     /**
      * SQL queries to execute at the beginning of each session.
-     * Useful to disable foreign key checks.
+     * Recommended for large imports (significant speed boost).
      */
     'pre_queries' => [
-        // Uncomment if needed:
-        // 'SET foreign_key_checks = 0',
-        // 'SET unique_checks = 0',
-        // 'SET autocommit = 0',
+        'SET autocommit = 0',
+        'SET unique_checks = 0',
+        'SET foreign_key_checks = 0',
     ],
+
+    /**
+     * Batch INSERT optimization.
+     * Groups consecutive simple INSERTs into multi-value INSERTs.
+     * Example: 1000 single INSERTs become 1 INSERT with 1000 value sets.
+     * Provides x10-50 speed improvement for dumps with simple INSERTs.
+     * Set to 0 to disable.
+     */
+    'insert_batch_size' => 1000,
 
     /**
      * Default query end delimiter.
