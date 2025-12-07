@@ -10,6 +10,7 @@ use BigDump\Models\FileHandler;
 use BigDump\Models\SqlParser;
 use BigDump\Models\ImportSession;
 use BigDump\Services\AutoTunerService;
+use BigDump\Services\InsertBatcherService;
 use RuntimeException;
 
 /**
@@ -64,6 +65,12 @@ class ImportService
     private AutoTunerService $autoTuner;
 
     /**
+     * INSERT batcher service.
+     * @var InsertBatcherService
+     */
+    private InsertBatcherService $insertBatcher;
+
+    /**
      * Get AutoTuner metrics for UI display.
      *
      * @param int $currentLines Current line count for speed calculation
@@ -92,6 +99,10 @@ class ImportService
         if ($this->autoTuner->isEnabled()) {
             $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
         }
+
+        // Initialize INSERT batcher
+        $insertBatchSize = (int) $config->get('insert_batch_size', 1000);
+        $this->insertBatcher = new InsertBatcherService($insertBatchSize);
     }
 
     /**
@@ -137,6 +148,9 @@ class ImportService
 
             // Process lines
             $this->processLines($session);
+
+            // Flush any remaining batched INSERTs before ending session
+            $this->flushInsertBatcher($session);
 
             // Update the final offset
             $session->setCurrentOffset($this->fileHandler->tell());
@@ -428,6 +442,29 @@ class ImportService
             return;
         }
 
+        // Process through INSERT batcher
+        $result = $this->insertBatcher->process($query);
+
+        // Execute any queries returned by the batcher
+        foreach ($result['queries'] as $batchedQuery) {
+            $this->executeQueryDirect($session, $batchedQuery);
+        }
+    }
+
+    /**
+     * Executes a SQL query directly (bypasses batching).
+     *
+     * @param ImportSession $session Import session
+     * @param string $query SQL query
+     * @return void
+     * @throws RuntimeException In case of SQL error
+     */
+    private function executeQueryDirect(ImportSession $session, string $query): void
+    {
+        if (empty(trim($query))) {
+            return;
+        }
+
         if (!$this->database->query($query)) {
             $error = $this->database->getLastError();
             $lineNum = $session->getCurrentLine();
@@ -448,6 +485,20 @@ class ImportService
     }
 
     /**
+     * Flushes any remaining batched INSERTs.
+     *
+     * @param ImportSession $session Import session
+     * @return void
+     */
+    private function flushInsertBatcher(ImportSession $session): void
+    {
+        $result = $this->insertBatcher->flush();
+        foreach ($result['queries'] as $batchedQuery) {
+            $this->executeQueryDirect($session, $batchedQuery);
+        }
+    }
+
+    /**
      * Handles the end of the file.
      *
      * @param ImportSession $session Import session
@@ -463,6 +514,9 @@ class ImportService
             // Try to execute the final query
             $this->executeQuery($session, $pendingQuery);
         }
+
+        // Flush any remaining batched INSERTs
+        $this->flushInsertBatcher($session);
 
         // Check that we're not inside an unclosed string
         if ($this->sqlParser->isInString()) {
