@@ -24,7 +24,7 @@ use RuntimeException;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.5
+ * @version 2.6
  */
 class ImportService
 {

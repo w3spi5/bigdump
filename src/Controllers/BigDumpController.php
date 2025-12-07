@@ -24,7 +24,7 @@ use BigDump\Services\AjaxService;
  *
  * @package BigDump\Controllers
  * @author  Refactorisation MVC
- * @version 2.5
+ * @version 2.6
  */
 class BigDumpController
 {

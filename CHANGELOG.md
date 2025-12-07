@@ -2,7 +2,7 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.5] - 2025-12-06
+## [2.6] - 2025-12-06
 
 ### Added
 
