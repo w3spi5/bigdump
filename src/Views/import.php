@@ -173,6 +173,13 @@
         <?= $statistics['pct_done'] ?>%
     </div>
 </div>
+<!-- ETA disabled - needs stabilization
+<div class="eta-container text-center mb-3" id="eta-display">
+    <span class="eta-icon">⏱️</span>
+    <span class="eta-label">Estimated time remaining:</span>
+    <span class="eta-value" id="eta-value">Calculating...</span>
+</div>
+-->
 <?php elseif ($statistics['gzip_mode']): ?>
 <div class="alert alert-info text-center">
     Progress bar not available for gzipped files
