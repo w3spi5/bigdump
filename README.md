@@ -1,8 +1,8 @@
-# BigDump 2.6 - Staggered MySQL Dump Importer
+# BigDump 2.7 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.6-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.7-blue.svg)](https://php.net/)
 
 <p align="center">
   <img src="2025-12-06_04h29_29.png" alt="BigDump Screenshot" width="800">
@@ -63,24 +63,25 @@ See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## Configuration
 
-### Auto-Tuning (RAM-based)
+### Auto-Tuning (RAM-based, NVMe-optimized)
 
 ```php
 return [
     'auto_tuning' => true,       // Enable dynamic batch sizing
-    'min_batch_size' => 3000,    // Safety floor
-    'max_batch_size' => 100000,  // Ceiling
+    'min_batch_size' => 5000,    // Safety floor
+    'max_batch_size' => 300000,  // NVMe ceiling
     'force_batch_size' => 0,     // Force specific size (0 = auto)
 ];
 ```
 
 | Available RAM | Batch Size |
 |---------------|------------|
-| < 512 MB | 5,000 |
-| 512 MB - 1 GB | 15,000 |
-| 1 GB - 2 GB | 30,000 |
-| 2 GB - 4 GB | 50,000 |
-| > 4 GB | 80,000 |
+| < 512 MB | 10,000 |
+| 512 MB - 1 GB | 30,000 |
+| 1 GB - 2 GB | 60,000 |
+| 2 GB - 4 GB | 100,000 |
+| 4 GB - 8 GB | 150,000 |
+| > 8 GB | 200,000 |
 
 ### INSERT Batching (x10-50 speedup)
 
@@ -88,7 +89,7 @@ For dumps with simple INSERT statements, BigDump can group them into multi-value
 
 ```php
 return [
-    'insert_batch_size' => 1000,  // Group 1000 INSERTs into 1 query
+    'insert_batch_size' => 10000,  // Group 10000 INSERTs into 1 query (16MB max)
 ];
 ```
 
@@ -133,7 +134,7 @@ return [
 ];
 ```
 
-### Pre-queries (Recommended for large imports)
+### Pre/Post-queries (Recommended for large imports)
 
 ```php
 return [
@@ -141,11 +142,25 @@ return [
         'SET autocommit = 0',
         'SET unique_checks = 0',
         'SET foreign_key_checks = 0',
+        'SET sql_log_bin = 0',  // Disable binary logging
+    ],
+    'post_queries' => [
+        'COMMIT',
+        'SET autocommit = 1',
+        'SET unique_checks = 1',
+        'SET foreign_key_checks = 1',
     ],
 ];
 ```
 
-These settings significantly speed up imports by reducing MySQL overhead.
+Pre-queries disable constraints for speed; post-queries restore them automatically after import.
+        'SET unique_checks = 1',
+        'SET foreign_key_checks = 1',
+    ],
+];
+```
+
+Pre-queries disable constraints for speed; post-queries restore them automatically after import.
 
 ## Project Structure
 

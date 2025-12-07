@@ -2,7 +2,57 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.6.1] - 2025-12-07
+## [2.7] - 2025-12-07
+
+### Added
+
+- **Post-queries Support**: Restore database constraints after import completion
+  - New `post_queries` config option for constraint restoration
+  - `Database::executePostQueries()` method
+  - Auto-COMMIT at each session end (critical with `autocommit=0`)
+  - Restores `autocommit`, `unique_checks`, `foreign_key_checks` automatically
+- **Byte-based Batch Limit**: 16MB safety limit per INSERT batch
+  - Respects MySQL `max_allowed_packet` setting
+  - Prevents oversized queries from failing
+
+### Changed
+
+- **NVMe/SSD Optimizations**: Aggressive RAM profiles for modern storage
+  - < 512 MB: 5,000 → 10,000 lines
+  - < 1 GB: 15,000 → 30,000 lines
+  - < 2 GB: 30,000 → 60,000 lines
+  - < 4 GB: 50,000 → 100,000 lines
+  - **New** < 8 GB: 150,000 lines
+  - > 8 GB: 80,000 → 200,000 lines
+- **AutoTuner Aggressiveness**: 50% safety margin (was 70%), 300 bytes/line estimate (was 500)
+- **Default insert_batch_size**: 1,000 → 10,000 (10x larger batches)
+- **max_query_memory**: 10 MB → 100 MB for high-speed imports
+- **Pre-queries**: Added `SET sql_log_bin = 0` for binary logging bypass
+- **Progress Precision**: 2 decimal places (was integer) across all views
+
+### Configuration
+
+```php
+'insert_batch_size' => 10000,     // Group INSERTs (was 1000)
+'max_batch_size' => 300000,       // NVMe ceiling (was 100000)
+'max_query_memory' => 104857600,  // 100 MB (was 10 MB)
+'pre_queries' => [
+    'SET autocommit = 0',
+    'SET unique_checks = 0',
+    'SET foreign_key_checks = 0',
+    'SET sql_log_bin = 0',        // NEW
+],
+'post_queries' => [               // NEW
+    'COMMIT',
+    'SET autocommit = 1',
+    'SET unique_checks = 1',
+    'SET foreign_key_checks = 1',
+],
+```
+
+---
+
+## [2.6] - 2025-12-07
 
 ### Added
 
@@ -50,7 +100,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.6] - 2025-12-06
+## [2.5] - 2025-12-06
 
 ### Added
 
