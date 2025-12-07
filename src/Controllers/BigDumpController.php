@@ -24,7 +24,7 @@ use BigDump\Services\AjaxService;
  *
  * @package BigDump\Controllers
  * @author  Refactorisation MVC
- * @version 2.5
+ * @version 2.6
  */
 class BigDumpController
 {
@@ -237,9 +237,12 @@ class BigDumpController
             return;
         }
 
-        // Clear any pending query from previous import of this file
-        $sessionKey = 'bigdump_pending_' . md5($filename);
-        unset($_SESSION[$sessionKey]);
+        // Clear any pending query file from previous import of this file
+        $uploadsDir = $this->config->getUploadDir();
+        $pendingFile = $uploadsDir . '/.pending_' . md5($filename) . '.tmp';
+        if (file_exists($pendingFile)) {
+            @unlink($pendingFile);
+        }
 
         // Redirect to import
         $url = $this->request->getScriptUri() . '?' . http_build_query([

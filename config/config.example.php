@@ -1,13 +1,13 @@
 <?php
 
 /**
- * BigDump 2.5 - Configuration
+ * BigDump 2.6 - Configuration
  *
  * Modify this file to configure your MySQL import.
  * All options are documented below.
  *
  * @package BigDump
- * @version 2.5
+ * @version 2.6
  */
 
 return [
@@ -62,11 +62,24 @@ return [
     'ajax' => true,
 
     /**
-     * Number of lines to process per session.
-     * Reduce this value if you have timeout errors.
-     * Increase for faster imports on powerful servers.
+     * Number of lines to process per session (base value).
+     * With auto-tuning enabled (default), this is dynamically adjusted
+     * based on available RAM:
+     *   < 512 MB  →  5,000 lines
+     *   < 1 GB    → 15,000 lines
+     *   < 2 GB    → 30,000 lines
+     *   < 4 GB    → 50,000 lines
+     *   > 4 GB    → 80,000 lines
      */
     'linespersession' => 3000,
+
+    /**
+     * Force a specific batch size (bypasses auto-tuning).
+     * Set to 0 to use auto-tuning (recommended).
+     * Use this only if you know your server can handle it.
+     * Example: 100000 for very powerful servers.
+     */
+    'force_batch_size' => 0,
 
     /**
      * Delay in milliseconds between each session.
@@ -131,14 +144,22 @@ return [
 
     /**
      * SQL queries to execute at the beginning of each session.
-     * Useful to disable foreign key checks.
+     * Recommended for large imports (significant speed boost).
      */
     'pre_queries' => [
-        // Uncomment if needed:
-        // 'SET foreign_key_checks = 0',
-        // 'SET unique_checks = 0',
-        // 'SET autocommit = 0',
+        'SET autocommit = 0',
+        'SET unique_checks = 0',
+        'SET foreign_key_checks = 0',
     ],
+
+    /**
+     * Batch INSERT optimization.
+     * Groups consecutive simple INSERTs into multi-value INSERTs.
+     * Example: 1000 single INSERTs become 1 INSERT with 1000 value sets.
+     * Provides x10-50 speed improvement for dumps with simple INSERTs.
+     * Set to 0 to disable.
+     */
+    'insert_batch_size' => 1000,
 
     /**
      * Default query end delimiter.

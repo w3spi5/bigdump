@@ -10,6 +10,7 @@ use BigDump\Models\FileHandler;
 use BigDump\Models\SqlParser;
 use BigDump\Models\ImportSession;
 use BigDump\Services\AutoTunerService;
+use BigDump\Services\InsertBatcherService;
 use RuntimeException;
 
 /**
@@ -23,7 +24,7 @@ use RuntimeException;
  *
  * @package BigDump\Services
  * @author  Refactorisation MVC
- * @version 2.5
+ * @version 2.6
  */
 class ImportService
 {
@@ -64,6 +65,12 @@ class ImportService
     private AutoTunerService $autoTuner;
 
     /**
+     * INSERT batcher service.
+     * @var InsertBatcherService
+     */
+    private InsertBatcherService $insertBatcher;
+
+    /**
      * Get AutoTuner metrics for UI display.
      *
      * @param int $currentLines Current line count for speed calculation
@@ -92,6 +99,10 @@ class ImportService
         if ($this->autoTuner->isEnabled()) {
             $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
         }
+
+        // Initialize INSERT batcher
+        $insertBatchSize = (int) $config->get('insert_batch_size', 1000);
+        $this->insertBatcher = new InsertBatcherService($insertBatchSize);
     }
 
     /**
@@ -103,8 +114,8 @@ class ImportService
      */
     public function executeSession(ImportSession $session): ImportSession
     {
-        // Generate unique session key based on filename
-        $sessionKey = 'bigdump_pending_' . md5($session->getFilename());
+        // Generate unique pending file path based on filename
+        $pendingFile = $this->getPendingFilePath($session->getFilename());
 
         // Start AutoTuner timing
         $this->autoTuner->startTiming($session->getStartLine());
@@ -120,11 +131,16 @@ class ImportService
             $this->sqlParser->setDelimiter($session->getDelimiter());
             $this->sqlParser->reset();
 
-            // Restore parser state from PHP session (pendingQuery can be large)
-            $pendingQuery = $_SESSION[$sessionKey] ?? '';
-            if ($pendingQuery !== '') {
+            // Restore parser state from file (more reliable than PHP sessions)
+            // CRITICAL: Only restore pendingQuery if foffset > 0 (continuation session)
+            // If foffset = 0, this is a fresh start - any existing pendingQuery is stale
+            $pendingQuery = $this->loadPendingQuery($pendingFile);
+            if ($pendingQuery !== '' && $session->getStartOffset() > 0) {
                 $this->sqlParser->setCurrentQuery($pendingQuery);
                 $this->sqlParser->setInString($session->getInString(), $session->getActiveQuote());
+            } elseif ($pendingQuery !== '' && $session->getStartOffset() === 0) {
+                // Stale pending file from previous import - clean it up
+                $this->deletePendingQuery($pendingFile);
             }
 
             // Empty the CSV table if needed
@@ -132,6 +148,9 @@ class ImportService
 
             // Process lines
             $this->processLines($session);
+
+            // Flush any remaining batched INSERTs before ending session
+            $this->flushInsertBatcher($session);
 
             // Update the final offset
             $session->setCurrentOffset($this->fileHandler->tell());
@@ -141,17 +160,13 @@ class ImportService
 
             // Save parser state for next session
             $currentQuery = $this->sqlParser->getCurrentQuery();
-            if ($currentQuery !== '') {
-                $_SESSION[$sessionKey] = $currentQuery;
-            } else {
-                unset($_SESSION[$sessionKey]);
-            }
+            $this->savePendingQuery($pendingFile, $currentQuery);
             $session->setInString($this->sqlParser->isInString());
             $session->setActiveQuote($this->sqlParser->getActiveQuote());
 
-            // Clean up session on completion
+            // Clean up pending file on completion
             if ($session->isFinished() || $session->hasError()) {
-                unset($_SESSION[$sessionKey]);
+                $this->deletePendingQuery($pendingFile);
             }
 
             // AutoTuner metrics
@@ -170,13 +185,71 @@ class ImportService
 
         } catch (RuntimeException $e) {
             $session->setError($e->getMessage());
-            unset($_SESSION[$sessionKey]);
+            $this->deletePendingQuery($pendingFile);
         } finally {
             $this->fileHandler->close();
             $this->database->close();
         }
 
         return $session;
+    }
+
+    /**
+     * Gets the path for the pending query file.
+     *
+     * @param string $filename Original dump filename
+     * @return string Path to pending query file
+     */
+    private function getPendingFilePath(string $filename): string
+    {
+        $uploadsDir = $this->config->getUploadDir();
+        return $uploadsDir . '/.pending_' . md5($filename) . '.tmp';
+    }
+
+    /**
+     * Loads pending query from file.
+     *
+     * @param string $pendingFile Path to pending file
+     * @return string Pending query or empty string
+     */
+    private function loadPendingQuery(string $pendingFile): string
+    {
+        if (!file_exists($pendingFile)) {
+            return '';
+        }
+
+        $content = @file_get_contents($pendingFile);
+        return $content !== false ? $content : '';
+    }
+
+    /**
+     * Saves pending query to file.
+     *
+     * @param string $pendingFile Path to pending file
+     * @param string $query Query to save
+     * @return void
+     */
+    private function savePendingQuery(string $pendingFile, string $query): void
+    {
+        if ($query === '') {
+            $this->deletePendingQuery($pendingFile);
+            return;
+        }
+
+        @file_put_contents($pendingFile, $query, LOCK_EX);
+    }
+
+    /**
+     * Deletes pending query file.
+     *
+     * @param string $pendingFile Path to pending file
+     * @return void
+     */
+    private function deletePendingQuery(string $pendingFile): void
+    {
+        if (file_exists($pendingFile)) {
+            @unlink($pendingFile);
+        }
     }
 
     /**
@@ -369,6 +442,29 @@ class ImportService
             return;
         }
 
+        // Process through INSERT batcher
+        $result = $this->insertBatcher->process($query);
+
+        // Execute any queries returned by the batcher
+        foreach ($result['queries'] as $batchedQuery) {
+            $this->executeQueryDirect($session, $batchedQuery);
+        }
+    }
+
+    /**
+     * Executes a SQL query directly (bypasses batching).
+     *
+     * @param ImportSession $session Import session
+     * @param string $query SQL query
+     * @return void
+     * @throws RuntimeException In case of SQL error
+     */
+    private function executeQueryDirect(ImportSession $session, string $query): void
+    {
+        if (empty(trim($query))) {
+            return;
+        }
+
         if (!$this->database->query($query)) {
             $error = $this->database->getLastError();
             $lineNum = $session->getCurrentLine();
@@ -389,6 +485,20 @@ class ImportService
     }
 
     /**
+     * Flushes any remaining batched INSERTs.
+     *
+     * @param ImportSession $session Import session
+     * @return void
+     */
+    private function flushInsertBatcher(ImportSession $session): void
+    {
+        $result = $this->insertBatcher->flush();
+        foreach ($result['queries'] as $batchedQuery) {
+            $this->executeQueryDirect($session, $batchedQuery);
+        }
+    }
+
+    /**
      * Handles the end of the file.
      *
      * @param ImportSession $session Import session
@@ -404,6 +514,9 @@ class ImportService
             // Try to execute the final query
             $this->executeQuery($session, $pendingQuery);
         }
+
+        // Flush any remaining batched INSERTs
+        $this->flushInsertBatcher($session);
 
         // Check that we're not inside an unclosed string
         if ($this->sqlParser->isInString()) {
