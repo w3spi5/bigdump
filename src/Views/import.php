@@ -170,7 +170,7 @@
 <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
 <div class="progress-container mb-3">
     <div class="progress-bar" style="width: <?= $statistics['pct_done'] ?>%">
-        <?= $statistics['pct_done'] ?>%
+        <?= number_format($statistics['pct_done'], 2) ?>%
     </div>
 </div>
 <!-- ETA disabled - needs stabilization
@@ -201,7 +201,7 @@
     </div>
     <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
     <div class="stat-box">
-        <div class="stat-value"><?= $statistics['pct_done'] ?>%</div>
+        <div class="stat-value"><?= number_format($statistics['pct_done'], 2) ?>%</div>
         <div class="stat-label">Complete</div>
     </div>
     <?php endif; ?>
@@ -256,10 +256,10 @@
         <?php if (!$statistics['gzip_mode']): ?>
         <tr>
             <td><strong>%</strong></td>
-            <td><?= $statistics['pct_this'] ?? '?' ?></td>
-            <td><?= $statistics['pct_done'] ?? '?' ?></td>
-            <td><?= $statistics['pct_togo'] ?? '?' ?></td>
-            <td>100</td>
+            <td><?= isset($statistics['pct_this']) ? number_format($statistics['pct_this'], 2) : '?' ?></td>
+            <td><?= isset($statistics['pct_done']) ? number_format($statistics['pct_done'], 2) : '?' ?></td>
+            <td><?= isset($statistics['pct_togo']) ? number_format($statistics['pct_togo'], 2) : '?' ?></td>
+            <td>100.00</td>
         </tr>
         <?php endif; ?>
     </tbody>

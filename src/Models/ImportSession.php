@@ -633,9 +633,9 @@ class ImportSession
         $pctTogo = null;
 
         if (!$this->gzipMode && $this->fileSize > 0) {
-            $pctDone = min(100, (int) ceil($this->currentOffset / $this->fileSize * 100));
-            $pctThis = min(100, (int) ceil($bytesThis / $this->fileSize * 100));
-            $pctTogo = max(0, 100 - $pctDone);
+            $pctDone = min(100.0, round($this->currentOffset / $this->fileSize * 100, 2));
+            $pctThis = min(100.0, round($bytesThis / $this->fileSize * 100, 2));
+            $pctTogo = max(0.0, round(100 - $pctDone, 2));
         }
 
         return [

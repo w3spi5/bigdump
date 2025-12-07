@@ -390,8 +390,9 @@ class AjaxService
         var progressBar = document.querySelector('.progress-bar');
         var pctDone = getXmlValue(xml, 'elem22'); // pct_done
         if (progressBar && pctDone) {
+            var pctFormatted = parseFloat(pctDone).toFixed(2);
             progressBar.style.width = pctDone + '%';
-            progressBar.textContent = pctDone + '%';
+            progressBar.textContent = pctFormatted + '%';
         }
         // Update ETA based on new progress
         updateEta(pctDone);
@@ -403,7 +404,8 @@ class AjaxService
             statBoxes[1].textContent = getXmlValue(xml, 'elem6');  // queries_done
             statBoxes[2].textContent = getXmlValue(xml, 'elem18'); // mb_done
             if (statBoxes[3]) {
-                statBoxes[3].textContent = getXmlValue(xml, 'elem22') + '%'; // pct_done
+                var pctValue = parseFloat(getXmlValue(xml, 'elem22')).toFixed(2);
+                statBoxes[3].textContent = pctValue + '%'; // pct_done
             }
         }
 
