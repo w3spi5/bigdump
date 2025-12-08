@@ -108,7 +108,7 @@
                             <?php if ($file['type'] !== 'GZip' || function_exists('gzopen')): ?>
                                 <form method="post" action="" style="display:inline">
                                     <input type="hidden" name="fn" value="<?= $view->e($file['name']) ?>">
-                                    <button type="submit" class="btn btn-primary">Import</button>
+                                    <button type="submit" class="btn btn-success">Import</button>
                                 </form>
                             <?php else: ?>
                                 <span class="text-muted">GZip not supported</span>

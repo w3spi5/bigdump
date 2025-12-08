@@ -640,11 +640,14 @@ class ImportSession
         $queriesTogo = null;
 
         if ($this->finished) {
-            // Exact values when finished
+            // Exact values when finished - use actual counts, not estimates
             $linesTotal = $linesDone;
             $linesTogo = 0;
             $queriesTotal = $this->totalQueries;
             $queriesTogo = 0;
+            // Also update bytes to exact values
+            $bytesTogo = 0;
+            $bytesTotal = $bytesDone;
         } elseif (!$this->gzipMode && $bytesDone > 0 && $this->fileSize > 0) {
             // Calculate current estimates
             $bytesPerLine = $bytesDone / max(1, $linesDone);
@@ -682,9 +685,15 @@ class ImportSession
         $pctTogo = null;
 
         if (!$this->gzipMode && $this->fileSize > 0) {
-            $pctDone = min(100.0, round($this->currentOffset / $this->fileSize * 100, 2));
+            // When finished, force 100% to avoid 99.95% display issues
+            if ($this->finished) {
+                $pctDone = 100.0;
+                $pctTogo = 0.0;
+            } else {
+                $pctDone = min(100.0, round($this->currentOffset / $this->fileSize * 100, 2));
+                $pctTogo = max(0.0, round(100 - $pctDone, 2));
+            }
             $pctThis = min(100.0, round($bytesThis / $this->fileSize * 100, 2));
-            $pctTogo = max(0.0, round(100 - $pctDone, 2));
         }
 
         return [
