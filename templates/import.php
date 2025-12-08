@@ -17,57 +17,6 @@
  */
 ?>
 
-<style>
-/* Performance Section Styles */
-.performance-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-.performance-section h3 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.performance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-}
-.perf-box {
-    background: white;
-    padding: 10px;
-    border-radius: 6px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.perf-label {
-    display: block;
-    font-size: 11px;
-    color: #6c757d;
-    margin-bottom: 5px;
-}
-.perf-value {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #212529;
-}
-.adjustment-notice {
-    margin-top: 10px;
-    padding: 8px 12px;
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    color: #155724;
-    font-size: 13px;
-}
-</style>
-
 <?php if ($testMode): ?>
 <div class="alert alert-warning">
     <strong>Test Mode</strong> - Queries are being parsed but NOT executed.
@@ -218,19 +167,20 @@
         </tr>
     </thead>
     <tbody>
+        <?php $calcClass = (!$statistics['finished'] && empty($statistics['estimates_frozen'])) ? ' class="calculating"' : ''; ?>
         <tr>
             <td><strong>Lines</strong></td>
             <td><?= number_format($statistics['lines_this']) ?></td>
             <td><?= number_format($statistics['lines_done']) ?></td>
-            <td><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
-            <td><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Queries</strong></td>
             <td><?= number_format($statistics['queries_this']) ?></td>
             <td><?= number_format($statistics['queries_done']) ?></td>
-            <td><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
-            <td><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Bytes</strong></td>
@@ -287,7 +237,7 @@
             <span class="perf-value" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
         </div>
         <div class="perf-box">
-            <span class="perf-label">Speed</span>
+            <span class="perf-label">Realtime Speed</span>
             <span class="perf-value" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
         </div>
     </div>
@@ -334,11 +284,8 @@
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="<?= $view->e($scriptUri) ?>" class="btn btn-secondary">
+        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="btn btn-secondary" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
-        </a>
-        <a href="/" class="btn btn-outline-secondary" style="margin-left: 10px;">
-            Back to Home
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
     </div>

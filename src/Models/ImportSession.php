@@ -727,6 +727,7 @@ class ImportSession
             // Status
             'finished' => $this->finished,
             'gzip_mode' => $this->gzipMode,
+            'estimates_frozen' => $this->frozenLinesTotal !== null,
 
             // AutoTuner metrics
             'batch_size' => $this->batchSize,
