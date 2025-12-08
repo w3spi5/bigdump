@@ -1,11 +1,11 @@
-# BigDump 2.7 - Staggered MySQL Dump Importer
+# BigDump 2.8 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.7-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.8-blue.svg)](https://php.net/)
 
 <p align="center">
-  <img src="docs/2025-12-06_04h29_29.png" alt="BigDump Screenshot" width="800">
+  <img src="docs/logo.png" alt="BigDump Logo" width="400">
 </p>
 
 BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This major version 2 is a complete refactoring using object-oriented MVC architecture.
@@ -16,9 +16,10 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 - **Staggered Import**: Imports dumps in sessions to bypass timeout limits
 - **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
-- **AJAX Mode**: Import without page refresh (recommended)
-- **Modern Interface**: Drag & drop upload with progress bars
-- **Auto-Tuning**: Dynamic batch size based on available RAM
+- **SSE Streaming**: Real-time progress with Server-Sent Events
+- **Session Persistence**: Resume imports after browser refresh or server restart
+- **Modern Interface**: Drag & drop upload with smooth animated progress
+- **Auto-Tuning**: Dynamic batch size based on available RAM (up to 1.5M lines/batch)
 - **Enhanced Security**: Protection against path traversal, XSS, and other vulnerabilities
 - **UTF-8 Support**: Proper handling of multi-byte characters and BOM
 
@@ -58,7 +59,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 4. **Access** BigDump via your browser:
    ```
-   http://your-site.com/bigdump/public/index.php
+   http://your-site.com/bigdump/
    ```
 
 ## Configuration
@@ -67,21 +68,22 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 ```php
 return [
-    'auto_tuning' => true,       // Enable dynamic batch sizing
-    'min_batch_size' => 5000,    // Safety floor
-    'max_batch_size' => 300000,  // NVMe ceiling
-    'force_batch_size' => 0,     // Force specific size (0 = auto)
+    'auto_tuning' => true,        // Enable dynamic batch sizing
+    'min_batch_size' => 10000,    // Safety floor
+    'max_batch_size' => 1500000,  // NVMe ceiling
+    'force_batch_size' => 0,      // Force specific size (0 = auto)
 ];
 ```
 
 | Available RAM | Batch Size |
 |---------------|------------|
-| < 512 MB | 10,000 |
-| 512 MB - 1 GB | 30,000 |
-| 1 GB - 2 GB | 60,000 |
-| 2 GB - 4 GB | 100,000 |
-| 4 GB - 8 GB | 150,000 |
-| > 8 GB | 200,000 |
+| < 1 GB | 80,000 |
+| < 2 GB | 150,000 |
+| < 4 GB | 300,000 |
+| < 8 GB | 620,000 |
+| < 12 GB | 940,000 |
+| < 16 GB | 1,260,000 |
+| > 16 GB | 1,500,000 |
 
 ### INSERT Batching (x10-50 speedup)
 
@@ -116,9 +118,9 @@ extension=com_dotnet
 
 ```php
 return [
-    'linespersession' => 3000,  // Lines per session (if auto_tuning disabled)
+    'linespersession' => 50000, // Lines per session (if auto_tuning disabled)
     'delaypersession' => 0,     // Delay between sessions (ms)
-    'ajax' => true,             // AJAX mode (recommended)
+    'ajax' => true,             // AJAX/SSE mode (recommended)
     'test_mode' => false,       // Parse without executing
 ];
 ```
@@ -154,9 +156,19 @@ return [
 ```
 
 Pre-queries disable constraints for speed; post-queries restore them automatically after import.
+
+## Project Structure
+
+```
+bigdump/
+├── config/
 │   └── config.php
-├── public/
-│   └── index.php
+├── index.php              # Entry point
+├── assets/
+│   ├── css/
+│   ├── js/
+│   └── img/
+│       └── logo.png
 ├── src/
 │   ├── Config/Config.php
 │   ├── Controllers/BigDumpController.php
@@ -171,19 +183,22 @@ Pre-queries disable constraints for speed; post-queries restore them automatical
 │   │   ├── FileHandler.php
 │   │   ├── ImportSession.php
 │   │   └── SqlParser.php
-│   ├── Services/
-│   │   ├── AjaxService.php
-│   │   ├── AutoTunerService.php
-│   │   └── ImportService.php
-│   └── Views/
-│       ├── error.php
-│       ├── home.php
-│       ├── import.php
-│       └── layout.php
+│   └── Services/
+│       ├── AjaxService.php
+│       ├── AutoTunerService.php
+│       ├── ImportService.php
+│       ├── InsertBatcherService.php
+│       └── SseService.php
+├── templates/
+│   ├── error.php
+│   ├── error_bootstrap.php
+│   ├── home.php
+│   ├── import.php
+│   └── layout.php
 ├── uploads/
 ├── docs/
 │   ├── CHANGELOG.md
-│   └── screenshot.png
+│   └── logo.png
 ├── LICENSE
 └── README.md
 ```
@@ -203,3 +218,11 @@ Pre-queries disable constraints for speed; post-queries restore them automatical
 
 - **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump)
 - **MVC Refactoring**: Version 2 by [w3spi5](https://github.com/w3spi5)
+
+---
+
+## Screenshots
+
+<p align="center">
+  <img src="docs/demov2.2.png" alt="BigDump Screenshot" width="800">
+</p>
