@@ -13,11 +13,10 @@ use RuntimeException;
  * Database Class - MySQL Connection Manager
  *
  * This class encapsulates the MySQLi connection and provides
- * secure methods for query execution.
+ * secure methods for query execution
  *
  * @package BigDump\Models
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class Database
 {

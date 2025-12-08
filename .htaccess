@@ -1,0 +1,8 @@
+RewriteEngine On
+
+# Protect sensitive directories
+RewriteRule ^(src|config|uploads|docs)/.*$ - [F,L]
+
+# Clean URL routing
+RewriteRule ^import$ index.php?action=import [L,QSA]
+RewriteRule ^import/sse$ index.php?action=sse_import [L,QSA]

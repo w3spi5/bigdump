@@ -7,14 +7,13 @@ namespace BigDump\Core;
 use RuntimeException;
 
 /**
- * Router Class - Simplified route handler.
+ * Router Class - Simplified route handler
  *
  * This class manages routing of requests to appropriate
- * controller actions.
+ * controller actions
  *
  * @package BigDump\Core
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class Router
 {
