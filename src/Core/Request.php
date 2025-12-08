@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace BigDump\Core;
 
 /**
- * Request Class - Encapsulates HTTP request data.
+ * Request Class - Encapsulates HTTP request data
  *
  * This class provides a secure abstraction to access HTTP request data
- * ($_GET, $_POST, $_FILES, $_SERVER).
+ * ($_GET, $_POST, $_FILES, $_SERVER)
  *
  * @package BigDump\Core
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class Request
 {
@@ -121,10 +120,23 @@ class Request
     /**
      * Determines the action to execute based on request parameters.
      *
+     * Priority: explicit action > form actions > parameter-based actions
+     *
      * @return string Action name.
      */
     private function determineAction(): string
     {
+        // 1. Explicit action parameter takes highest priority (for SSE, AJAX, etc.)
+        if ($this->has('action')) {
+            $action = $this->input('action', '');
+            // Validate against known actions to prevent injection
+            $validActions = ['home', 'upload', 'delete', 'import', 'start_import', 'ajax_import', 'sse_import'];
+            if (in_array($action, $validActions, true)) {
+                return $action;
+            }
+        }
+
+        // 2. Form-based actions (button submissions)
         if ($this->has('uploadbutton')) {
             return 'upload';
         }
@@ -133,14 +145,8 @@ class Request
             return 'delete';
         }
 
-        if ($this->has('start') && $this->has('fn')) {
-            if ($this->has('ajaxrequest')) {
-                return 'ajax_import';
-            }
-            return 'import';
-        }
-
-        if ($this->has('fn')) {
+        // 3. POST with fn parameter = start import
+        if ($this->has('fn') && ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             return 'start_import';
         }
 
@@ -275,13 +281,19 @@ class Request
     }
 
     /**
-     * Gets the script URI.
+     * Gets the script URI (base path without index.php).
      *
-     * @return string Script URI.
+     * @return string Script URI (e.g., '/bigdump' instead of '/bigdump/index.php').
      */
     public function getScriptUri(): string
     {
-        return $this->server('PHP_SELF', '/index.php');
+        $phpSelf = $this->server('PHP_SELF', '/index.php');
+        // Remove /index.php suffix to get clean base URL
+        $uri = preg_replace('#/index\.php$#', '', $phpSelf);
+        
+        // If empty (app at root), return empty string - callers will handle the slash
+        // e.g., getScriptUri() . '/import' = '/import' (correct)
+        return $uri === '' ? '' : $uri;
     }
 
     /**

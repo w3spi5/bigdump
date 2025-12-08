@@ -22,8 +22,7 @@ use RuntimeException;
  * - Proper BOM handling for UTF-8, UTF-16, UTF-32
  *
  * @package BigDump\Models
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class FileHandler
 {

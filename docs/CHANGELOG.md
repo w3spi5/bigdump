@@ -2,9 +2,68 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.8] - 2025-12-08 - Session Persistence & Aggressive Auto-Tuning
+
+### Added in 2.8
+
+- **Server-Side Session Persistence**: Import state migrated from URL params to `$_SESSION`
+  - Crash-resilient imports: resume after browser refresh or server restart
+  - New `ImportSession::toSession()`, `fromSession()`, `clearSession()` methods
+  - Direct session file writing for SSE compatibility
+- **SSE (Server-Sent Events) Streaming**: Real-time progress without polling
+  - New `SseService.php` for event stream handling
+  - Automatic reconnection after connection loss
+  - Seamless fallback to AJAX mode
+- **Smooth Transition Engine**: Fluid counter animations in UI
+  - "Roulette" effect for number transitions
+  - Configurable easing factor (0.06 default)
+- **Loading Overlay**: Visual feedback on import start
+  - Spinner animation with dynamic file name display
+- **Frozen Estimates**: Lock total estimates after 5% progress
+  - Prevents fluctuating Lines/Queries totals during import
+  - `frozenLinesTotal` and `frozenQueriesTotal` properties
+
+### Changed in 2.8
+
+- **Ultra-Aggressive RAM Profiles**: Granular per-GB batch sizing
+  - < 1 GB: 80,000 lines (was 30,000)
+  - < 4 GB: 300,000 lines (was 100,000)
+  - < 8 GB: 620,000 lines (was 200,000)
+  - < 12 GB: 940,000 lines (NEW)
+  - < 16 GB: 1,260,000 lines (NEW)
+  - > 16 GB: 1,500,000 lines (NEW)
+- **AutoTuner Aggressiveness**: 80% safety margin (was 50%), 150 bytes/line (was 300)
+- **Default Batch Size**: 50,000 lines (was 3,000)
+- **Max Batch Size**: 1,500,000 lines (was 100,000)
+
+### Fixed in 2.8
+
+- **Absolute URL Redirect**: Fixed `https://import/` redirect bug when app at root
+- **Corrupted PendingQuery**: SQL regex validation prevents invalid query restoration
+- **Fluctuating Totals**: Frozen estimates after 5% progress
+
+### Refactored in 2.8
+
+- Templates moved from `src/Views/` to `templates/`
+- Entry point moved from `public/index.php` to `index.php`
+- Removed `.pending_*.tmp` files (replaced by session storage)
+- Added `.htaccess` for clean URL routing
+- Static assets organized in `assets/`
+
+### Configuration changes in 2.8
+
+```php
+// AutoTuner now scales to 1.5M lines/batch for 16GB+ systems
+'min_batch_size' => 10000,      // Was 3000
+'max_batch_size' => 1500000,    // Was 100000
+'linespersession' => 50000,     // Was 3000
+```
+
+---
+
 ## [2.7] - 2025-12-07
 
-### Added
+### Added in 2.7
 
 - **Post-queries Support**: Restore database constraints after import completion
   - New `post_queries` config option for constraint restoration
@@ -15,7 +74,7 @@ All notable changes to BigDump are documented in this file.
   - Respects MySQL `max_allowed_packet` setting
   - Prevents oversized queries from failing
 
-### Changed
+### Changed in 2.7
 
 - **NVMe/SSD Optimizations**: Aggressive RAM profiles for modern storage
   - < 512 MB: 5,000 → 10,000 lines
@@ -30,7 +89,7 @@ All notable changes to BigDump are documented in this file.
 - **Pre-queries**: Added `SET sql_log_bin = 0` for binary logging bypass
 - **Progress Precision**: 2 decimal places (was integer) across all views
 
-### Configuration
+### Configuration added by 2.7
 
 ```php
 'insert_batch_size' => 10000,     // Group INSERTs (was 1000)
@@ -54,7 +113,7 @@ All notable changes to BigDump are documented in this file.
 
 ## [2.6] - 2025-12-07
 
-### Added
+### Added in 2.6
 
 - **INSERT Batching (x10-50 speedup)**: Groups consecutive simple INSERTs into multi-value queries
   - New `InsertBatcherService.php` transforms individual INSERTs into batched queries
@@ -69,7 +128,7 @@ All notable changes to BigDump are documented in this file.
   - Displayed with "~" prefix to indicate estimation
   - Exact values shown upon completion
 
-### Changed
+### Changed in 2.6
 
 - **Increased Batch Size Profiles**: More aggressive defaults for modern servers
   - < 512 MB: 3,000 → 5,000
@@ -80,13 +139,13 @@ All notable changes to BigDump are documented in this file.
 - **Max Batch Size**: Increased from 50,000 to 100,000
 - **Pre-queries**: Now enabled by default in config template
 
-### Fixed
+### Fixed in 2.6
 
 - **Stale Pending Query Bug**: Fixed corruption when `foffset=0` with existing pending file
   - Fresh imports now delete stale `.pending_*.tmp` files
   - Prevents SQL fragment merging from previous aborted imports
 
-### Configuration
+### Configuration added by 2.6
 
 ```php
 'insert_batch_size' => 1000,   // Group INSERTs (0 = disabled)
@@ -102,7 +161,7 @@ All notable changes to BigDump are documented in this file.
 
 ## [2.5] - 2025-12-06
 
-### Added
+### Added in 2.5
 
 - **Auto-Tuning Performance System**: Dynamic batch size based on available system RAM
   - Automatic RAM detection: Windows COM/WMI, Linux `/proc/meminfo`, smart fallbacks
@@ -117,7 +176,7 @@ All notable changes to BigDump are documented in this file.
   - Import speed (lines/sec)
   - Batch adjustment notifications
 
-### Fixed
+### Fixed in 2.5
 
 - **SQL Parser Dual Quote Support**: Parser now correctly handles both single (`'`) and double (`"`) quotes
   - Prevents query fusion when double-quoted strings appear in SQL
@@ -128,7 +187,7 @@ All notable changes to BigDump are documented in this file.
   - Automatic cleanup on import completion or error
   - Fixes "SET SQL_MODE" appearing inside INSERT VALUES error
 
-### Configuration
+### Configuration added by 2.5
 
 ```php
 'auto_tuning' => true,        // Enable dynamic batch sizing
@@ -140,7 +199,7 @@ All notable changes to BigDump are documented in this file.
 
 ## [2.4] - 2025-12-06
 
-### Fixed
+### Fixed in 2.4
 
 - **Clear Session on New Import**: Previous import state no longer contaminates new imports
   - Session cleanup when starting import of the same file
@@ -154,7 +213,7 @@ All notable changes to BigDump are documented in this file.
   - Session-isolated per file using hash-based keys
   - Automatic cleanup on import completion
 
-### Changed
+### Changed in 2.4
 
 - Minor design improvements to layout
 
@@ -162,7 +221,7 @@ All notable changes to BigDump are documented in this file.
 
 ## [2.3] - 2025-12-06
 
-### Added
+### Added in 2.3
 
 - **Multi-line INSERT Cross-Session State Persistence**
   - Extended INSERT statements spanning multiple lines now work across sessions
@@ -170,7 +229,7 @@ All notable changes to BigDump are documented in this file.
   - New properties in `ImportSession`: `pendingQuery`, `inString`
   - New methods in `SqlParser`: `setInString()`, `getCurrentQuery()`, `setCurrentQuery()`
 
-### Data Flow
+### Data Flow added by 2.3
 
 ```text
 Session N ends → save currentQuery + inString → URL params
@@ -181,7 +240,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ## [2.2] - 2025-12-06
 
-### Added
+### Added in 2.2
 
 - **Import Error Display Enhancement**
   - Improved error visualization during import process
@@ -190,7 +249,7 @@ Session N+1 starts → restore parser state → continue parsing
   - Added `uploads/.htaccess` for directory protection
   - Moved `config.php` to `config.example.php` template
 
-### Changed
+### Changed in 2.2
 
 - Translated all French comments to English throughout codebase
 - Updated footer branding
@@ -199,7 +258,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ## [2.1] - 2025-12-06
 
-### Added
+### Added in 2.1
 
 - **Modern Drag & Drop Upload Component**
   - Replaced legacy form with FileUpload component
@@ -218,7 +277,7 @@ Session N+1 starts → restore parser state → continue parsing
   - BEM CSS methodology for component styling
   - Responsive design with smooth transitions
 
-### Documentation
+### Documentation added by 2.1
 
 - Added repository screenshot for presentation
 - Translated README.md to English with w3spi5 branding
@@ -227,20 +286,20 @@ Session N+1 starts → restore parser state → continue parsing
 
 ## [2.0] - 2025-12-06
 
-### Added
+### Added in 2.0
 
 - **Complete MVC Refactoring** of original BigDump script
   - Object-oriented architecture
   - PSR-4 autoloading
   - Separation of concerns (Controllers, Models, Services, Views)
 
-### Architecture
+### Architecture at 2.0
 
 ```text
 public/index.php → Core/Application → Core/Router → Controllers → Services
 ```
 
-### Components
+### Components added by 2.0
 
 - `Core/Application.php` - Main orchestrator
 - `Core/Router.php` - Action routing
@@ -255,7 +314,7 @@ public/index.php → Core/Application → Core/Router → Controllers → Servic
 - `Services/ImportService.php` - Core import logic
 - `Services/AjaxService.php` - AJAX response generation
 
-### Features
+### Features in 2.0
 
 - Staggered import to bypass timeout limits
 - Multi-format support: `.sql`, `.gz`, `.csv`
@@ -265,7 +324,7 @@ public/index.php → Core/Application → Core/Router → Controllers → Servic
 - Clear error messages
 - UTF-8 and BOM support
 
-### Requirements
+### Requirements for version 2.0
 
 - PHP 8.1+
 - MySQLi extension

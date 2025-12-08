@@ -8,11 +8,10 @@ namespace BigDump\Models;
  * ImportSession Class - Import session state management
  *
  * This class encapsulates all data from an import session,
- * including statistics and progression state.
+ * including statistics and progression state
  *
  * @package BigDump\Models
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class ImportSession
 {
@@ -133,6 +132,18 @@ class ImportSession
      * @var string|null
      */
     private ?string $autoTuneAdjustment = null;
+
+    /**
+     * Frozen estimated total lines (calculated once at ~5% progress)
+     * @var int|null
+     */
+    private ?int $frozenLinesTotal = null;
+
+    /**
+     * Frozen estimated total queries (calculated once at ~5% progress)
+     * @var int|null
+     */
+    private ?int $frozenQueriesTotal = null;
 
     /**
      * Creates a new session from request parameters
@@ -309,6 +320,26 @@ class ImportSession
     {
         $this->fileSize = $size;
         return $this;
+    }
+
+    /**
+     * Gets frozen lines total estimate
+     *
+     * @return int|null Frozen estimate or null
+     */
+    public function getFrozenLinesTotal(): ?int
+    {
+        return $this->frozenLinesTotal;
+    }
+
+    /**
+     * Gets frozen queries total estimate
+     *
+     * @return int|null Frozen estimate or null
+     */
+    public function getFrozenQueriesTotal(): ?int
+    {
+        return $this->frozenQueriesTotal;
     }
 
     /**
@@ -615,14 +646,32 @@ class ImportSession
             $queriesTotal = $this->totalQueries;
             $queriesTogo = 0;
         } elseif (!$this->gzipMode && $bytesDone > 0 && $this->fileSize > 0) {
-            // Estimate based on observed ratio
+            // Calculate current estimates
             $bytesPerLine = $bytesDone / max(1, $linesDone);
-            $linesTotal = (int) ceil($this->fileSize / $bytesPerLine);
-            $linesTogo = max(0, $linesTotal - $linesDone);
+            $currentLinesEstimate = (int) ceil($this->fileSize / $bytesPerLine);
 
+            $currentQueriesEstimate = null;
             if ($this->totalQueries > 0) {
                 $bytesPerQuery = $bytesDone / $this->totalQueries;
-                $queriesTotal = (int) ceil($this->fileSize / $bytesPerQuery);
+                $currentQueriesEstimate = (int) ceil($this->fileSize / $bytesPerQuery);
+            }
+
+            // Freeze estimates once we have processed 5% of the file (enough data for stable estimate)
+            $progressPct = ($bytesDone / $this->fileSize) * 100;
+            if ($progressPct >= 5 && $this->frozenLinesTotal === null) {
+                $this->frozenLinesTotal = $currentLinesEstimate;
+                $this->frozenQueriesTotal = $currentQueriesEstimate;
+            }
+
+            // Use frozen values if available, otherwise use current estimates
+            $linesTotal = $this->frozenLinesTotal ?? $currentLinesEstimate;
+            $linesTogo = max(0, $linesTotal - $linesDone);
+
+            if ($this->frozenQueriesTotal !== null) {
+                $queriesTotal = $this->frozenQueriesTotal;
+                $queriesTogo = max(0, $queriesTotal - $this->totalQueries);
+            } elseif ($currentQueriesEstimate !== null) {
+                $queriesTotal = $currentQueriesEstimate;
                 $queriesTogo = max(0, $queriesTotal - $this->totalQueries);
             }
         }
@@ -704,6 +753,83 @@ class ImportSession
             'instring' => $this->inString ? '1' : '0',
             'activequote' => $this->activeQuote,
         ];
+    }
+
+    /**
+     * Saves import state to PHP session.
+     *
+     * @return void
+     */
+    public function toSession(): void
+    {
+        $_SESSION['import'] = [
+            'filename' => $this->filename,
+            'start_line' => $this->currentLine,
+            'offset' => $this->currentOffset,
+            'total_queries' => $this->totalQueries,
+            'delimiter' => $this->delimiter,
+            'in_string' => $this->inString,
+            'active_quote' => $this->activeQuote,
+            'pending_query' => $this->pendingQuery,
+            'file_size' => $this->fileSize,
+            'frozen_lines_total' => $this->frozenLinesTotal,
+            'frozen_queries_total' => $this->frozenQueriesTotal,
+            'active' => true,
+        ];
+    }
+
+    /**
+     * Restores import state from PHP session.
+     *
+     * @return self|null ImportSession or null if no active session
+     */
+    public static function fromSession(): ?self
+    {
+        if (empty($_SESSION['import']['active']) || empty($_SESSION['import']['filename'])) {
+            return null;
+        }
+
+        $data = $_SESSION['import'];
+        $session = self::fromRequest(
+            $data['filename'],
+            $data['start_line'] ?? 1,
+            $data['offset'] ?? 0,
+            $data['total_queries'] ?? 0,
+            $data['delimiter'] ?? ';',
+            $data['pending_query'] ?? '',
+            $data['in_string'] ?? false,
+            $data['active_quote'] ?? ''
+        );
+
+        // Restore frozen estimates if available
+        if (isset($data['frozen_lines_total'])) {
+            $session->frozenLinesTotal = $data['frozen_lines_total'];
+        }
+        if (isset($data['frozen_queries_total'])) {
+            $session->frozenQueriesTotal = $data['frozen_queries_total'];
+        }
+
+        return $session;
+    }
+
+    /**
+     * Clears import session from PHP session.
+     *
+     * @return void
+     */
+    public static function clearSession(): void
+    {
+        unset($_SESSION['import']);
+    }
+
+    /**
+     * Checks if an import session is active.
+     *
+     * @return bool True if active session exists
+     */
+    public static function hasActiveSession(): bool
+    {
+        return !empty($_SESSION['import']['active']) && !empty($_SESSION['import']['filename']);
     }
 
     /**
