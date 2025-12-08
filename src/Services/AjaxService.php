@@ -176,6 +176,7 @@ class AjaxService
     public function createAjaxScript(ImportSession $session, string $scriptUri): string
     {
         $safeScriptUri = $this->escapeJsString($scriptUri);
+        $safeFilename = $this->escapeJsString($session->getFilename());
 
         $js = <<<JAVASCRIPT
 <script type="text/javascript">
@@ -183,12 +184,25 @@ class AjaxService
     'use strict';
 
     var scriptUri = '{$safeScriptUri}';
+    var filename = '{$safeFilename}';
 
     /**
      * Displays an import error directly in the page (no popup).
      * Creates a styled error container similar to the PHP-rendered version.
      */
     function displayErrorInPage(message, stats) {
+        // Check for "Table already exists" error and extract table name
+        var tableMatch = message.match(/Table\s+['"`]([^'"`]+)['"`]\s+already exists/i);
+        var dropButton = '';
+        if (tableMatch) {
+            var tableName = tableMatch[1];
+            dropButton = '<a href="' + scriptUri + '/import/drop-restart?table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
+                'class="btn btn-warning" ' +
+                'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
+                'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
+                '<br><br><span class="text-muted">or</span><br><br>';
+        }
+
         // Create error HTML matching the existing error-container style
         var errorHtml = '<div class="error-container" role="alert">' +
             '<div class="error-header">' +
@@ -214,9 +228,10 @@ class AjaxService
                 '</div>' +
             '</details>' +
         '</div>' +
-        '<div class="text-center mt-3">' +
-            '<a href="' + scriptUri + '" class="btn btn-primary">Start Over</a>' +
-            '<span class="text-muted" style="margin-left: 15px;">(DROP old tables before restarting)</span>' +
+        '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
+            dropButton +
+            '<a href="' + scriptUri + '" class="btn btn-primary">Start Over (resume)</a>' +
+            (tableMatch ? '' : '<span class="text-muted">(DROP old tables before restarting)</span>') +
         '</div>';
 
         // Find card-body and insert error at the beginning
