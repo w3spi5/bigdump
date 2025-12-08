@@ -5,6 +5,7 @@ claude.md
 
 # Custom
 config/config.php
+*.har
 
 # Uploads directory (contains user SQL dumps)
 uploads/*.sql

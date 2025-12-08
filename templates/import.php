@@ -129,7 +129,7 @@
     <div class="error-header">
         <div class="error-header__icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.648c1.154 2-.29 4.5-2.699 4.5H4.645c-2.609 0-3.752-2.6-2.698-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
+                <path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.899 4.5H4.645c-2.809 0-3.752-2.8-2.898-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>
             </svg>
         </div>
         <div class="error-header__content">
@@ -313,6 +313,7 @@
 
 <div class="text-center mt-3">
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-primary">Back to File List</a>
+    <a href="/" class="btn btn-secondary" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -326,8 +327,8 @@
     <noscript>
         <div class="alert alert-warning text-center">
             JavaScript is disabled. Click the link below to continue manually.<br><br>
-            <a href="<?= $view->url($nextParams) ?>" class="btn btn-primary">
-                Continue from line <?= number_format($nextParams['start']) ?>
+            <a href="?action=import" class="btn btn-primary">
+                Continue Import
             </a>
         </div>
     </noscript>
@@ -335,6 +336,9 @@
     <div class="text-center mt-3">
         <a href="<?= $view->e($scriptUri) ?>" class="btn btn-secondary">
             STOP Import
+        </a>
+        <a href="/" class="btn btn-outline-secondary" style="margin-left: 10px;">
+            Back to Home
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
     </div>
@@ -351,7 +355,11 @@
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-primary">
         Start Over
     </a>
-    <span class="text-muted" style="margin-left: 15px;">(DROP old tables before restarting)</span>
+    <a href="/" class="btn btn-secondary" style="margin-left: 10px;">
+        Back to Home
+    </a>
+    <br><br>
+    <span class="text-muted">(DROP old tables before restarting)</span>
 </div>
 
 <?php endif; ?>

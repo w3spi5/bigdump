@@ -1,7 +1,7 @@
 <?php
 
 /**
- * BigDump 2.6 - Main entry point
+ * BigDump v2+ wMain entry point
  *
  * This file is the entry point of the refactored BigDump application.
  * It initializes the autoloader and launches the MVC application.
@@ -12,24 +12,23 @@
  * 3. Access this file via your web browser
  *
  * @package BigDump
- * @version 2.6
- * @author  MVC Refactoring
+ * @author  w3spi5
  * @license MIT
  */
 
 declare(strict_types=1);
 
 // Define the application root directory
-define('BIGDUMP_ROOT', dirname(__DIR__));
+define('BIGDUMP_ROOT', __DIR__);
 
 // Check PHP version
 if (PHP_VERSION_ID < 80100) {
-    die('BigDump 2.6 requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
+    die('BigDump v2+ requires PHP 8.1 or higher. You have PHP ' . PHP_VERSION);
 }
 
 // Check MySQLi extension
 if (!extension_loaded('mysqli')) {
-    die('BigDump requires the MySQLi extension. Please enable it in your php.ini');
+    die('BigDump v2+ requires the MySQLi extension. Please enable it in your php.ini');
 }
 
 // Simple autoloader (without Composer)
@@ -69,31 +68,8 @@ set_exception_handler(function (Throwable $e): void {
         header('Content-Type: text/html; charset=UTF-8');
     }
 
-    $message = htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8');
-
-    echo <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>BigDump Error</title>
-    <style>
-        body { font-family: Arial, sans-serif; background: #f5f5f5; padding: 40px; }
-        .error { background: white; border-left: 4px solid #e74c3c; padding: 20px; max-width: 600px; margin: 0 auto; }
-        h1 { color: #e74c3c; margin-top: 0; font-size: 20px; }
-        p { color: #333; line-height: 1.6; }
-        code { background: #f8f8f8; padding: 2px 6px; border-radius: 3px; }
-    </style>
-</head>
-<body>
-    <div class="error">
-        <h1>BigDump Error</h1>
-        <p>{$message}</p>
-        <p>Please check your configuration and try again.</p>
-    </div>
-</body>
-</html>
-HTML;
+    $message = $e->getMessage();
+    include BIGDUMP_ROOT . '/templates/error_bootstrap.php';
 });
 
 // Create the uploads directory if it doesn't exist

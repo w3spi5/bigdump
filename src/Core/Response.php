@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace BigDump\Core;
 
 /**
- * Response Class - Manages HTTP responses.
+ * Response Class - Manages HTTP responses
  *
  * This class encapsulates creation and sending of HTTP responses,
- * including headers, content and AJAX/XML responses.
+ * including headers, content and AJAX/XML responses
  *
  * @package BigDump\Core
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class Response
 {

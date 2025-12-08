@@ -22,8 +22,7 @@ use BigDump\Config\Config;
  * - Protection against infinite memory accumulation
  *
  * @package BigDump\Models
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class SqlParser
 {

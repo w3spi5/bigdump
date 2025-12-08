@@ -16,15 +16,14 @@ use Throwable;
  * managing initialization, routing and execution.
  *
  * @package BigDump\Core
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class Application
 {
     /**
      * Application version.
      */
-    public const VERSION = '2.6';
+    public const VERSION = '2.8';
 
     /**
      * Configuration instance.
@@ -89,7 +88,7 @@ class Application
         // Initialize components
         $this->request = new Request();
         $this->response = new Response();
-        $this->view = new View($this->basePath . '/src/Views');
+        $this->view = new View($this->basePath . '/templates');
         $this->router = new Router();
 
         // Configure routes
@@ -144,7 +143,8 @@ class Application
             ->register('delete', $controller, 'delete')
             ->register('import', $controller, 'import')
             ->register('start_import', $controller, 'startImport')
-            ->register('ajax_import', $controller, 'ajaxImport');
+            ->register('ajax_import', $controller, 'ajaxImport')
+            ->register('sse_import', $controller, 'sseImport');
     }
 
     /**

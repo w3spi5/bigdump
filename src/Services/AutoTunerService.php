@@ -11,6 +11,9 @@ use BigDump\Config\Config;
  *
  * Detects available RAM and PHP limits to calculate optimal linespersession.
  * Supports Windows (COM/WMI), Linux (/proc/meminfo), and fallback estimation.
+ *
+ * @package BigDump\Services
+ * @author  w3spi5
  */
 class AutoTunerService
 {
@@ -30,21 +33,33 @@ class AutoTunerService
      * Aggressive profiles optimized for NVMe SSD systems
      */
     private const PROFILES = [
-        536870912   => 10000,   // < 512 MB → 10,000  (was 5,000)
-        1073741824  => 30000,   // < 1 GB   → 30,000  (was 15,000)
-        2147483648  => 60000,   // < 2 GB   → 60,000  (was 30,000)
-        4294967296  => 100000,  // < 4 GB   → 100,000 (was 50,000)
-        8589934592  => 150000,  // < 8 GB   → 150,000 (NEW)
-        PHP_INT_MAX => 200000,  // > 8 GB   → 200,000 (was 80,000)
+        536870912    => 30000,    // < 512 MB →   30,000 lines
+        1073741824   => 80000,    // < 1 GB   →   80,000 lines
+        2147483648   => 150000,   // < 2 GB   →  150,000 lines
+        3221225472   => 220000,   // < 3 GB   →  220,000 lines
+        4294967296   => 300000,   // < 4 GB   →  300,000 lines
+        5368709120   => 380000,   // < 5 GB   →  380,000 lines
+        6442450944   => 460000,   // < 6 GB   →  460,000 lines
+        7516192768   => 540000,   // < 7 GB   →  540,000 lines
+        8589934592   => 620000,   // < 8 GB   →  620,000 lines
+        9663676416   => 700000,   // < 9 GB   →  700,000 lines
+        10737418240  => 780000,   // < 10 GB  →  780,000 lines
+        11811160064  => 860000,   // < 11 GB  →  860,000 lines
+        12884901888  => 940000,   // < 12 GB  →  940,000 lines
+        13958643712  => 1020000,  // < 13 GB  → 1,020,000 lines
+        15032385536  => 1100000,  // < 14 GB  → 1,100,000 lines
+        16106127360  => 1180000,  // < 15 GB  → 1,180,000 lines
+        17179869184  => 1260000,  // < 16 GB  → 1,260,000 lines
+        PHP_INT_MAX  => 1500000,  // > 16 GB  → 1,500,000 lines
     ];
 
     public function __construct(Config $config)
     {
         $this->config = $config;
         $this->enabled = (bool) $config->get('auto_tuning', true);
-        $this->minBatchSize = (int) $config->get('min_batch_size', 3000);
-        $this->maxBatchSize = (int) $config->get('max_batch_size', 100000);
-        $this->currentBatchSize = (int) $config->get('linespersession', 3000);
+        $this->minBatchSize = (int) $config->get('min_batch_size', 10000);
+        $this->maxBatchSize = (int) $config->get('max_batch_size', 1500000);
+        $this->currentBatchSize = (int) $config->get('linespersession', 50000);
 
         // Force batch size bypasses all auto-tuning calculations
         $forcedSize = $config->get('force_batch_size', 0);
@@ -120,11 +135,11 @@ class AutoTunerService
         // Take minimum of both constraints
         $effectiveLimit = min($availableRam, $phpHeadroom);
 
-        // Apply 50% safety margin (aggressive for NVMe systems)
-        $safeBuffer = (int) ($effectiveLimit * 0.5);
+        // AGGRESSIVE: 80% safety margin for NVMe systems
+        $safeBuffer = (int) ($effectiveLimit * 0.8);
 
-        // Estimate ~300 bytes per SQL line (optimized for INSERT dumps)
-        $bytesPerLine = 300;
+        // Estimate ~150 bytes per SQL line (aggressive for INSERT dumps)
+        $bytesPerLine = 150;
         $calculatedLines = (int) floor($safeBuffer / $bytesPerLine);
 
         // Lookup profile based on available RAM
