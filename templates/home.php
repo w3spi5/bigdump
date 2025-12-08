@@ -142,7 +142,7 @@
             For larger files, use FTP to upload directly to <code><?= $view->e($uploadDir) ?></code>
         </p>
 
-        <div class="file-upload" id="fileUpload">
+        <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>">
             <!-- Dropzone -->
             <div class="file-upload__dropzone" id="dropzone">
                 <div class="file-upload__icon">
@@ -177,7 +177,6 @@
             </div>
         </div>
 
-        <?php require __DIR__ . '/partials/fileupload-script.php'; ?>
     <?php endif; ?>
 
 <?php endif; ?>
@@ -190,92 +189,3 @@
         <div class="loading-subtext">Loading file</div>
     </div>
 </div>
-
-<style>
-.loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(15, 23, 42, 0.85);
-    backdrop-filter: blur(4px);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.loading-overlay.active {
-    display: flex;
-    opacity: 1;
-}
-
-.loading-content {
-    text-align: center;
-    color: white;
-}
-
-.loading-spinner {
-    width: 56px;
-    height: 56px;
-    border: 4px solid rgba(255, 255, 255, 0.2);
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    margin: 0 auto 20px;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
-.loading-text {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.loading-subtext {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* Pulsing dots animation for subtext */
-.loading-subtext::after {
-    content: '';
-    animation: dots 1.5s steps(4, end) infinite;
-}
-
-@keyframes dots {
-    0%, 20% { content: ''; }
-    40% { content: '.'; }
-    60% { content: '..'; }
-    80%, 100% { content: '...'; }
-}
-</style>
-
-<script>
-(function() {
-    // Show overlay when clicking Import buttons
-    document.querySelectorAll('form').forEach(function(form) {
-        // Only forms with hidden 'fn' input are import forms
-        if (form.querySelector('input[name="fn"]')) {
-            form.addEventListener('submit', function(e) {
-                var overlay = document.getElementById('loadingOverlay');
-                overlay.classList.add('active');
-
-                // Update text based on filename
-                var fnInput = form.querySelector('input[name="fn"]');
-                if (fnInput) {
-                    var filename = fnInput.value;
-                    var subtext = overlay.querySelector('.loading-subtext');
-                    subtext.textContent = 'Loading ' + filename;
-                }
-            });
-        }
-    });
-})();
-</script>

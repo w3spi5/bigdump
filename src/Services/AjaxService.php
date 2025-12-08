@@ -109,11 +109,13 @@ class AjaxService
         $memoryPct = $stats['memory_percentage'] ?? 0;
         $speedLps = $stats['speed_lps'] ?? 0;
         $adjustment = $stats['auto_tune_adjustment'] ?? '';
+        $estimatesFrozen = $stats['estimates_frozen'] ?? false;
 
         $xml .= $this->xmlElement('batch_size', (string) $batchSize);
         $xml .= $this->xmlElement('memory_pct', (string) $memoryPct);
         $xml .= $this->xmlElement('speed_lps', number_format($speedLps, 0));
         $xml .= $this->xmlElement('adjustment', $adjustment);
+        $xml .= $this->xmlElement('estimates_frozen', $estimatesFrozen ? '1' : '0');
 
         $xml .= '</root>';
 
@@ -428,6 +430,34 @@ class AjaxService
                 if (adjEl) {
                     adjEl.textContent = adjustment;
                     adjEl.style.display = 'block';
+                }
+            }
+        }
+
+        // Update calculating indicator for estimated values (Lines/Queries: Remaining & Total columns)
+        // estimates_frozen is true once we've processed 5% of file (stable estimate)
+        var estimatesFrozen = stats && stats.estimates_frozen;
+        var table = document.querySelector('table tbody');
+        if (table) {
+            var rows = table.getElementsByTagName('tr');
+            // Row 0 = Lines, Row 1 = Queries
+            // Columns: 0=label, 1=this_session, 2=total_done, 3=remaining, 4=total
+            for (var r = 0; r < 2 && r < rows.length; r++) {
+                var cells = rows[r].getElementsByTagName('td');
+                // Apply/remove calculating class on Remaining (col 3) and Total (col 4)
+                if (cells[3]) {
+                    if (estimatesFrozen) {
+                        cells[3].classList.remove('calculating');
+                    } else {
+                        cells[3].classList.add('calculating');
+                    }
+                }
+                if (cells[4]) {
+                    if (estimatesFrozen) {
+                        cells[4].classList.remove('calculating');
+                    } else {
+                        cells[4].classList.add('calculating');
+                    }
                 }
             }
         }

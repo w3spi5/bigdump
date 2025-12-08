@@ -542,4 +542,37 @@ class BigDumpController
             file_put_contents($sessionFile, '', LOCK_EX);
         }
     }
+
+    /**
+     * Stops the current import by clearing the session.
+     *
+     * @return void
+     */
+    public function stopImport(): void
+    {
+        // Clear PHP session import data
+        ImportSession::clearSession();
+
+        // Also clear direct session file if it exists
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $sessionFile = session_save_path() . '/sess_' . session_id();
+        if (file_exists($sessionFile)) {
+            // Re-read, remove bigdump keys, re-write
+            $data = file_get_contents($sessionFile);
+            if ($data !== false) {
+                // Remove bigdump_import section from serialized session
+                $data = preg_replace('/bigdump_import\|[^}]+\}/', '', $data);
+                file_put_contents($sessionFile, $data, LOCK_EX);
+            }
+        }
+
+        // Redirect to home page
+        $scriptUri = $this->request->getScriptUri();
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $path = ($scriptUri === '' || $scriptUri === '/') ? '/' : $scriptUri;
+        $this->response->redirect($protocol . '://' . $host . $path);
+    }
 }

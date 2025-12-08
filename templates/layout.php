@@ -27,5 +27,7 @@
             Original by Alexey Ozerov | Refactored with improved stability and security | Made by w3spi5 (wespify.com) with ❤️ for everyone
         </div>
     </div>
+    <script src="assets/js/bigdump.js"></script>
+    <script src="assets/js/fileupload.js"></script>
 </body>
 </html>
