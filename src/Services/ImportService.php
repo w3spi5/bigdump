@@ -23,8 +23,7 @@ use RuntimeException;
  * - Managing staggered import sessions
  *
  * @package BigDump\Services
- * @author  Refactorisation MVC
- * @version 2.6
+ * @author  w3spi5
  */
 class ImportService
 {
@@ -114,9 +113,6 @@ class ImportService
      */
     public function executeSession(ImportSession $session): ImportSession
     {
-        // Generate unique pending file path based on filename
-        $pendingFile = $this->getPendingFilePath($session->getFilename());
-
         // Start AutoTuner timing
         $this->autoTuner->startTiming($session->getStartLine());
 
@@ -131,16 +127,25 @@ class ImportService
             $this->sqlParser->setDelimiter($session->getDelimiter());
             $this->sqlParser->reset();
 
-            // Restore parser state from file (more reliable than PHP sessions)
-            // CRITICAL: Only restore pendingQuery if foffset > 0 (continuation session)
-            // If foffset = 0, this is a fresh start - any existing pendingQuery is stale
-            $pendingQuery = $this->loadPendingQuery($pendingFile);
-            if ($pendingQuery !== '' && $session->getStartOffset() > 0) {
-                $this->sqlParser->setCurrentQuery($pendingQuery);
-                $this->sqlParser->setInString($session->getInString(), $session->getActiveQuote());
-            } elseif ($pendingQuery !== '' && $session->getStartOffset() === 0) {
-                // Stale pending file from previous import - clean it up
-                $this->deletePendingQuery($pendingFile);
+            // Restore parser state from session
+            // CRITICAL: Only restore pendingQuery if offset > 0 (continuation session)
+            // If offset = 0, this is a fresh start - any existing pendingQuery is stale
+            $pendingQuery = $session->getPendingQuery();
+            if ($pendingQuery !== '' && $session->getCurrentOffset() > 0) {
+                // Validate pendingQuery - must start with a SQL keyword to be valid
+                // If it's just VALUES like "(123, 456)..." it's corrupted (lost INSERT prefix)
+                $trimmed = ltrim($pendingQuery);
+                $isValidSql = preg_match('/^(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|SET|LOCK|UNLOCK|START|COMMIT|ROLLBACK|REPLACE|TRUNCATE|USE|GRANT|REVOKE|SHOW|DESCRIBE|EXPLAIN|CALL|DELIMITER|\/\*|--)/i', $trimmed);
+
+                if ($isValidSql) {
+                    $this->sqlParser->setCurrentQuery($pendingQuery);
+                    $this->sqlParser->setInString($session->getInString(), $session->getActiveQuote());
+                } else {
+                    // Corrupted pendingQuery (e.g., just VALUES without INSERT)
+                    // Clear it and let the file continue from offset
+                    error_log("BigDump: Discarding corrupted pendingQuery: " . substr($pendingQuery, 0, 100));
+                    $session->setPendingQuery('');
+                }
             }
 
             // Empty the CSV table if needed
@@ -163,13 +168,13 @@ class ImportService
 
             // Save parser state for next session
             $currentQuery = $this->sqlParser->getCurrentQuery();
-            $this->savePendingQuery($pendingFile, $currentQuery);
+            $session->setPendingQuery($currentQuery);
             $session->setInString($this->sqlParser->isInString());
             $session->setActiveQuote($this->sqlParser->getActiveQuote());
 
-            // Clean up pending file on completion
+            // Clean up pending query on completion
             if ($session->isFinished() || $session->hasError()) {
-                $this->deletePendingQuery($pendingFile);
+                $session->setPendingQuery('');
             }
 
             // AutoTuner metrics
@@ -188,71 +193,16 @@ class ImportService
 
         } catch (RuntimeException $e) {
             $session->setError($e->getMessage());
-            $this->deletePendingQuery($pendingFile);
+            $session->setPendingQuery('');
         } finally {
             $this->fileHandler->close();
             $this->database->close();
         }
 
+        // NOTE: Session saving is now handled by the controller
+        // Do NOT call toSession() here - it conflicts with SSE's direct file writing
+
         return $session;
-    }
-
-    /**
-     * Gets the path for the pending query file.
-     *
-     * @param string $filename Original dump filename
-     * @return string Path to pending query file
-     */
-    private function getPendingFilePath(string $filename): string
-    {
-        $uploadsDir = $this->config->getUploadDir();
-        return $uploadsDir . '/.pending_' . md5($filename) . '.tmp';
-    }
-
-    /**
-     * Loads pending query from file.
-     *
-     * @param string $pendingFile Path to pending file
-     * @return string Pending query or empty string
-     */
-    private function loadPendingQuery(string $pendingFile): string
-    {
-        if (!file_exists($pendingFile)) {
-            return '';
-        }
-
-        $content = @file_get_contents($pendingFile);
-        return $content !== false ? $content : '';
-    }
-
-    /**
-     * Saves pending query to file.
-     *
-     * @param string $pendingFile Path to pending file
-     * @param string $query Query to save
-     * @return void
-     */
-    private function savePendingQuery(string $pendingFile, string $query): void
-    {
-        if ($query === '') {
-            $this->deletePendingQuery($pendingFile);
-            return;
-        }
-
-        @file_put_contents($pendingFile, $query, LOCK_EX);
-    }
-
-    /**
-     * Deletes pending query file.
-     *
-     * @param string $pendingFile Path to pending file
-     * @return void
-     */
-    private function deletePendingQuery(string $pendingFile): void
-    {
-        if (file_exists($pendingFile)) {
-            @unlink($pendingFile);
-        }
     }
 
     /**
@@ -288,7 +238,8 @@ class ImportService
         $session->setGzipMode($this->fileHandler->isGzipMode());
 
         // Position at the correct offset
-        $offset = $session->getStartOffset();
+        // Use currentOffset (updated after each batch) instead of startOffset (initial value)
+        $offset = $session->getCurrentOffset();
 
         if ($offset > 0) {
             if (!$this->fileHandler->seek($offset)) {
@@ -350,11 +301,12 @@ class ImportService
      */
     private function processLines(ImportSession $session): void
     {
-        $startLine = $session->getStartLine();
-        $maxLine = $startLine + $this->linesPerSession;
+        // Use currentLine (updated after each batch) not startLine (initial value)
+        $currentLine = $session->getCurrentLine();
+        $maxLine = $currentLine + $this->linesPerSession;
         $isCsv = $this->fileHandler->getExtension($session->getFilename()) === 'csv';
         $csvTable = $this->config->get('csv_insert_table', '');
-        $isFirstLine = ($session->getStartOffset() === 0);
+        $isFirstLine = ($session->getCurrentOffset() === 0);
 
         while ($session->getCurrentLine() < $maxLine || $this->sqlParser->isInString()) {
             // Read a line

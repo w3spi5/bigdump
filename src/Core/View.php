@@ -7,14 +7,13 @@ namespace BigDump\Core;
 use RuntimeException;
 
 /**
- * View Class - View rendering engine.
+ * View Class - View rendering engine
  *
  * This class handles rendering of PHP templates with support
- * for layout, partials and automatic escaping.
+ * for layout, partials and automatic escaping
  *
  * @package BigDump\Core
- * @author  MVC Refactoring
- * @version 2.6
+ * @author  w3spi5
  */
 class View
 {

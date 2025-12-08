@@ -10,11 +10,10 @@ use RuntimeException;
  * Config Class - Configuration Manager
  *
  * This class loads and manages the application configuration
- * from an external PHP file.
+ * from an external PHP file
  *
  * @package BigDump\Config
- * @author  Refactorisation MVC
- * @version 2.6
+ * @author  w3spi5
  */
 class Config
 {

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace BigDump\Services;
 
 /**
- * Groups consecutive simple INSERT statements into multi-value INSERTs.
+ * Groups consecutive simple INSERT statements into multi-value INSERTs
  *
  * Transforms:
  *   INSERT INTO t VALUES (1, 'a');
@@ -15,7 +15,10 @@ namespace BigDump\Services;
  * Into:
  *   INSERT INTO t VALUES (1, 'a'), (2, 'b'), (3, 'c');
  *
- * This provides x10-50 speed improvement for dumps with simple INSERTs.
+ * This provides x10-50 speed improvement for dumps with simple INSERTs
+ *
+ * @package BigDump\Services
+ * @author  w3spi5
  */
 class InsertBatcherService
 {
