@@ -542,4 +542,119 @@ class BigDumpController
             file_put_contents($sessionFile, '', LOCK_EX);
         }
     }
+
+    /**
+     * Stops the current import by clearing the session.
+     *
+     * @return void
+     */
+    public function stopImport(): void
+    {
+        // Clear PHP session import data
+        ImportSession::clearSession();
+
+        // Also clear direct session file if it exists (with error suppression for Windows)
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $sessionFile = session_save_path() . '/sess_' . session_id();
+        if (file_exists($sessionFile) && is_readable($sessionFile)) {
+            try {
+                // Re-read, remove bigdump keys, re-write
+                $data = @file_get_contents($sessionFile);
+                if ($data !== false) {
+                    // Remove bigdump_import section from serialized session
+                    $data = preg_replace('/bigdump_import\|[^}]+\}/', '', $data);
+                    @file_put_contents($sessionFile, $data, LOCK_EX);
+                }
+            } catch (\Throwable $e) {
+                // Ignore session file manipulation errors - ImportSession::clearSession() already did the work
+            }
+        }
+
+        // Redirect to home page
+        $scriptUri = $this->request->getScriptUri();
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $path = ($scriptUri === '' || $scriptUri === '/') ? '/' : $scriptUri;
+        $this->response->redirect($protocol . '://' . $host . $path);
+    }
+
+    /**
+     * Drops a table and restarts the import.
+     *
+     * Used when import fails with "Table already exists" error.
+     *
+     * @return void
+     */
+    public function dropRestart(): void
+    {
+        $tableName = $this->request->input('table', '');
+        $filename = $this->request->input('fn', '');
+
+        // Validate table name (security: only allow valid MySQL identifiers)
+        if (empty($tableName) || !preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $tableName)) {
+            $this->view->assign(['error' => 'Invalid table name specified']);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        // Validate filename
+        if (empty($filename)) {
+            $this->view->assign(['error' => 'No filename specified']);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        // Check file exists
+        $fileHandler = $this->importService->getFileHandler();
+        if (!$fileHandler->exists($filename)) {
+            $this->view->assign(['error' => "File not found: {$filename}"]);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        try {
+            // Connect to database and drop the table
+            $db = $this->importService->getDatabase();
+            $db->connect();
+
+            // Use backticks to safely quote the table name
+            $dropQuery = "DROP TABLE IF EXISTS `{$tableName}`";
+            $db->query($dropQuery);
+
+        } catch (\Exception $e) {
+            $this->view->assign(['error' => 'Failed to drop table: ' . $e->getMessage()]);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        // Clear any previous session and create new one
+        ImportSession::clearSession();
+        $session = ImportSession::fromRequest(
+            $filename,
+            1,
+            0,
+            0,
+            $this->config->get('delimiter', ';'),
+            '',
+            false,
+            ''
+        );
+        $session->toSession();
+
+        // Redirect to import page
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+        $baseUri = $this->request->getScriptUri();
+        // Remove /import/drop-restart suffix to get base path
+        $baseUri = preg_replace('#/import/drop-restart$#', '', $baseUri);
+        $path = ($baseUri === '' || $baseUri === '/') ? '/import' : $baseUri . '/import';
+
+        $this->response->redirect($protocol . '://' . $host . $path);
+    }
 }

@@ -17,56 +17,10 @@
  */
 ?>
 
-<style>
-/* Performance Section Styles */
-.performance-section {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 8px;
-    border: 1px solid #e9ecef;
-}
-.performance-section h3 {
-    margin: 0 0 15px 0;
-    color: #495057;
-    font-size: 14px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-.performance-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-}
-.perf-box {
-    background: white;
-    padding: 10px;
-    border-radius: 6px;
-    text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-.perf-label {
-    display: block;
-    font-size: 11px;
-    color: #6c757d;
-    margin-bottom: 5px;
-}
-.perf-value {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #212529;
-}
-.adjustment-notice {
-    margin-top: 10px;
-    padding: 8px 12px;
-    background: #d4edda;
-    border: 1px solid #c3e6cb;
-    border-radius: 4px;
-    color: #155724;
-    font-size: 13px;
-}
-</style>
+<div class="text-center mb-3">
+    <h3>Processing: <strong><?= $view->e($session->getFilename()) ?></strong></h3>
+    <p class="text-muted">Starting from line: <?= number_format($session->getStartLine()) ?></p>
+</div>
 
 <?php if ($testMode): ?>
 <div class="alert alert-warning">
@@ -88,6 +42,7 @@
     $errorSummary = '';
     $errorLine = null;
     $mysqlError = '';
+    $tableAlreadyExists = null; // Table name if "already exists" error
 
     if (!empty($errorText)) {
         $errorLines = explode("\n", $errorText);
@@ -103,6 +58,11 @@
                     ? substr($mysqlError, 0, 100) . '...'
                     : $mysqlError;
                 $mysqlErrorFound = true;
+
+                // Check for "Table 'xxx' already exists" error (supports both 'table' and `table` formats)
+                if (preg_match("/Table\s+['\"`]([^'\"`]+)['\"`]\s+already exists/i", $mysqlError, $tableMatch)) {
+                    $tableAlreadyExists = $tableMatch[1];
+                }
             }
             if (!$lineNumberFound && preg_match('/at line\s+(\d+)/i', $line, $matches)) {
                 $errorLine = (int)$matches[1];
@@ -119,6 +79,11 @@
             $errorSummary = strlen($errorLines[0]) > 100
                 ? substr($errorLines[0], 0, 100) . '...'
                 : $errorLines[0];
+        }
+
+        // Fallback: search for "already exists" in full error text if not found via MySQL Error line
+        if ($tableAlreadyExists === null && preg_match("/Table\s+['\"`]([^'\"`]+)['\"`]\s+already exists/i", $errorText, $tableMatch)) {
+            $tableAlreadyExists = $tableMatch[1];
         }
     } else {
         $errorSummary = 'Unknown error occurred';
@@ -161,11 +126,6 @@
     </details>
 </div>
 <?php endif; ?>
-
-<div class="text-center mb-3">
-    <h3>Processing: <strong><?= $view->e($session->getFilename()) ?></strong></h3>
-    <p class="text-muted">Starting from line: <?= number_format($session->getStartLine()) ?></p>
-</div>
 
 <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
 <div class="progress-container mb-3">
@@ -218,19 +178,23 @@
         </tr>
     </thead>
     <tbody>
+        <?php $calcClass = (!$statistics['finished'] && empty($statistics['estimates_frozen'])) ? ' class="calculating"' : ''; ?>
         <tr>
-            <td><strong>Lines</strong></td>
+            <td>
+                <strong>Lines</strong>
+                <span class="tooltip-trigger">?<span class="tooltip-content tooltip-multiline">Lines = SQL file lines read (including comments, CREATE, SET, etc.), not database records inserted. This count is normally higher than actual rows in database.</span></span>
+            </td>
             <td><?= number_format($statistics['lines_this']) ?></td>
             <td><?= number_format($statistics['lines_done']) ?></td>
-            <td><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
-            <td><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Queries</strong></td>
             <td><?= number_format($statistics['queries_this']) ?></td>
             <td><?= number_format($statistics['queries_done']) ?></td>
-            <td><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
-            <td><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
+            <td<?= $calcClass ?>><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
         </tr>
         <tr>
             <td><strong>Bytes</strong></td>
@@ -287,7 +251,7 @@
             <span class="perf-value" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
         </div>
         <div class="perf-box">
-            <span class="perf-label">Speed</span>
+            <span class="perf-label">Realtime Speed</span>
             <span class="perf-value" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
         </div>
     </div>
@@ -313,7 +277,7 @@
 
 <div class="text-center mt-3">
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-primary">Back to File List</a>
-    <a href="/" class="btn btn-secondary" style="margin-left: 10px;">Back to Home</a>
+    <a href="/" class="btn btn-info" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -334,11 +298,8 @@
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="<?= $view->e($scriptUri) ?>" class="btn btn-secondary">
+        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="btn btn-secondary" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
-        </a>
-        <a href="/" class="btn btn-outline-secondary" style="margin-left: 10px;">
-            Back to Home
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
     </div>
@@ -351,15 +312,20 @@
 
 <?php else: ?>
 
-<div class="text-center mt-3">
-    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-primary">
-        Start Over
+<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">
+    <?php if ($tableAlreadyExists): ?>
+    <a href="<?= $view->e($scriptUri) ?>/import/drop-restart?table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
+       class="btn btn-warning"
+       onclick="return confirm('This will DROP TABLE `<?= $view->e($tableAlreadyExists) ?>` and restart the import. Continue?');">
+        Drop "<?= $view->e($tableAlreadyExists) ?>" &amp; Restart Import
     </a>
-    <a href="/" class="btn btn-secondary" style="margin-left: 10px;">
-        Back to Home
-    </a>
-    <br><br>
+    <span class="text-muted">or</span>
+    <?php endif; ?>
+    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-primary">Start Over (resume)</a>
+    <a href="../" class="btn btn-info">Back to Home</a>
+    <?php if (!$tableAlreadyExists): ?>
     <span class="text-muted">(DROP old tables before restarting)</span>
+    <?php endif; ?>
 </div>
 
 <?php endif; ?>
