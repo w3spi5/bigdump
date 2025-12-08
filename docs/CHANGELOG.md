@@ -2,6 +2,59 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.9] - 2025-12-08 - UI Overhaul & Drop Table Recovery
+
+### Added in 2.9
+
+- **Drop Table & Restart Feature**: One-click recovery from "Table already exists" errors
+  - New route `/import/drop-restart?table=xxx&fn=file.sql`
+  - Safe table name validation (alphanumeric + underscore only)
+  - Confirmation dialog before DROP TABLE execution
+  - Automatic import restart after table deletion
+- **Enhanced Error Page**: Contextual help for common errors
+  - "No filename specified" error: session expiry explanation + recovery steps
+  - "File not found" error: troubleshooting checklist
+  - Info boxes with icons and actionable instructions
+
+### Changed in 2.9
+
+- **Button Design Overhaul**: Tailwind-inspired gradients with pulse animations
+  - Primary: blue gradient (#1e40af → #1e3a8a)
+  - Danger: red gradient (#f87171 → #ef4444)
+  - Success: green gradient (#22c55e → #16a34a)
+  - Warning: amber gradient (#f59e0b → #d97706)
+  - Info: sky gradient (#0284c7 → #0369a1)
+  - Secondary: zinc gradient (#52525b → #3f3f46)
+- **Hover Animation**: Pulse effect with growing box-shadow (1.5s infinite)
+- **Button Colors**: All buttons now use white text for consistency
+- **Import Button**: Changed from blue (primary) to green (success) on home page
+- **Back to Home**: Changed from gray (secondary) to sky blue (info)
+- **Button Labels**: "Start Over" renamed to "Start Over (resume)"
+- **Layout**: "Processing" header moved to top of import page
+- **Button Alignment**: Flexbox layout for horizontal button groups
+
+### Fixed in 2.9
+
+- **Stop Import Error**: Fixed permission denied on Windows when manipulating session files
+  - Added `is_readable()` check before file operations
+  - Added try/catch with error suppression for session file access
+- **Text Visibility**: Contextual `.text-muted` color (gray in cards, white-70% in footer)
+- **Button Font Size**: Standardized 14px across all button types (button/anchor)
+
+### CSS Additions in 2.9
+
+```css
+/* Pulse animations for each button type */
+@keyframes pulse-primary { /* blue shadow */ }
+@keyframes pulse-danger { /* red shadow */ }
+@keyframes pulse-success { /* green shadow */ }
+@keyframes pulse-warning { /* amber shadow */ }
+@keyframes pulse-info { /* sky shadow */ }
+@keyframes pulse-secondary { /* zinc shadow */ }
+```
+
+---
+
 ## [2.8] - 2025-12-08 - Session Persistence & Aggressive Auto-Tuning
 
 ### Added in 2.8

@@ -109,11 +109,13 @@ class AjaxService
         $memoryPct = $stats['memory_percentage'] ?? 0;
         $speedLps = $stats['speed_lps'] ?? 0;
         $adjustment = $stats['auto_tune_adjustment'] ?? '';
+        $estimatesFrozen = $stats['estimates_frozen'] ?? false;
 
         $xml .= $this->xmlElement('batch_size', (string) $batchSize);
         $xml .= $this->xmlElement('memory_pct', (string) $memoryPct);
         $xml .= $this->xmlElement('speed_lps', number_format($speedLps, 0));
         $xml .= $this->xmlElement('adjustment', $adjustment);
+        $xml .= $this->xmlElement('estimates_frozen', $estimatesFrozen ? '1' : '0');
 
         $xml .= '</root>';
 
@@ -174,6 +176,7 @@ class AjaxService
     public function createAjaxScript(ImportSession $session, string $scriptUri): string
     {
         $safeScriptUri = $this->escapeJsString($scriptUri);
+        $safeFilename = $this->escapeJsString($session->getFilename());
 
         $js = <<<JAVASCRIPT
 <script type="text/javascript">
@@ -181,12 +184,25 @@ class AjaxService
     'use strict';
 
     var scriptUri = '{$safeScriptUri}';
+    var filename = '{$safeFilename}';
 
     /**
      * Displays an import error directly in the page (no popup).
      * Creates a styled error container similar to the PHP-rendered version.
      */
     function displayErrorInPage(message, stats) {
+        // Check for "Table already exists" error and extract table name
+        var tableMatch = message.match(/Table\s+['"`]([^'"`]+)['"`]\s+already exists/i);
+        var dropButton = '';
+        if (tableMatch) {
+            var tableName = tableMatch[1];
+            dropButton = '<a href="' + scriptUri + '/import/drop-restart?table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
+                'class="btn btn-warning" ' +
+                'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
+                'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
+                '<br><br><span class="text-muted">or</span><br><br>';
+        }
+
         // Create error HTML matching the existing error-container style
         var errorHtml = '<div class="error-container" role="alert">' +
             '<div class="error-header">' +
@@ -212,9 +228,10 @@ class AjaxService
                 '</div>' +
             '</details>' +
         '</div>' +
-        '<div class="text-center mt-3">' +
-            '<a href="' + scriptUri + '" class="btn btn-primary">Start Over</a>' +
-            '<span class="text-muted" style="margin-left: 15px;">(DROP old tables before restarting)</span>' +
+        '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
+            dropButton +
+            '<a href="' + scriptUri + '" class="btn btn-primary">Start Over (resume)</a>' +
+            (tableMatch ? '' : '<span class="text-muted">(DROP old tables before restarting)</span>') +
         '</div>';
 
         // Find card-body and insert error at the beginning
@@ -428,6 +445,34 @@ class AjaxService
                 if (adjEl) {
                     adjEl.textContent = adjustment;
                     adjEl.style.display = 'block';
+                }
+            }
+        }
+
+        // Update calculating indicator for estimated values (Lines/Queries: Remaining & Total columns)
+        // estimates_frozen is true once we've processed 5% of file (stable estimate)
+        var estimatesFrozen = stats && stats.estimates_frozen;
+        var table = document.querySelector('table tbody');
+        if (table) {
+            var rows = table.getElementsByTagName('tr');
+            // Row 0 = Lines, Row 1 = Queries
+            // Columns: 0=label, 1=this_session, 2=total_done, 3=remaining, 4=total
+            for (var r = 0; r < 2 && r < rows.length; r++) {
+                var cells = rows[r].getElementsByTagName('td');
+                // Apply/remove calculating class on Remaining (col 3) and Total (col 4)
+                if (cells[3]) {
+                    if (estimatesFrozen) {
+                        cells[3].classList.remove('calculating');
+                    } else {
+                        cells[3].classList.add('calculating');
+                    }
+                }
+                if (cells[4]) {
+                    if (estimatesFrozen) {
+                        cells[4].classList.remove('calculating');
+                    } else {
+                        cells[4].classList.add('calculating');
+                    }
                 }
             }
         }
