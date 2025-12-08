@@ -8,6 +8,7 @@
     <meta http-equiv="Expires" content="-1">
     <meta name="robots" content="noindex, nofollow">
     <title>BigDump v<?= $view->e($version) ?> - MySQL Dump Importer</title>
+    <link rel="icon" type="image/png" href="assets/img/logo.png">
     <link rel="stylesheet" href="assets/css/bigdump.css">
 </head>
 <body>
