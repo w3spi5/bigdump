@@ -2,6 +2,47 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.11] - Quick Wins: Animations, Preview & History
+
+### Added in 2.11
+
+- **SQL Preview Modal**: Preview file contents before importing
+  - Click the eye icon (👁️) on any file to open preview
+  - Raw SQL content display (first 50 lines)
+  - Extracted queries with type badges (CREATE, INSERT, DROP, UPDATE, etc.)
+  - Tabbed interface: Raw Content / Queries
+  - File info: size, type, lines count, queries count
+  - Direct "Start Import" button from preview
+  - Supports both `.sql` and `.gz` files
+- **Import History**: Track all import operations
+  - New `ImportHistoryService` for persistent logging
+  - History modal with statistics (total, successful, failed, queries)
+  - Table view with status icons, dates, and results
+  - Clear history functionality
+  - JSON storage in `uploads/.import_history.json`
+  - Automatic logging at end of SSE imports
+- **UI Animations**: Enhanced visual feedback
+  - Buttons: `hover:scale-105`, `active:scale-95`, shadow on hover
+  - Progress bar: Animated striped pattern
+  - Stat boxes: Lift effect on hover (`-translate-y-1`)
+  - Dropzone: Scale and shadow on hover
+  - Table rows: Smooth color transitions
+
+### Changed in 2.11
+
+- **Tailwind Config**: Added custom `progress-stripe` animation keyframes
+- **Button Classes**: Unified animation classes across all buttons
+- **Security**: All dynamic content uses safe DOM methods (`textContent`, `createElement`)
+
+### New Routes in 2.11
+
+- `?action=preview&fn=filename` - Get JSON preview data for a file
+- `?action=history` - Get import history and statistics
+- `?action=history&do=clear` - Clear all history
+- `?action=history&do=stats` - Get statistics only
+
+---
+
 ## [2.10] - Tailwind CSS Migration
 
 ### Added in 2.10
