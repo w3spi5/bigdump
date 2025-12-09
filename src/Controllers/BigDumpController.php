@@ -12,6 +12,7 @@ use BigDump\Models\ImportSession;
 use BigDump\Services\ImportService;
 use BigDump\Services\AjaxService;
 use BigDump\Services\SseService;
+use BigDump\Services\ImportHistoryService;
 
 /**
  * BigDumpController Class - Main controller
@@ -65,6 +66,12 @@ class BigDumpController
     protected AjaxService $ajaxService;
 
     /**
+     * Import history service.
+     * @var ImportHistoryService
+     */
+    protected ImportHistoryService $historyService;
+
+    /**
      * Constructor.
      *
      * @param Config $config Configuration
@@ -85,6 +92,7 @@ class BigDumpController
 
         $this->importService = new ImportService($config);
         $this->ajaxService = new AjaxService($config);
+        $this->historyService = new ImportHistoryService($config->get('upload_dir', 'uploads/'));
     }
 
     /**
@@ -479,14 +487,36 @@ class BigDumpController
             $this->clearSessionDirect($sessionFile);
         }
 
-        // Send final event
+        // Send final event and log to history
         $stats = $session->getStatistics();
         if ($session->hasError()) {
+            // Log failed import to history
+            $this->historyService->addEntry(
+                $session->getFilename(),
+                $stats['queries_done'] ?? 0,
+                $stats['lines_done'] ?? 0,
+                $stats['bytes_done'] ?? 0,
+                false,
+                $session->getError(),
+                0.0
+            );
+
             $sseService->sendEvent('error', [
                 'message' => $session->getError(),
                 'stats' => $stats,
             ]);
         } else {
+            // Log successful import to history
+            $this->historyService->addEntry(
+                $session->getFilename(),
+                $stats['queries_done'] ?? 0,
+                $stats['lines_done'] ?? 0,
+                $stats['bytes_done'] ?? 0,
+                true,
+                null,
+                0.0
+            );
+
             $sseService->sendEvent('complete', [
                 'stats' => $stats,
             ]);
@@ -656,5 +686,195 @@ class BigDumpController
         $path = ($baseUri === '' || $baseUri === '/') ? '/import' : $baseUri . '/import';
 
         $this->response->redirect($protocol . '://' . $host . $path);
+    }
+
+    /**
+     * Preview SQL file content (first N lines/queries).
+     *
+     * Returns JSON with preview data for modal display.
+     *
+     * @return void
+     */
+    public function preview(): void
+    {
+        // Set JSON content type
+        header('Content-Type: application/json; charset=utf-8');
+
+        $filename = $this->request->get('fn', '');
+        $maxLines = min((int) $this->request->get('lines', 50), 200); // Cap at 200 lines
+
+        if (empty($filename)) {
+            echo json_encode(['error' => 'No filename provided']);
+            exit;
+        }
+
+        $uploadDir = $this->config->get('upload_dir', 'uploads/');
+        $filepath = $uploadDir . basename($filename);
+
+        if (!file_exists($filepath)) {
+            echo json_encode(['error' => 'File not found']);
+            exit;
+        }
+
+        // Detect gzip
+        $isGzip = strtolower(pathinfo($filename, PATHINFO_EXTENSION)) === 'gz';
+
+        try {
+            $lines = [];
+            $queries = [];
+            $currentQuery = '';
+            $lineCount = 0;
+            $queryCount = 0;
+            $fileSize = filesize($filepath);
+
+            // Open file (gzip or regular)
+            if ($isGzip && function_exists('gzopen')) {
+                $handle = gzopen($filepath, 'r');
+            } else {
+                $handle = fopen($filepath, 'r');
+            }
+
+            if (!$handle) {
+                echo json_encode(['error' => 'Cannot open file']);
+                exit;
+            }
+
+            // Skip BOM if present
+            $firstBytes = $isGzip ? gzread($handle, 3) : fread($handle, 3);
+            if ($firstBytes !== "\xEF\xBB\xBF") {
+                // Not a BOM, seek back
+                if ($isGzip) {
+                    gzrewind($handle);
+                } else {
+                    rewind($handle);
+                }
+            }
+
+            // Read lines
+            while ($lineCount < $maxLines) {
+                $line = $isGzip ? gzgets($handle) : fgets($handle);
+                if ($line === false) {
+                    break;
+                }
+
+                $lineCount++;
+                $trimmedLine = trim($line);
+                $lines[] = $line;
+
+                // Skip empty lines and comments for query extraction
+                if (empty($trimmedLine) || str_starts_with($trimmedLine, '--') || str_starts_with($trimmedLine, '#') || str_starts_with($trimmedLine, '/*')) {
+                    continue;
+                }
+
+                // Accumulate query
+                $currentQuery .= $line;
+
+                // Check if query is complete (ends with ;)
+                if (str_ends_with($trimmedLine, ';')) {
+                    $queries[] = trim($currentQuery);
+                    $currentQuery = '';
+                    $queryCount++;
+
+                    // Stop if we have enough queries
+                    if ($queryCount >= 10) {
+                        break;
+                    }
+                }
+            }
+
+            // Close file
+            if ($isGzip) {
+                gzclose($handle);
+            } else {
+                fclose($handle);
+            }
+
+            // Prepare response
+            $response = [
+                'success' => true,
+                'filename' => $filename,
+                'fileSize' => $fileSize,
+                'fileSizeFormatted' => $this->formatBytes($fileSize),
+                'isGzip' => $isGzip,
+                'linesPreview' => $lineCount,
+                'queriesPreview' => count($queries),
+                'rawContent' => implode('', $lines),
+                'queries' => array_slice($queries, 0, 10), // First 10 queries
+            ];
+
+            echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+
+        } catch (\Throwable $e) {
+            echo json_encode(['error' => 'Error reading file: ' . $e->getMessage()]);
+        }
+
+        exit;
+    }
+
+    /**
+     * Format bytes to human readable string.
+     *
+     * @param int $bytes Bytes count
+     * @return string Formatted string
+     */
+    private function formatBytes(int $bytes): string
+    {
+        $units = ['B', 'KB', 'MB', 'GB'];
+        $i = 0;
+        while ($bytes >= 1024 && $i < count($units) - 1) {
+            $bytes /= 1024;
+            $i++;
+        }
+        return round($bytes, 2) . ' ' . $units[$i];
+    }
+
+    /**
+     * Action: Get import history.
+     *
+     * Returns JSON with import history and statistics.
+     *
+     * @return void
+     */
+    public function history(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+
+        $action = $this->request->get('do', 'list');
+
+        switch ($action) {
+            case 'clear':
+                $this->historyService->clearHistory();
+                echo json_encode(['success' => true, 'message' => 'History cleared']);
+                break;
+
+            case 'delete':
+                $id = $this->request->get('id', '');
+                if (empty($id)) {
+                    echo json_encode(['success' => false, 'error' => 'No ID provided']);
+                } else {
+                    $deleted = $this->historyService->deleteEntry($id);
+                    echo json_encode(['success' => $deleted]);
+                }
+                break;
+
+            case 'stats':
+                echo json_encode([
+                    'success' => true,
+                    'statistics' => $this->historyService->getStatistics(),
+                ]);
+                break;
+
+            case 'list':
+            default:
+                $limit = (int) $this->request->get('limit', 20);
+                echo json_encode([
+                    'success' => true,
+                    'history' => $this->historyService->getHistory($limit),
+                    'statistics' => $this->historyService->getStatistics(),
+                ]);
+                break;
+        }
+
+        exit;
     }
 }

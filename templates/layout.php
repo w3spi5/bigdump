@@ -19,6 +19,15 @@
                 extend: {
                     maxWidth: {
                         'container': '70vw',
+                    },
+                    animation: {
+                        'progress-stripe': 'progress-stripe 1s linear infinite',
+                    },
+                    keyframes: {
+                        'progress-stripe': {
+                            '0%': { backgroundPosition: '1rem 0' },
+                            '100%': { backgroundPosition: '0 0' },
+                        }
                     }
                 }
             }
