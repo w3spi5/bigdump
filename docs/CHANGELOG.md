@@ -2,7 +2,50 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.9] - 2025-12-08 - UI Overhaul & Drop Table Recovery
+## [2.10] - Tailwind CSS Migration
+
+### Added in 2.10
+
+- **Tailwind CSS Framework**: Complete migration from Bootstrap/custom CSS to Tailwind CDN
+  - Dark mode support via `data-theme` attribute
+  - Custom container width (`max-w-container: 70vw`)
+  - Responsive grid layouts
+- **SSE Loading Overlay**: "Connecting..." spinner while establishing SSE connection
+  - Displayed only during active imports
+  - Auto-hidden on first progress event
+- **SSE Error Display**: Import errors now displayed inline with Tailwind styling
+  - Full error details in collapsible section
+  - "Drop & Restart" button for "Table already exists" errors
+  - Proper dark mode support
+
+### Changed in 2.10
+
+- **Header Layout**: Logo, title, and dark mode toggle now aligned with main content container
+  - Gradient background remains full-width
+  - Content constrained to `max-w-container`
+- **CSS Reduction**: Removed ~1100 lines of Bootstrap/custom CSS
+  - Only animations, tooltips, and specific styles remain in `bigdump.css`
+- **JavaScript Selectors**: Updated to use Tailwind-compatible selectors
+  - `displayErrorInPage()` uses `main` instead of `.card-body`
+  - Stats boxes use `.stat-box .stat-value` classes
+  - Progress bar uses `.progress-bar` class
+
+### Fixed in 2.10
+
+- **Real-time Stats Updates**: Added missing CSS classes (`stat-box`, `stat-value`, `progress-bar`) for JavaScript compatibility
+- **SSE Error Handling**: Errors now display in page instead of failing silently
+- **Dark Mode Consistency**: All components properly styled for both light and dark themes
+
+### Templates Refactored in 2.10
+
+- `templates/layout.php` - Tailwind base layout with dark mode
+- `templates/home.php` - File list, upload zone, cards
+- `templates/import.php` - Progress, stats, error display
+- `templates/error.php` - Error page styling
+
+---
+
+## [2.9] - UI Overhaul & Drop Table Recovery
 
 ### Added in 2.9
 
@@ -55,7 +98,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.8] - 2025-12-08 - Session Persistence & Aggressive Auto-Tuning
+## [2.8] - Session Persistence & Aggressive Auto-Tuning
 
 ### Added in 2.8
 
@@ -114,7 +157,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.7] - 2025-12-07
+## [2.7] - Post-Queries & NVMe Optimization
 
 ### Added in 2.7
 
@@ -164,7 +207,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.6] - 2025-12-07
+## [2.6] - INSERT Batching & Statistics Estimation
 
 ### Added in 2.6
 
@@ -212,7 +255,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.5] - 2025-12-06
+## [2.5] - Auto-Tuning & SQL Parser Fixes
 
 ### Added in 2.5
 
@@ -250,7 +293,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.4] - 2025-12-06
+## [2.4] - Session Cleanup & URI Fix
 
 ### Fixed in 2.4
 
@@ -272,7 +315,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.3] - 2025-12-06
+## [2.3] - Multi-line INSERT Persistence
 
 ### Added in 2.3
 
@@ -291,7 +334,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.2] - 2025-12-06
+## [2.2] - Error Display & Security
 
 ### Added in 2.2
 
@@ -309,7 +352,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.1] - 2025-12-06
+## [2.1] - Drag & Drop Upload
 
 ### Added in 2.1
 
@@ -337,7 +380,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.0] - 2025-12-06
+## [2.0] - MVC Refactoring
 
 ### Added in 2.0
 
