@@ -34,10 +34,34 @@
         });
     }
 
+    /**
+     * Initialize dark mode toggle
+     */
+    function initDarkModeToggle() {
+        var toggle = document.getElementById('darkModeToggle');
+        if (!toggle) return;
+
+        toggle.addEventListener('click', function() {
+            var html = document.documentElement;
+            var current = html.getAttribute('data-theme') || 'light';
+            var next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            localStorage.setItem('bigdump-theme', next);
+        });
+    }
+
+    /**
+     * Initialize all components
+     */
+    function init() {
+        initLoadingOverlay();
+        initDarkModeToggle();
+    }
+
     // Initialize when DOM is ready
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initLoadingOverlay);
+        document.addEventListener('DOMContentLoaded', init);
     } else {
-        initLoadingOverlay();
+        init();
     }
 })();

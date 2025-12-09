@@ -197,55 +197,60 @@ class AjaxService
         if (tableMatch) {
             var tableName = tableMatch[1];
             dropButton = '<a href="' + scriptUri + '/import/drop-restart?table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
-                'class="btn btn-warning" ' +
+                'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 text-white" ' +
                 'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
                 'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
-                '<br><br><span class="text-muted">or</span><br><br>';
+                '<span class="text-gray-500 dark:text-gray-400 mx-2">or</span>';
         }
 
-        // Create error HTML matching the existing error-container style
-        var errorHtml = '<div class="error-container" role="alert">' +
-            '<div class="error-header">' +
-                '<div class="error-header__icon">' +
-                    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+        // Create error HTML with Tailwind classes (matching import.php error display)
+        var errorHtml = '<div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 mb-6" id="sse-error-alert" role="alert">' +
+            '<div class="flex items-start gap-4">' +
+                '<div class="flex-shrink-0">' +
+                    '<svg class="w-8 h-8 text-red-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
                         '<path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.899 4.5H4.645c-2.809 0-3.752-2.8-2.898-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>' +
                     '</svg>' +
                 '</div>' +
-                '<div class="error-header__content">' +
-                    '<h2 class="error-header__title">Import Error</h2>' +
-                    '<div class="error-header__summary">' + escapeHtml(message) + '</div>' +
+                '<div class="flex-1">' +
+                    '<h2 class="text-lg font-semibold text-red-800 dark:text-red-200">Import Error</h2>' +
+                    '<div class="text-sm text-red-700 dark:text-red-300 mt-1">' + escapeHtml(message.split('\\n')[0]) + '</div>' +
                 '</div>' +
             '</div>' +
-            '<details class="error-details" open>' +
-                '<summary class="error-details__toggle">' +
+            '<details class="mt-4" open>' +
+                '<summary class="cursor-pointer flex items-center gap-2 text-sm font-medium text-red-700 dark:text-red-300">' +
                     '<span>Show Full Error Details</span>' +
-                    '<svg class="error-details__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
+                    '<svg class="w-5 h-5 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
                         '<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>' +
                     '</svg>' +
                 '</summary>' +
-                '<div class="error-details__content">' +
-                    '<pre class="error-details__pre">' + escapeHtml(message) + '</pre>' +
+                '<div class="mt-3">' +
+                    '<pre class="bg-red-100 dark:bg-red-900/40 p-4 rounded-lg text-xs font-mono text-red-800 dark:text-red-200 overflow-x-auto whitespace-pre-wrap">' + escapeHtml(message) + '</pre>' +
                 '</div>' +
             '</details>' +
         '</div>' +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             dropButton +
-            '<a href="' + scriptUri + '" class="btn btn-primary">Start Over (resume)</a>' +
-            (tableMatch ? '' : '<span class="text-muted">(DROP old tables before restarting)</span>') +
+            '<a href="' + scriptUri + '" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Start Over (resume)</a>' +
+            '<a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
+            (tableMatch ? '' : '<span class="text-gray-500 dark:text-gray-400">(DROP old tables before restarting)</span>') +
         '</div>';
 
-        // Find card-body and insert error at the beginning
-        var cardBody = document.querySelector('.card-body');
-        if (cardBody) {
-            // Remove existing content except the error
-            var existingError = cardBody.querySelector('.error-container');
-            if (existingError) existingError.remove();
-            cardBody.insertAdjacentHTML('afterbegin', errorHtml);
+        // Find main content area and insert error at the beginning
+        var mainContent = document.querySelector('main');
+        if (mainContent) {
+            // Remove existing SSE error if any
+            var existingError = document.getElementById('sse-error-alert');
+            if (existingError) existingError.parentElement.remove();
+            mainContent.insertAdjacentHTML('afterbegin', errorHtml);
         }
 
         // Hide progress elements
-        var progressElements = document.querySelectorAll('.progress-container, .stats-grid, table, .performance-section, noscript + div');
-        progressElements.forEach(function(el) { el.style.display = 'none'; });
+        var progressElements = document.querySelectorAll('.grid, table, noscript + div, .text-center.mt-3');
+        progressElements.forEach(function(el) {
+            if (!el.closest('#sse-error-alert')) {
+                el.style.display = 'none';
+            }
+        });
     }
 
     /**
@@ -537,7 +542,7 @@ class AjaxService
 
             // Easing factor: how fast to catch up (lower = smoother/slower)
             // 0.05 = very smooth, 0.15 = normal, 0.5 = fast
-            var easing = 0.06;
+            var easing = 0.15;
 
             // Smoothly move toward targets
             this.displayLines += (this.targetLines - this.displayLines) * easing;
@@ -605,6 +610,9 @@ class AjaxService
             console.log('SSE: Connection established');
             connected = true;
             reconnectAttempts = 0;
+            // Hide loading overlay
+            var overlay = document.getElementById('sseLoadingOverlay');
+            if (overlay) overlay.style.display = 'none';
         });
 
         // Handle progress events (real-time updates)
@@ -612,6 +620,9 @@ class AjaxService
             try {
                 var data = JSON.parse(e.data);
                 connected = true;
+                // Hide loading overlay on first progress
+                var overlay = document.getElementById('sseLoadingOverlay');
+                if (overlay) overlay.style.display = 'none';
                 // Sync smoothing engine with real server data
                 if (data.stats) {
                     smoothing.sync(data.stats);
