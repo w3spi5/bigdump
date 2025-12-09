@@ -23,7 +23,7 @@ class Application
     /**
      * Application version.
      */
-    public const VERSION = '2.9';
+    public const VERSION = '2.11';
 
     /**
      * Configuration instance.
@@ -146,7 +146,9 @@ class Application
             ->register('stop_import', $controller, 'stopImport')
             ->register('ajax_import', $controller, 'ajaxImport')
             ->register('sse_import', $controller, 'sseImport')
-            ->register('drop_restart', $controller, 'dropRestart');
+            ->register('drop_restart', $controller, 'dropRestart')
+            ->register('preview', $controller, 'preview')
+            ->register('history', $controller, 'history');
     }
 
     /**

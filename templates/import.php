@@ -141,7 +141,7 @@
 <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
 <div class="bg-white dark:bg-gray-800 rounded-lg p-4 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
     <div class="bg-gray-200 dark:bg-gray-700 rounded h-2.5 overflow-hidden">
-        <div class="progress-bar h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300" style="width: <?= $statistics['pct_done'] ?>%"></div>
+        <div class="progress-bar h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300 bg-[length:1rem_1rem] animate-progress-stripe" style="width: <?= $statistics['pct_done'] ?>%; background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);"></div>
     </div>
     <div class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-2 text-right"><?= number_format($statistics['pct_done'], 2) ?>% Complete</div>
 </div>
@@ -159,20 +159,20 @@
 <?php endif; ?>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
         <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['lines_done']) ?></div>
         <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Lines Processed</div>
     </div>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
         <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['queries_done']) ?></div>
         <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Queries Executed</div>
     </div>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
         <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= $statistics['mb_done'] ?></div>
         <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">MB Processed</div>
     </div>
     <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700">
+    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
         <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['pct_done'], 1) ?>%</div>
         <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Complete</div>
     </div>
@@ -293,8 +293,8 @@
 </div>
 
 <div class="text-center mt-3">
-    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Back to File List</a>
-    <a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white" style="margin-left: 10px;">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Back to File List</a>
+    <a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -315,7 +315,7 @@
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-gray-500 hover:bg-gray-600 text-white" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
+        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-gray-500 hover:bg-gray-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
         </a>
         <span class="text-gray-500 dark:text-gray-400" style="margin-left: 15px;">or wait for automatic continuation</span>
@@ -332,14 +332,14 @@
 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">
     <?php if ($tableAlreadyExists): ?>
     <a href="<?= $view->e($scriptUri) ?>/import/drop-restart?table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
-       class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 text-white"
+       class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
        onclick="return confirm('This will DROP TABLE `<?= $view->e($tableAlreadyExists) ?>` and restart the import. Continue?');">
         Drop "<?= $view->e($tableAlreadyExists) ?>" &amp; Restart Import
     </a>
     <span class="text-gray-500 dark:text-gray-400">or</span>
     <?php endif; ?>
-    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Start Over (resume)</a>
-    <a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Start Over (resume)</a>
+    <a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Back to Home</a>
     <?php if (!$tableAlreadyExists): ?>
     <span class="text-gray-500 dark:text-gray-400">(DROP old tables before restarting)</span>
     <?php endif; ?>
