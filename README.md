@@ -1,8 +1,8 @@
-# BigDump 2.9 - Staggered MySQL Dump Importer
+# BigDump 2.10 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.9-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.10-blue.svg)](https://php.net/)
 
 <p align="center">
   <img src="docs/logo.png" alt="BigDump Logo" width="400">
@@ -18,7 +18,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 - **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
 - **SSE Streaming**: Real-time progress with Server-Sent Events
 - **Session Persistence**: Resume imports after browser refresh or server restart
-- **Modern Interface**: Drag & drop upload with smooth animated progress
+- **Modern Interface**: Tailwind CSS with dark mode, drag & drop upload, smooth animations
 - **Auto-Tuning**: Dynamic batch size based on available RAM (up to 1.5M lines/batch)
 - **Enhanced Security**: Protection against path traversal, XSS, and other vulnerabilities
 - **UTF-8 Support**: Proper handling of multi-byte characters and BOM
