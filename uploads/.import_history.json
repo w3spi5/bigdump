@@ -1,0 +1,30 @@
+[
+    {
+        "id": "imp_693809a9a13b2",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765280169,
+        "datetime": "2025-12-09 11:36:09",
+        "queries_executed": 183,
+        "lines_processed": 53124106,
+        "bytes_processed": 1839121799,
+        "size_formatted": "1.71 GB",
+        "success": false,
+        "error": "SQL Error at line 53124107:\nQuery: (51954049, 129028, 1760722407, 88),\n(51954131, 220142, 1760722704, 88),\n(51954185, 37414, 1760722883, 88),\n(51954223, 220637, 1760723018, 88),\n(51954351, 51378, 1760723561, 88),\n(51954431, 78057, 1760723847, 88),\n(51954536, 203657, 1760724209, 88),\n(51954618, 1954, 1760724521, 88),\n(51954675, 185684, 1760724702, 88),\n(51954712, 123971, 1760724868, 88),\n(51954765, 218438, 1760725044, 88),\n(51954871, 77, 1760725416, 88),\n(51954931, 224776, 1760725590, 88),\n(51955007, 1099, 1760725835, 88),\n(519551...\nMySQL Error: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '51954049, 129028, 1760722407, 88),\n(51954131, 220142, 1760722704, 88),\n(51954185' at line 1",
+        "duration": 0,
+        "duration_formatted": "0s"
+    },
+    {
+        "id": "imp_693809a6cbadd",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765280166,
+        "datetime": "2025-12-09 11:36:06",
+        "queries_executed": 183,
+        "lines_processed": 53123811,
+        "bytes_processed": 1839121799,
+        "size_formatted": "1.71 GB",
+        "success": false,
+        "error": "SQL Error at line 53123812:\nQuery: (51954049, 129028, 1760722407, 88),\n(51954131, 220142, 1760722704, 88),\n(51954185, 37414, 1760722883, 88),\n(51954223, 220637, 1760723018, 88),\n(51954351, 51378, 1760723561, 88),\n(51954431, 78057, 1760723847, 88),\n(51954536, 203657, 1760724209, 88),\n(51954618, 1954, 1760724521, 88),\n(51954675, 185684, 1760724702, 88),\n(51954712, 123971, 1760724868, 88),\n(51954765, 218438, 1760725044, 88),\n(51954871, 77, 1760725416, 88),\n(51954931, 224776, 1760725590, 88),\n(51955007, 1099, 1760725835, 88),\n(519551...\nMySQL Error: You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '51954049, 129028, 1760722407, 88),\n(51954131, 220142, 1760722704, 88),\n(51954185' at line 1",
+        "duration": 0,
+        "duration_formatted": "0s"
+    }
+]
