@@ -308,8 +308,17 @@
                 if (f.status === 'success') hasSuccess = true;
             });
             if (hasSuccess) {
-                // Reload page after short delay to show updated file list
-                setTimeout(function() { location.reload(); }, 1000);
+                // Refresh file list using real-time polling (no page reload)
+                setTimeout(function() {
+                    if (typeof refreshFileList === 'function') {
+                        // Clear upload UI and refresh file list
+                        clearAll();
+                        refreshFileList();
+                    } else {
+                        // Fallback: reload page if polling not available
+                        location.reload();
+                    }
+                }, 500);
             }
         }
     }

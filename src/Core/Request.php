@@ -130,7 +130,7 @@ class Request
         if ($this->has('action')) {
             $action = $this->input('action', '');
             // Validate against known actions to prevent injection
-            $validActions = ['home', 'upload', 'delete', 'import', 'start_import', 'stop_import', 'ajax_import', 'sse_import', 'drop_restart', 'preview', 'history'];
+            $validActions = ['home', 'upload', 'delete', 'import', 'start_import', 'stop_import', 'ajax_import', 'sse_import', 'drop_restart', 'preview', 'history', 'files_list'];
             if (in_array($action, $validActions, true)) {
                 return $action;
             }

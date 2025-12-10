@@ -690,6 +690,25 @@ class AjaxService
         intentionalClose = true;
         if (source) source.close();
     });
+
+    // Handle Stop Import button - close SSE before navigation
+    document.addEventListener('click', function(e) {
+        var stopLink = e.target.closest('a[href*="stop_import"]');
+        if (stopLink) {
+            // Close SSE connection immediately
+            intentionalClose = true;
+            if (source) {
+                source.close();
+                source = null;
+                console.log('SSE: Closed by user (Stop Import)');
+            }
+            // Small delay to ensure connection is closed before navigation
+            e.preventDefault();
+            setTimeout(function() {
+                window.location.href = stopLink.href;
+            }, 100);
+        }
+    });
 })();
 </script>
 JAVASCRIPT;
