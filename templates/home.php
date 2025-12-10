@@ -19,39 +19,39 @@
 ?>
 
 <?php if ($testMode): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+<div class="alert alert-warning">
     <strong>Test Mode Enabled</strong> - Queries will be parsed but not executed.
 </div>
 <?php endif; ?>
 
 <?php if (isset($uploadResult)): ?>
     <?php if ($uploadResult['success']): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700"><?= $view->e($uploadResult['message']) ?></div>
+        <div class="alert alert-success"><?= $view->e($uploadResult['message']) ?></div>
     <?php else: ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700"><?= $view->e($uploadResult['message']) ?></div>
+        <div class="alert alert-error"><?= $view->e($uploadResult['message']) ?></div>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if (isset($deleteResult)): ?>
     <?php if ($deleteResult['success']): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700"><?= $view->e($deleteResult['message']) ?></div>
+        <div class="alert alert-success"><?= $view->e($deleteResult['message']) ?></div>
     <?php else: ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700"><?= $view->e($deleteResult['message']) ?></div>
+        <div class="alert alert-error"><?= $view->e($deleteResult['message']) ?></div>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if (!$dbConfigured): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+<div class="alert alert-error">
     <strong>Database not configured!</strong><br>
-    Please edit <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">config/config.php</code> and set your database credentials.
+    Please edit <code class="code">config/config.php</code> and set your database credentials.
 </div>
 <?php elseif ($connectionInfo && !$connectionInfo['success']): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+<div class="alert alert-error">
     <strong>Database connection failed!</strong><br>
     <?= $view->e($connectionInfo['message']) ?>
 </div>
 <?php elseif ($connectionInfo && $connectionInfo['success']): ?>
-<div class="bg-cyan-600 dark:bg-cyan-800 text-white rounded-xl px-6 py-4 mb-6">
+<div class="info-box">
     Connected to <strong><?= $view->e($dbName) ?></strong> at <strong><?= $view->e($dbServer) ?></strong><br>
     Connection charset: <strong><?= $view->e($connectionInfo['charset']) ?></strong>
     <span class="text-cyan-100 dark:text-cyan-200">(Your dump file must use the same charset)</span>
@@ -59,25 +59,25 @@
 <?php endif; ?>
 
 <?php if (!empty($predefinedFile)): ?>
-    <div class="bg-cyan-600 dark:bg-cyan-800 text-white rounded-xl px-6 py-4 mb-6">
+    <div class="info-box">
         <strong>Predefined file:</strong> <?= $view->e($predefinedFile) ?><br>
         <form method="post" action="" style="display:inline">
             <input type="hidden" name="fn" value="<?= $view->e($predefinedFile) ?>">
-            <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white mt-3">Start Import</button>
+            <button type="submit" class="btn btn-blue mt-3">Start Import</button>
         </form>
     </div>
 <?php else: ?>
 
     <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Dump Files</h3>
-        <button onclick="showHistory()" class="px-3 py-1.5 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-indigo-500 hover:bg-indigo-600 hover:scale-105 active:scale-95 text-white">
+        <button onclick="showHistory()" class="btn btn-sm btn-indigo">
             <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
         </button>
     </div>
 
     <!-- Empty state message (shown when no files) -->
-    <div id="noFilesMessage" class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 <?= empty($files) ? '' : 'hidden' ?>">
-        No dump files found in <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code><br>
+    <div id="noFilesMessage" class="alert alert-warning <?= empty($files) ? '' : 'hidden' ?>">
+        No dump files found in <code class="code"><?= $view->e($uploadDir) ?></code><br>
         Upload a .sql, .gz or .csv file using the form below, or via FTP.
     </div>
 
@@ -115,20 +115,20 @@
                             <?php if ($file['type'] !== 'GZip' || function_exists('gzopen')): ?>
                                 <button type="button"
                                         onclick="previewFile('<?= $view->escapeJs($file['name']) ?>')"
-                                        class="px-3 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-purple-500 hover:bg-purple-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
+                                        class="btn btn-icon btn-purple"
                                         title="Preview SQL content">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
                                 <form method="post" action="" style="display:inline">
                                     <input type="hidden" name="fn" value="<?= $view->e($file['name']) ?>">
-                                    <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Import</button>
+                                    <button type="submit" class="btn btn-green">Import</button>
                                 </form>
                             <?php else: ?>
-                                <span class="text-gray-500 dark:text-gray-400">GZip not supported</span>
+                                <span class="text-muted">GZip not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
                         <a href="<?= $view->url(['delete' => $file['name']]) ?>"
-                           class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
+                           class="btn btn-red"
                            onclick="return confirm('Delete <?= $view->escapeJs($file['name']) ?>?')">
                             Delete
                         </a>
@@ -144,20 +144,20 @@
     <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Upload Dump Files</h3>
 
     <?php if (!$uploadEnabled): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
-            Upload disabled. Directory <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code> is not writable.<br>
+        <div class="alert alert-warning">
+            Upload disabled. Directory <code class="code"><?= $view->e($uploadDir) ?></code> is not writable.<br>
             Set permissions to 755 or 777, or upload files via FTP.
         </div>
     <?php else: ?>
-        <p class="text-gray-500 dark:text-gray-400 mb-3">
+        <p class="text-muted mb-3">
             Maximum file size: <strong><?= $view->formatBytes($uploadMaxSize) ?></strong> &bull;
             Allowed types: <strong>.sql, .gz, .csv</strong><br>
-            For larger files, use FTP to upload directly to <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code>
+            For larger files, use FTP to upload directly to <code class="code"><?= $view->e($uploadDir) ?></code>
         </p>
 
         <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>">
             <!-- Dropzone -->
-            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-[1.01] hover:shadow-lg transition-all duration-200 bg-gray-50 dark:bg-gray-800/50" id="dropzone">
+            <div class="dropzone" id="dropzone">
                 <div class="file-upload__icon">
                     <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round"/>
@@ -181,10 +181,10 @@
 
             <!-- Actions -->
             <div class="mt-4 flex gap-3" id="uploadActions" style="display: none;">
-                <button type="button" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white" id="uploadBtn">
+                <button type="button" class="btn btn-blue" id="uploadBtn">
                     Upload All Files
                 </button>
-                <button type="button" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-gray-500 hover:bg-gray-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" id="clearBtn">
+                <button type="button" class="btn btn-gray" id="clearBtn">
                     Clear All
                 </button>
             </div>
@@ -276,13 +276,13 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <button onclick="closePreviewModal()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+        <div class="modal-footer">
+            <button onclick="closePreviewModal()" class="btn btn-secondary">
                 Close
             </button>
             <form method="post" action="" id="previewImportForm" style="display:inline">
                 <input type="hidden" name="fn" id="previewImportFilename" value="">
-                <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">
+                <button type="submit" class="btn btn-green">
                     <i class="fa-solid fa-play mr-2"></i>Start Import
                 </button>
             </form>
@@ -738,7 +738,7 @@ function createFileRow(file, isNew = false, isUploading = false) {
             // Preview button
             const previewBtn = document.createElement('button');
             previewBtn.type = 'button';
-            previewBtn.className = 'px-3 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-purple-500 hover:bg-purple-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+            previewBtn.className = 'btn btn-icon btn-purple';
             previewBtn.title = 'Preview SQL content';
             previewBtn.onclick = () => previewFile(file.name);
             const eyeIcon = document.createElement('i');
@@ -759,14 +759,14 @@ function createFileRow(file, isNew = false, isUploading = false) {
             form.appendChild(hiddenInput);
             const importBtn = document.createElement('button');
             importBtn.type = 'submit';
-            importBtn.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+            importBtn.className = 'btn btn-green';
             importBtn.textContent = 'Import';
             form.appendChild(importBtn);
             td5.appendChild(form);
             td5.appendChild(document.createTextNode(' '));
         } else if (file.type === 'GZip') {
             const notSupported = document.createElement('span');
-            notSupported.className = 'text-gray-500 dark:text-gray-400';
+            notSupported.className = 'text-muted';
             notSupported.textContent = 'GZip not supported';
             td5.appendChild(notSupported);
             td5.appendChild(document.createTextNode(' '));
@@ -775,7 +775,7 @@ function createFileRow(file, isNew = false, isUploading = false) {
         // Delete button
         const deleteLink = document.createElement('a');
         deleteLink.href = '?delete=' + encodeURIComponent(file.name);
-        deleteLink.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+        deleteLink.className = 'btn btn-red';
         deleteLink.textContent = 'Delete';
         deleteLink.onclick = () => confirm('Delete ' + file.name + '?');
         td5.appendChild(deleteLink);
@@ -906,11 +906,11 @@ document.addEventListener('DOMContentLoaded', startFilePolling);
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <button onclick="clearHistory()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300">
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button onclick="clearHistory()" class="btn btn-danger-ghost">
                 <i class="fa-solid fa-trash mr-1"></i> Clear History
             </button>
-            <button onclick="closeHistoryModal()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+            <button onclick="closeHistoryModal()" class="btn btn-secondary">
                 Close
             </button>
         </div>
