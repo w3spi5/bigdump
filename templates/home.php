@@ -211,15 +211,20 @@
 
 <!-- SQL Preview Modal -->
 <div class="modal-overlay hidden" id="previewModal" onclick="closePreviewModal(event)">
-    <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="previewModalTitle"
+         aria-describedby="previewModalSubtitle"
+         onclick="event.stopPropagation()">
         <!-- Modal Header -->
         <div class="modal-header">
             <div>
                 <h3 class="modal-title" id="previewModalTitle">SQL Preview</h3>
                 <p class="modal-subtitle" id="previewModalSubtitle">Loading...</p>
             </div>
-            <button onclick="closePreviewModal()" class="modal-close">
-                <i class="fa-solid fa-xmark text-xl"></i>
+            <button onclick="closePreviewModal()" class="modal-close" aria-label="Close preview modal">
+                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
             </button>
         </div>
 
@@ -296,29 +301,24 @@
     </div>
 </div>
 
-<!-- Escape key handler for modals -->
-<script>
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        if (typeof closePreviewModal === 'function') closePreviewModal();
-        if (typeof closeHistoryModal === 'function') closeHistoryModal();
-    }
-});
-</script>
-
 <!-- Import History Modal -->
 <div class="modal-overlay hidden" id="historyModal" onclick="closeHistoryModal(event)">
-    <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="historyModalTitle"
+         aria-describedby="historyModalSubtitle"
+         onclick="event.stopPropagation()">
         <!-- Modal Header -->
         <div class="modal-header">
             <div>
-                <h3 class="modal-title">
-                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500"></i>Import History
+                <h3 class="modal-title" id="historyModalTitle">
+                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500" aria-hidden="true"></i>Import History
                 </h3>
-                <p class="modal-subtitle">Recent import operations</p>
+                <p class="modal-subtitle" id="historyModalSubtitle">Recent import operations</p>
             </div>
-            <button onclick="closeHistoryModal()" class="modal-close">
-                <i class="fa-solid fa-xmark text-xl"></i>
+            <button onclick="closeHistoryModal()" class="modal-close" aria-label="Close history modal">
+                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
             </button>
         </div>
 
