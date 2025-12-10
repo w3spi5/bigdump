@@ -857,6 +857,75 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ========================================
+   ACCESSIBILITY - Focus Visible States
+   ======================================== */
+
+/* Modal Close Button Focus */
+.modal-close:focus {
+    outline: none;
+}
+.modal-close:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6;
+    border-radius: 0.375rem;
+}
+[data-theme="dark"] .modal-close:focus-visible {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #3b82f6;
+}
+
+/* Tab Controls Focus */
+.preview-tab:focus {
+    outline: none;
+}
+.preview-tab:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6;
+    border-radius: 0.25rem;
+}
+[data-theme="dark"] .preview-tab:focus-visible {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #3b82f6;
+}
+
+/* Links Focus */
+a:focus {
+    outline: none;
+}
+a:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6;
+    border-radius: 0.25rem;
+}
+[data-theme="dark"] a:focus-visible {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #3b82f6;
+}
+
+/* Dropzone Focus-Within */
+.dropzone:focus-within {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6;
+}
+[data-theme="dark"] .dropzone:focus-within {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #3b82f6;
+}
+
+/* Details/Summary Focus */
+details.error-details summary:focus {
+    outline: none;
+}
+details.error-details summary:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3b82f6;
+    border-radius: 0.375rem;
+}
+[data-theme="dark"] details.error-details summary:focus-visible {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #3b82f6;
+}
+
+/* Blue Button - Alternate Focus Ring for Contrast */
+.btn-blue:focus-visible {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #fbbf24;
+}
+[data-theme="dark"] .btn-blue:focus-visible {
+    box-shadow: 0 0 0 2px #1f2937, 0 0 0 4px #fbbf24;
+}
+
+/* ========================================
    SCROLLBAR STYLING
    ======================================== */
 

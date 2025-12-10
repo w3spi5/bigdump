@@ -84,6 +84,7 @@
     <script src="assets/js/bigdump.js"></script>
     <script src="assets/js/preview.js"></script>
     <script src="assets/js/history.js"></script>
+    <script src="assets/js/modal.js"></script>
     <script src="assets/js/filepolling.js"></script>
     <script src="assets/js/fileupload.js"></script>
 </body>
