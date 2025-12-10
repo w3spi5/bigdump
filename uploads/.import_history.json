@@ -1,5 +1,47 @@
 [
     {
+        "id": "imp_6938808894ab2",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765310600,
+        "datetime": "2025-12-09 20:03:20",
+        "queries_executed": 3,
+        "lines_processed": 34,
+        "bytes_processed": 0,
+        "size_formatted": "0 B",
+        "success": false,
+        "error": "SQL Error at line 35:\nQuery: --\n--\n--\n--\nCREATE TABLE `wespy_diffusion` (\n  `id_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `titre_id` bigint(20) UNSIGNED NOT NULL,\n  `date_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `station_id` bigint(20) UNSIGNED NOT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\nMySQL Error: Table 'wespy_diffusion' already exists",
+        "duration": 0,
+        "duration_formatted": "0s"
+    },
+    {
+        "id": "imp_69387f3d9aaf8",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765310269,
+        "datetime": "2025-12-09 19:57:49",
+        "queries_executed": 6,
+        "lines_processed": 68,
+        "bytes_processed": 0,
+        "size_formatted": "0 B",
+        "success": false,
+        "error": "SQL Error at line 69:\nQuery: --\n--\n--\n--\nCREATE TABLE `wespy_diffusion` (\n  `id_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `titre_id` bigint(20) UNSIGNED NOT NULL,\n  `date_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `station_id` bigint(20) UNSIGNED NOT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\nMySQL Error: Table 'wespy_diffusion' already exists",
+        "duration": 0,
+        "duration_formatted": "0s"
+    },
+    {
+        "id": "imp_69387f2f97663",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765310255,
+        "datetime": "2025-12-09 19:57:35",
+        "queries_executed": 3,
+        "lines_processed": 34,
+        "bytes_processed": 0,
+        "size_formatted": "0 B",
+        "success": false,
+        "error": "SQL Error at line 35:\nQuery: --\n--\n--\n--\nCREATE TABLE `wespy_diffusion` (\n  `id_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `titre_id` bigint(20) UNSIGNED NOT NULL,\n  `date_diffusion` bigint(20) UNSIGNED NOT NULL,\n  `station_id` bigint(20) UNSIGNED NOT NULL\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci\nMySQL Error: Table 'wespy_diffusion' already exists",
+        "duration": 0,
+        "duration_formatted": "0s"
+    },
+    {
         "id": "imp_693809a9a13b2",
         "filename": "wespy_diffusion.sql",
         "timestamp": 1765280169,
