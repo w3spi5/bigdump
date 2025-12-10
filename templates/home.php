@@ -75,12 +75,14 @@
         </button>
     </div>
 
-    <?php if (empty($files)): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
-            No dump files found in <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code><br>
-            Upload a .sql, .gz or .csv file using the form below, or via FTP.
-        </div>
-    <?php else: ?>
+    <!-- Empty state message (shown when no files) -->
+    <div id="noFilesMessage" class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 <?= empty($files) ? '' : 'hidden' ?>">
+        No dump files found in <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code><br>
+        Upload a .sql, .gz or .csv file using the form below, or via FTP.
+    </div>
+
+    <!-- Files table (always rendered, hidden when empty) -->
+    <div id="filesTableContainer" class="<?= empty($files) ? 'hidden' : '' ?>">
         <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
             <thead class="bg-gray-50 dark:bg-gray-700">
                 <tr>
@@ -91,9 +93,9 @@
                     <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600 text-center">Actions</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="fileTableBody">
                 <?php foreach ($files as $file): ?>
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150">
+                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150" data-filename="<?= $view->e($file['name']) ?>">
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong><?= $view->e($file['name']) ?></strong></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->formatBytes($file['size']) ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->e($file['date']) ?></td>
@@ -135,7 +137,7 @@
                 <?php endforeach; ?>
             </tbody>
         </table>
-    <?php endif; ?>
+    </div>
 
     <hr class="border-t border-gray-200 dark:border-gray-700 my-6">
 
@@ -555,6 +557,285 @@ function clearHistory() {
             }
         });
 }
+
+// ============================================
+// Real-Time File List Polling
+// ============================================
+
+// State variables
+let filePollingInterval = null;
+let knownFiles = new Set();
+let uploadingFiles = new Set();
+const POLL_INTERVAL = 4000; // 4 seconds
+const DB_CONFIGURED = <?= json_encode($dbConfigured && $connectionInfo && $connectionInfo['success']) ?>;
+const GZIP_SUPPORTED = <?= json_encode(function_exists('gzopen')) ?>;
+
+// Initialize known files from current DOM
+function initKnownFiles() {
+    document.querySelectorAll('#fileTableBody tr[data-filename]').forEach(row => {
+        knownFiles.add(row.getAttribute('data-filename'));
+    });
+}
+
+// Start polling when page loads
+function startFilePolling() {
+    initKnownFiles();
+    filePollingInterval = setInterval(refreshFileList, POLL_INTERVAL);
+}
+
+// Stop polling
+function stopFilePolling() {
+    if (filePollingInterval) {
+        clearInterval(filePollingInterval);
+        filePollingInterval = null;
+    }
+}
+
+// Pause polling when tab is hidden, resume when visible
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        stopFilePolling();
+    } else {
+        startFilePolling();
+    }
+});
+
+// Pause polling when modals are open
+function isModalOpen() {
+    return !document.getElementById('previewModal').classList.contains('hidden') ||
+           !document.getElementById('historyModal').classList.contains('hidden');
+}
+
+// Refresh file list from server
+async function refreshFileList() {
+    // Skip if modal is open
+    if (isModalOpen()) return;
+
+    try {
+        const response = await fetch('?action=files_list');
+        const data = await response.json();
+
+        if (!data.success) return;
+
+        // Detect new files
+        const currentFiles = new Set(data.files.map(f => f.name));
+        const newFiles = data.files.filter(f => !knownFiles.has(f.name));
+
+        // Update the table
+        updateFileTable(data.files, newFiles);
+
+        // Update known files
+        knownFiles = currentFiles;
+
+        // Show/hide empty state
+        toggleEmptyState(data.files.length === 0);
+
+    } catch (err) {
+        console.error('File polling error:', err);
+    }
+}
+
+// Toggle empty state visibility
+function toggleEmptyState(isEmpty) {
+    const noFilesMsg = document.getElementById('noFilesMessage');
+    const tableContainer = document.getElementById('filesTableContainer');
+
+    if (isEmpty) {
+        noFilesMsg.classList.remove('hidden');
+        tableContainer.classList.add('hidden');
+    } else {
+        noFilesMsg.classList.add('hidden');
+        tableContainer.classList.remove('hidden');
+    }
+}
+
+// Get type badge class
+function getTypeBadgeClass(type) {
+    switch (type) {
+        case 'SQL': return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
+        case 'GZip': return 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200';
+        case 'CSV': return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200';
+        default: return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
+    }
+}
+
+// Create a file row element using safe DOM methods
+function createFileRow(file, isNew = false, isUploading = false) {
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
+    tr.setAttribute('data-filename', file.name);
+
+    // Add highlight animation for new files
+    if (isNew) {
+        tr.classList.add('bg-green-50', 'dark:bg-green-900/20', 'animate-pulse');
+        setTimeout(() => {
+            tr.classList.remove('bg-green-50', 'dark:bg-green-900/20', 'animate-pulse');
+        }, 3000);
+    }
+
+    // Uploading state
+    if (isUploading) {
+        tr.classList.add('bg-amber-50', 'dark:bg-amber-900/20');
+    }
+
+    const canImport = DB_CONFIGURED && (file.type !== 'GZip' || GZIP_SUPPORTED);
+    const cellClass = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100';
+
+    // Cell 1: Filename
+    const td1 = document.createElement('td');
+    td1.className = cellClass;
+    const strong = document.createElement('strong');
+    strong.textContent = file.name;
+    td1.appendChild(strong);
+    if (isUploading) {
+        const uploadSpan = document.createElement('span');
+        uploadSpan.className = 'ml-2 text-amber-600 dark:text-amber-400 text-xs';
+        const spinner = document.createElement('i');
+        spinner.className = 'fa-solid fa-spinner fa-spin';
+        uploadSpan.appendChild(spinner);
+        uploadSpan.appendChild(document.createTextNode(' Uploading...'));
+        td1.appendChild(uploadSpan);
+    } else if (isNew) {
+        const newBadge = document.createElement('span');
+        newBadge.className = 'ml-2 px-1.5 py-0.5 bg-green-500 text-white text-xs rounded font-medium';
+        newBadge.textContent = 'NEW';
+        td1.appendChild(newBadge);
+    }
+    tr.appendChild(td1);
+
+    // Cell 2: Size
+    const td2 = document.createElement('td');
+    td2.className = cellClass;
+    td2.textContent = isUploading ? '--' : file.sizeFormatted;
+    tr.appendChild(td2);
+
+    // Cell 3: Date
+    const td3 = document.createElement('td');
+    td3.className = cellClass;
+    td3.textContent = isUploading ? '--' : file.date;
+    tr.appendChild(td3);
+
+    // Cell 4: Type badge
+    const td4 = document.createElement('td');
+    td4.className = cellClass;
+    const typeBadge = document.createElement('span');
+    typeBadge.className = 'px-2 py-1 rounded text-xs font-medium ' + getTypeBadgeClass(file.type);
+    typeBadge.textContent = file.type;
+    td4.appendChild(typeBadge);
+    tr.appendChild(td4);
+
+    // Cell 5: Actions
+    const td5 = document.createElement('td');
+    td5.className = cellClass + ' text-center';
+
+    if (isUploading) {
+        const placeholder = document.createElement('span');
+        placeholder.className = 'text-gray-400';
+        placeholder.textContent = '--';
+        td5.appendChild(placeholder);
+    } else {
+        if (canImport) {
+            // Preview button
+            const previewBtn = document.createElement('button');
+            previewBtn.type = 'button';
+            previewBtn.className = 'px-3 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-purple-500 hover:bg-purple-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+            previewBtn.title = 'Preview SQL content';
+            previewBtn.onclick = () => previewFile(file.name);
+            const eyeIcon = document.createElement('i');
+            eyeIcon.className = 'fa-solid fa-eye';
+            previewBtn.appendChild(eyeIcon);
+            td5.appendChild(previewBtn);
+            td5.appendChild(document.createTextNode(' '));
+
+            // Import form
+            const form = document.createElement('form');
+            form.method = 'post';
+            form.action = '';
+            form.style.display = 'inline';
+            const hiddenInput = document.createElement('input');
+            hiddenInput.type = 'hidden';
+            hiddenInput.name = 'fn';
+            hiddenInput.value = file.name;
+            form.appendChild(hiddenInput);
+            const importBtn = document.createElement('button');
+            importBtn.type = 'submit';
+            importBtn.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+            importBtn.textContent = 'Import';
+            form.appendChild(importBtn);
+            td5.appendChild(form);
+            td5.appendChild(document.createTextNode(' '));
+        } else if (file.type === 'GZip') {
+            const notSupported = document.createElement('span');
+            notSupported.className = 'text-gray-500 dark:text-gray-400';
+            notSupported.textContent = 'GZip not supported';
+            td5.appendChild(notSupported);
+            td5.appendChild(document.createTextNode(' '));
+        }
+
+        // Delete button
+        const deleteLink = document.createElement('a');
+        deleteLink.href = '?delete=' + encodeURIComponent(file.name);
+        deleteLink.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
+        deleteLink.textContent = 'Delete';
+        deleteLink.onclick = () => confirm('Delete ' + file.name + '?');
+        td5.appendChild(deleteLink);
+    }
+
+    tr.appendChild(td5);
+    return tr;
+}
+
+// Update file table
+function updateFileTable(files, newFiles) {
+    const tbody = document.getElementById('fileTableBody');
+    const newFileNames = new Set(newFiles.map(f => f.name));
+
+    // Build new tbody content
+    const fragment = document.createDocumentFragment();
+
+    // First, add uploading files (not yet on server)
+    uploadingFiles.forEach(filename => {
+        if (!files.find(f => f.name === filename)) {
+            const uploadingFile = { name: filename, type: getFileType(filename), sizeFormatted: '--', date: '--' };
+            fragment.appendChild(createFileRow(uploadingFile, false, true));
+        }
+    });
+
+    // Then add server files
+    files.forEach(file => {
+        const isNew = newFileNames.has(file.name);
+        const isUploading = uploadingFiles.has(file.name);
+        fragment.appendChild(createFileRow(file, isNew, isUploading));
+    });
+
+    // Replace tbody content
+    tbody.replaceChildren(fragment);
+}
+
+// Get file type from extension
+function getFileType(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    if (ext === 'sql') return 'SQL';
+    if (ext === 'gz') return 'GZip';
+    if (ext === 'csv') return 'CSV';
+    return 'SQL';
+}
+
+// Track upload start
+function trackUploadStart(filename) {
+    uploadingFiles.add(filename);
+    refreshFileList();
+}
+
+// Track upload end
+function trackUploadEnd(filename) {
+    uploadingFiles.delete(filename);
+    knownFiles.add(filename); // Don't show as "new" if we just uploaded it
+    refreshFileList();
+}
+
+// Start polling on page load
+document.addEventListener('DOMContentLoaded', startFilePolling);
 </script>
 
 <!-- Import History Modal -->
