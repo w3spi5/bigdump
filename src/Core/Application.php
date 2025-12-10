@@ -148,7 +148,8 @@ class Application
             ->register('sse_import', $controller, 'sseImport')
             ->register('drop_restart', $controller, 'dropRestart')
             ->register('preview', $controller, 'preview')
-            ->register('history', $controller, 'history');
+            ->register('history', $controller, 'history')
+            ->register('files_list', $controller, 'filesList');
     }
 
     /**

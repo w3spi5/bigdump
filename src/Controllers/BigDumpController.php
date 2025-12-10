@@ -708,7 +708,7 @@ class BigDumpController
             exit;
         }
 
-        $uploadDir = $this->config->get('upload_dir', 'uploads/');
+        $uploadDir = rtrim($this->config->get('upload_dir', 'uploads/'), '/') . '/';
         $filepath = $uploadDir . basename($filename);
 
         if (!file_exists($filepath)) {
@@ -874,6 +874,42 @@ class BigDumpController
                 ]);
                 break;
         }
+
+        exit;
+    }
+
+    /**
+     * Action: Get files list as JSON for real-time updates.
+     *
+     * Returns the list of files in the upload directory for AJAX polling.
+     *
+     * @return void
+     */
+    public function filesList(): void
+    {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+
+        $fileHandler = $this->importService->getFileHandler();
+        $files = $fileHandler->listFiles();
+
+        // Transform files for JSON response
+        $fileList = array_map(function ($file) {
+            return [
+                'name' => $file['name'],
+                'size' => $file['size'],
+                'sizeFormatted' => $this->formatBytes($file['size']),
+                'date' => $file['date'],
+                'type' => $file['type'],
+            ];
+        }, $files);
+
+        echo json_encode([
+            'success' => true,
+            'files' => $fileList,
+            'count' => count($fileList),
+            'timestamp' => time(),
+        ]);
 
         exit;
     }
