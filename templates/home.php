@@ -89,34 +89,34 @@
 
     <!-- Files table (always rendered, hidden when empty) -->
     <div id="filesTableContainer" class="<?= empty($files) ? 'hidden' : '' ?>">
-        <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+        <table class="table">
+            <thead>
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Filename</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Size</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600 text-center">Actions</th>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody id="fileTableBody">
                 <?php foreach ($files as $file): ?>
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150" data-filename="<?= $view->e($file['name']) ?>">
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong><?= $view->e($file['name']) ?></strong></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->formatBytes($file['size']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->e($file['date']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                <tr data-filename="<?= $view->e($file['name']) ?>">
+                    <td><strong><?= $view->e($file['name']) ?></strong></td>
+                    <td><?= $view->formatBytes($file['size']) ?></td>
+                    <td><?= $view->e($file['date']) ?></td>
+                    <td>
                         <?php
-                        $typeClass = match($file['type']) {
-                            'SQL' => 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
-                            'GZip' => 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200',
-                            'CSV' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
-                            default => 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+                        $badgeClass = match($file['type']) {
+                            'SQL' => 'badge badge-blue',
+                            'GZip' => 'badge badge-purple',
+                            'CSV' => 'badge badge-green',
+                            default => 'badge badge-blue'
                         };
                         ?>
-                        <span class="px-2 py-1 rounded text-xs font-medium <?= $typeClass ?>"><?= $view->e($file['type']) ?></span>
+                        <span class="<?= $badgeClass ?>"><?= $view->e($file['type']) ?></span>
                     </td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-center">
+                    <td class="text-center">
                         <?php if ($dbConfigured && $connectionInfo && $connectionInfo['success']): ?>
                             <?php if ($file['type'] !== 'GZip' || function_exists('gzopen')): ?>
                                 <button type="button"
@@ -201,35 +201,35 @@
 <?php endif; ?>
 
 <!-- Loading Overlay for Import -->
-<div class="fixed inset-0 bg-black/50 items-center justify-center z-50 hidden" id="loadingOverlay">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-xl">
-        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="card card-body text-center" style="padding: 2rem;">
+        <div class="spinner spinner-lg mx-auto mb-4"></div>
         <div class="text-lg font-medium text-gray-900 dark:text-gray-100">Preparing import...</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading file</div>
+        <div class="text-muted mt-2">Loading file</div>
     </div>
 </div>
 
 <!-- SQL Preview Modal -->
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden" id="previewModal" onclick="closePreviewModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4" onclick="event.stopPropagation()">
+<div class="modal-overlay hidden" id="previewModal" onclick="closePreviewModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="modal-header">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100" id="previewModalTitle">SQL Preview</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400" id="previewModalSubtitle">Loading...</p>
+                <h3 class="modal-title" id="previewModalTitle">SQL Preview</h3>
+                <p class="modal-subtitle" id="previewModalSubtitle">Loading...</p>
             </div>
-            <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            <button onclick="closePreviewModal()" class="modal-close">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="flex-1 overflow-hidden flex flex-col p-6">
+        <div class="modal-body">
             <!-- Loading State -->
             <div id="previewLoading" class="flex-1 flex items-center justify-center">
                 <div class="text-center">
-                    <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
-                    <div class="text-gray-500 dark:text-gray-400">Loading preview...</div>
+                    <div class="spinner spinner-md mx-auto mb-3"></div>
+                    <div class="text-muted">Loading preview...</div>
                 </div>
             </div>
 
@@ -245,21 +245,21 @@
             <div id="previewContent" class="hidden flex-1 flex flex-col overflow-hidden">
                 <!-- File Info -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Size</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewFileSize">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Size</span>
+                        <span class="metric-value" id="previewFileSize">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Type</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewFileType">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Type</span>
+                        <span class="metric-value" id="previewFileType">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Lines Preview</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewLinesCount">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Lines Preview</span>
+                        <span class="metric-value" id="previewLinesCount">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Queries Found</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewQueriesCount">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Queries Found</span>
+                        <span class="metric-value" id="previewQueriesCount">-</span>
                     </div>
                 </div>
 
@@ -307,28 +307,28 @@ document.addEventListener('keydown', function(e) {
 </script>
 
 <!-- Import History Modal -->
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden" id="historyModal" onclick="closeHistoryModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4" onclick="event.stopPropagation()">
+<div class="modal-overlay hidden" id="historyModal" onclick="closeHistoryModal(event)">
+    <div class="modal" onclick="event.stopPropagation()">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="modal-header">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 class="modal-title">
                     <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500"></i>Import History
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Recent import operations</p>
+                <p class="modal-subtitle">Recent import operations</p>
             </div>
-            <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+            <button onclick="closeHistoryModal()" class="modal-close">
                 <i class="fa-solid fa-xmark text-xl"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="flex-1 overflow-hidden flex flex-col p-6">
+        <div class="modal-body">
             <!-- Loading State -->
             <div id="historyLoading" class="flex-1 flex items-center justify-center">
                 <div class="text-center">
-                    <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-                    <div class="text-gray-500 dark:text-gray-400">Loading history...</div>
+                    <div class="spinner spinner-md mx-auto mb-3"></div>
+                    <div class="text-muted">Loading history...</div>
                 </div>
             </div>
 
@@ -336,34 +336,34 @@ document.addEventListener('keydown', function(e) {
             <div id="historyContent" class="hidden flex-1 flex flex-col overflow-hidden">
                 <!-- Statistics -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Total Imports</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="histStatTotal">0</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Total Imports</span>
+                        <span class="metric-value" id="histStatTotal">0</span>
                     </div>
-                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-green-600 dark:text-green-400 mb-1">Successful</div>
-                        <div class="font-semibold text-green-700 dark:text-green-300" id="histStatSuccess">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(34,197,94,0.05) 100%);">
+                        <span class="metric-label" style="color: #16a34a;">Successful</span>
+                        <span class="metric-value" style="color: #15803d;" id="histStatSuccess">0</span>
                     </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-red-600 dark:text-red-400 mb-1">Failed</div>
-                        <div class="font-semibold text-red-700 dark:text-red-300" id="histStatFailed">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.05) 100%);">
+                        <span class="metric-label" style="color: #dc2626;">Failed</span>
+                        <span class="metric-value" style="color: #b91c1c;" id="histStatFailed">0</span>
                     </div>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1">Total Queries</div>
-                        <div class="font-semibold text-blue-700 dark:text-blue-300" id="histStatQueries">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.05) 100%);">
+                        <span class="metric-label" style="color: #2563eb;">Total Queries</span>
+                        <span class="metric-value" style="color: #1d4ed8;" id="histStatQueries">0</span>
                     </div>
                 </div>
 
                 <!-- History Table -->
                 <div class="flex-1 overflow-auto">
-                    <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                    <table class="table">
+                        <thead class="sticky top-0">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600 w-12"></th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Filename</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Stats</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Result</th>
+                                <th class="w-12"></th>
+                                <th>Filename</th>
+                                <th>Date</th>
+                                <th>Stats</th>
+                                <th>Result</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
