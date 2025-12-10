@@ -13,7 +13,7 @@ $isNoFilename = stripos($errorMessage, 'No filename specified') !== false;
 $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 ?>
 
-<div class="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700 px-4 py-3 rounded-lg mb-4">
+<div class="alert alert-error">
     <strong>Error</strong><br>
     <?= $view->e($errorMessage) ?>
 </div>
@@ -60,7 +60,7 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
         <h3 class="text-lg font-semibold text-blue-800 dark:text-blue-200">Why does this happen?</h3>
     </div>
     <div class="text-sm text-blue-700 dark:text-blue-300 space-y-3">
-        <p>The SQL dump file was not found in the <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">uploads/</code> directory. This can happen when:</p>
+        <p>The SQL dump file was not found in the <code class="code">uploads/</code> directory. This can happen when:</p>
         <ul class="list-disc list-inside space-y-1 ml-2">
             <li><strong>File was deleted</strong> - Someone removed the file from the server</li>
             <li><strong>File was moved</strong> - The file was relocated to another directory</li>
@@ -73,11 +73,11 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
             <li>Click <strong>"Back to Home"</strong> below</li>
             <li>Check the file list to see available files</li>
             <li>Upload your SQL dump file again if needed</li>
-            <li>Make sure the file has <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">.sql</code>, <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">.gz</code>, or <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">.csv</code> extension</li>
+            <li>Make sure the file has <code class="code">.sql</code>, <code class="code">.gz</code>, or <code class="code">.csv</code> extension</li>
         </ol>
 
         <p class="bg-blue-100 dark:bg-blue-800/30 px-4 py-3 rounded-lg mt-4">
-            <strong>Tip:</strong> Check that the <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">uploads/</code> directory has write permissions
+            <strong>Tip:</strong> Check that the <code class="code">uploads/</code> directory has write permissions
             and enough disk space for your dump file.
         </p>
     </div>
@@ -85,7 +85,7 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 <?php endif; ?>
 
 <div class="text-center mt-3">
-    <a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">
+    <a href="../" class="btn btn-cyan">
         Back to Home
     </a>
 </div>
