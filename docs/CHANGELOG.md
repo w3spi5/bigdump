@@ -2,6 +2,22 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.12] - Real-time File List Refresh
+
+### Changed in 2.12
+
+- **Upload Completion**: File list now refreshes without full page reload
+  - Uses `refreshFileList()` for seamless UI update after upload
+  - Clears upload UI state with `clearAll()`
+  - Reduced feedback delay from 1000ms to 500ms
+  - Fallback to `location.reload()` if polling unavailable
+
+### New Routes in 2.12
+
+- `?action=files_list` - Get file list as JSON for AJAX refresh
+
+---
+
 ## [2.11] - Quick Wins: Animations, Preview & History
 
 ### Added in 2.11
