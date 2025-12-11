@@ -18,40 +18,46 @@
  */
 ?>
 
+<!-- Configuration for JavaScript modules -->
+<script id="bigdump-config"
+        data-db-configured="<?= json_encode($dbConfigured && $connectionInfo && $connectionInfo['success']) ?>"
+        data-gzip-supported="<?= json_encode(function_exists('gzopen')) ?>">
+</script>
+
 <?php if ($testMode): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+<div class="alert alert-warning">
     <strong>Test Mode Enabled</strong> - Queries will be parsed but not executed.
 </div>
 <?php endif; ?>
 
 <?php if (isset($uploadResult)): ?>
     <?php if ($uploadResult['success']): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700"><?= $view->e($uploadResult['message']) ?></div>
+        <div class="alert alert-success"><?= $view->e($uploadResult['message']) ?></div>
     <?php else: ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700"><?= $view->e($uploadResult['message']) ?></div>
+        <div class="alert alert-error"><?= $view->e($uploadResult['message']) ?></div>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if (isset($deleteResult)): ?>
     <?php if ($deleteResult['success']): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-300 dark:border-green-700"><?= $view->e($deleteResult['message']) ?></div>
+        <div class="alert alert-success"><?= $view->e($deleteResult['message']) ?></div>
     <?php else: ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700"><?= $view->e($deleteResult['message']) ?></div>
+        <div class="alert alert-error"><?= $view->e($deleteResult['message']) ?></div>
     <?php endif; ?>
 <?php endif; ?>
 
 <?php if (!$dbConfigured): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+<div class="alert alert-error">
     <strong>Database not configured!</strong><br>
-    Please edit <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono">config/config.php</code> and set your database credentials.
+    Please edit <code class="code">config/config.php</code> and set your database credentials.
 </div>
 <?php elseif ($connectionInfo && !$connectionInfo['success']): ?>
-<div class="px-4 py-3 rounded-lg mb-4 text-sm bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+<div class="alert alert-error">
     <strong>Database connection failed!</strong><br>
     <?= $view->e($connectionInfo['message']) ?>
 </div>
 <?php elseif ($connectionInfo && $connectionInfo['success']): ?>
-<div class="bg-cyan-600 dark:bg-cyan-800 text-white rounded-xl px-6 py-4 mb-6">
+<div class="info-box">
     Connected to <strong><?= $view->e($dbName) ?></strong> at <strong><?= $view->e($dbServer) ?></strong><br>
     Connection charset: <strong><?= $view->e($connectionInfo['charset']) ?></strong>
     <span class="text-cyan-100 dark:text-cyan-200">(Your dump file must use the same charset)</span>
@@ -59,76 +65,76 @@
 <?php endif; ?>
 
 <?php if (!empty($predefinedFile)): ?>
-    <div class="bg-cyan-600 dark:bg-cyan-800 text-white rounded-xl px-6 py-4 mb-6">
+    <div class="info-box">
         <strong>Predefined file:</strong> <?= $view->e($predefinedFile) ?><br>
         <form method="post" action="" style="display:inline">
             <input type="hidden" name="fn" value="<?= $view->e($predefinedFile) ?>">
-            <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white mt-3">Start Import</button>
+            <button type="submit" class="btn btn-blue mt-3">Start Import</button>
         </form>
     </div>
 <?php else: ?>
 
     <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Dump Files</h3>
-        <button onclick="showHistory()" class="px-3 py-1.5 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-indigo-500 hover:bg-indigo-600 hover:scale-105 active:scale-95 text-white">
+        <button onclick="showHistory()" class="btn btn-sm btn-indigo">
             <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
         </button>
     </div>
 
     <!-- Empty state message (shown when no files) -->
-    <div id="noFilesMessage" class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 <?= empty($files) ? '' : 'hidden' ?>">
-        No dump files found in <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code><br>
+    <div id="noFilesMessage" class="alert alert-warning <?= empty($files) ? '' : 'hidden' ?>">
+        No dump files found in <code class="code"><?= $view->e($uploadDir) ?></code><br>
         Upload a .sql, .gz or .csv file using the form below, or via FTP.
     </div>
 
     <!-- Files table (always rendered, hidden when empty) -->
     <div id="filesTableContainer" class="<?= empty($files) ? 'hidden' : '' ?>">
-        <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm">
-            <thead class="bg-gray-50 dark:bg-gray-700">
+        <table class="table">
+            <thead>
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Filename</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Size</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Date</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Type</th>
-                    <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600 text-center">Actions</th>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th class="text-center">Actions</th>
                 </tr>
             </thead>
             <tbody id="fileTableBody">
                 <?php foreach ($files as $file): ?>
-                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150" data-filename="<?= $view->e($file['name']) ?>">
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong><?= $view->e($file['name']) ?></strong></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->formatBytes($file['size']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $view->e($file['date']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                <tr data-filename="<?= $view->e($file['name']) ?>">
+                    <td><strong><?= $view->e($file['name']) ?></strong></td>
+                    <td><?= $view->formatBytes($file['size']) ?></td>
+                    <td><?= $view->e($file['date']) ?></td>
+                    <td>
                         <?php
-                        $typeClass = match($file['type']) {
-                            'SQL' => 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200',
-                            'GZip' => 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200',
-                            'CSV' => 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200',
-                            default => 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+                        $badgeClass = match($file['type']) {
+                            'SQL' => 'badge badge-blue',
+                            'GZip' => 'badge badge-purple',
+                            'CSV' => 'badge badge-green',
+                            default => 'badge badge-blue'
                         };
                         ?>
-                        <span class="px-2 py-1 rounded text-xs font-medium <?= $typeClass ?>"><?= $view->e($file['type']) ?></span>
+                        <span class="<?= $badgeClass ?>"><?= $view->e($file['type']) ?></span>
                     </td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 text-center">
+                    <td class="text-center">
                         <?php if ($dbConfigured && $connectionInfo && $connectionInfo['success']): ?>
                             <?php if ($file['type'] !== 'GZip' || function_exists('gzopen')): ?>
                                 <button type="button"
                                         onclick="previewFile('<?= $view->escapeJs($file['name']) ?>')"
-                                        class="px-3 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-purple-500 hover:bg-purple-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
+                                        class="btn btn-icon btn-purple"
                                         title="Preview SQL content">
                                     <i class="fa-solid fa-eye"></i>
                                 </button>
                                 <form method="post" action="" style="display:inline">
                                     <input type="hidden" name="fn" value="<?= $view->e($file['name']) ?>">
-                                    <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Import</button>
+                                    <button type="submit" class="btn btn-green">Import</button>
                                 </form>
                             <?php else: ?>
-                                <span class="text-gray-500 dark:text-gray-400">GZip not supported</span>
+                                <span class="text-muted">GZip not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
                         <a href="<?= $view->url(['delete' => $file['name']]) ?>"
-                           class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
+                           class="btn btn-red"
                            onclick="return confirm('Delete <?= $view->escapeJs($file['name']) ?>?')">
                             Delete
                         </a>
@@ -144,20 +150,20 @@
     <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-gray-100">Upload Dump Files</h3>
 
     <?php if (!$uploadEnabled): ?>
-        <div class="px-4 py-3 rounded-lg mb-4 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
-            Upload disabled. Directory <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code> is not writable.<br>
+        <div class="alert alert-warning">
+            Upload disabled. Directory <code class="code"><?= $view->e($uploadDir) ?></code> is not writable.<br>
             Set permissions to 755 or 777, or upload files via FTP.
         </div>
     <?php else: ?>
-        <p class="text-gray-500 dark:text-gray-400 mb-3">
+        <p class="text-muted mb-3">
             Maximum file size: <strong><?= $view->formatBytes($uploadMaxSize) ?></strong> &bull;
             Allowed types: <strong>.sql, .gz, .csv</strong><br>
-            For larger files, use FTP to upload directly to <code class="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-sm font-mono"><?= $view->e($uploadDir) ?></code>
+            For larger files, use FTP to upload directly to <code class="code"><?= $view->e($uploadDir) ?></code>
         </p>
 
         <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>">
             <!-- Dropzone -->
-            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:scale-[1.01] hover:shadow-lg transition-all duration-200 bg-gray-50 dark:bg-gray-800/50" id="dropzone">
+            <div class="dropzone" id="dropzone">
                 <div class="file-upload__icon">
                     <svg class="w-12 h-12 mx-auto mb-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round"/>
@@ -181,10 +187,10 @@
 
             <!-- Actions -->
             <div class="mt-4 flex gap-3" id="uploadActions" style="display: none;">
-                <button type="button" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white" id="uploadBtn">
+                <button type="button" class="btn btn-blue" id="uploadBtn">
                     Upload All Files
                 </button>
-                <button type="button" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-gray-500 hover:bg-gray-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" id="clearBtn">
+                <button type="button" class="btn btn-gray" id="clearBtn">
                     Clear All
                 </button>
             </div>
@@ -195,35 +201,40 @@
 <?php endif; ?>
 
 <!-- Loading Overlay for Import -->
-<div class="fixed inset-0 bg-black/50 items-center justify-center z-50 hidden" id="loadingOverlay">
-    <div class="bg-white dark:bg-gray-800 rounded-xl p-8 text-center shadow-xl">
-        <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="card card-body text-center" style="padding: 2rem;">
+        <div class="spinner spinner-lg mx-auto mb-4"></div>
         <div class="text-lg font-medium text-gray-900 dark:text-gray-100">Preparing import...</div>
-        <div class="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading file</div>
+        <div class="text-muted mt-2">Loading file</div>
     </div>
 </div>
 
 <!-- SQL Preview Modal -->
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden" id="previewModal" onclick="closePreviewModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4" onclick="event.stopPropagation()">
+<div class="modal-overlay hidden" id="previewModal" onclick="closePreviewModal(event)">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="previewModalTitle"
+         aria-describedby="previewModalSubtitle"
+         onclick="event.stopPropagation()">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="modal-header">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100" id="previewModalTitle">SQL Preview</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400" id="previewModalSubtitle">Loading...</p>
+                <h3 class="modal-title" id="previewModalTitle">SQL Preview</h3>
+                <p class="modal-subtitle" id="previewModalSubtitle">Loading...</p>
             </div>
-            <button onclick="closePreviewModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                <i class="fa-solid fa-xmark text-xl"></i>
+            <button onclick="closePreviewModal()" class="modal-close" aria-label="Close preview modal">
+                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="flex-1 overflow-hidden flex flex-col p-6">
+        <div class="modal-body">
             <!-- Loading State -->
             <div id="previewLoading" class="flex-1 flex items-center justify-center">
                 <div class="text-center">
-                    <div class="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-3"></div>
-                    <div class="text-gray-500 dark:text-gray-400">Loading preview...</div>
+                    <div class="spinner spinner-md mx-auto mb-3"></div>
+                    <div class="text-muted">Loading preview...</div>
                 </div>
             </div>
 
@@ -239,21 +250,21 @@
             <div id="previewContent" class="hidden flex-1 flex flex-col overflow-hidden">
                 <!-- File Info -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Size</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewFileSize">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Size</span>
+                        <span class="metric-value" id="previewFileSize">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Type</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewFileType">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Type</span>
+                        <span class="metric-value" id="previewFileType">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Lines Preview</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewLinesCount">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Lines Preview</span>
+                        <span class="metric-value" id="previewLinesCount">-</span>
                     </div>
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Queries Found</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="previewQueriesCount">-</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Queries Found</span>
+                        <span class="metric-value" id="previewQueriesCount">-</span>
                     </div>
                 </div>
 
@@ -276,13 +287,13 @@
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-end gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <button onclick="closePreviewModal()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+        <div class="modal-footer">
+            <button onclick="closePreviewModal()" class="btn btn-secondary">
                 Close
             </button>
             <form method="post" action="" id="previewImportForm" style="display:inline">
                 <input type="hidden" name="fn" id="previewImportFilename" value="">
-                <button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">
+                <button type="submit" class="btn btn-green">
                     <i class="fa-solid fa-play mr-2"></i>Start Import
                 </button>
             </form>
@@ -290,577 +301,34 @@
     </div>
 </div>
 
-<script>
-// SQL Preview Functions - Using safe DOM methods
-function previewFile(filename) {
-    const modal = document.getElementById('previewModal');
-    const loading = document.getElementById('previewLoading');
-    const error = document.getElementById('previewError');
-    const content = document.getElementById('previewContent');
-
-    // Reset state
-    modal.classList.remove('hidden');
-    loading.classList.remove('hidden');
-    error.classList.add('hidden');
-    content.classList.add('hidden');
-
-    // Update title using textContent (safe)
-    document.getElementById('previewModalTitle').textContent = filename;
-    document.getElementById('previewModalSubtitle').textContent = 'Loading preview...';
-    document.getElementById('previewImportFilename').value = filename;
-
-    // Fetch preview
-    fetch('?action=preview&fn=' + encodeURIComponent(filename))
-        .then(response => response.json())
-        .then(data => {
-            loading.classList.add('hidden');
-
-            if (data.error) {
-                error.classList.remove('hidden');
-                document.getElementById('previewErrorMessage').textContent = data.error;
-                return;
-            }
-
-            // Update info using textContent (safe)
-            document.getElementById('previewModalSubtitle').textContent = data.fileSizeFormatted + (data.isGzip ? ' (GZip compressed)' : '');
-            document.getElementById('previewFileSize').textContent = data.fileSizeFormatted;
-            document.getElementById('previewFileType').textContent = data.isGzip ? 'GZip' : 'SQL';
-            document.getElementById('previewLinesCount').textContent = data.linesPreview;
-            document.getElementById('previewQueriesCount').textContent = data.queriesPreview;
-            document.getElementById('tabQueriesCount').textContent = data.queriesPreview;
-
-            // Raw content - use textContent for safety
-            document.getElementById('previewRaw').textContent = data.rawContent;
-
-            // Queries list - build safely with DOM methods
-            const queriesEl = document.getElementById('previewQueries');
-            queriesEl.replaceChildren(); // Clear safely
-
-            data.queries.forEach((query, index) => {
-                const div = document.createElement('div');
-                div.className = 'bg-gray-50 dark:bg-gray-700 rounded-lg p-4';
-
-                // Header row
-                const header = document.createElement('div');
-                header.className = 'flex items-center justify-between mb-2';
-
-                const label = document.createElement('span');
-                label.className = 'text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400';
-                label.textContent = 'Query ' + (index + 1);
-
-                const badge = document.createElement('span');
-                badge.className = 'text-xs px-2 py-1 rounded ' + getQueryTypeClass(query);
-                badge.textContent = getQueryType(query);
-
-                header.appendChild(label);
-                header.appendChild(badge);
-
-                // Query content
-                const pre = document.createElement('pre');
-                pre.className = 'text-sm font-mono text-gray-800 dark:text-gray-200 overflow-x-auto whitespace-pre-wrap';
-                pre.textContent = query; // Safe: textContent escapes HTML
-
-                div.appendChild(header);
-                div.appendChild(pre);
-                queriesEl.appendChild(div);
-            });
-
-            content.classList.remove('hidden');
-            switchPreviewTab('raw');
-        })
-        .catch(err => {
-            loading.classList.add('hidden');
-            error.classList.remove('hidden');
-            document.getElementById('previewErrorMessage').textContent = 'Network error: ' + err.message;
-        });
-}
-
-function closePreviewModal(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('previewModal').classList.add('hidden');
-}
-
-function switchPreviewTab(tab) {
-    const rawTab = document.getElementById('tabRaw');
-    const queriesTab = document.getElementById('tabQueries');
-    const rawContent = document.getElementById('previewRaw');
-    const queriesContent = document.getElementById('previewQueries');
-
-    if (tab === 'raw') {
-        rawTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-        rawTab.classList.remove('border-transparent', 'text-gray-500');
-        queriesTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-        queriesTab.classList.add('border-transparent', 'text-gray-500');
-        rawContent.classList.remove('hidden');
-        queriesContent.classList.add('hidden');
-    } else {
-        queriesTab.classList.add('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-        queriesTab.classList.remove('border-transparent', 'text-gray-500');
-        rawTab.classList.remove('border-blue-500', 'text-blue-600', 'dark:text-blue-400');
-        rawTab.classList.add('border-transparent', 'text-gray-500');
-        queriesContent.classList.remove('hidden');
-        rawContent.classList.add('hidden');
-    }
-}
-
-function getQueryType(query) {
-    const q = query.trim().toUpperCase();
-    if (q.startsWith('CREATE TABLE')) return 'CREATE TABLE';
-    if (q.startsWith('CREATE DATABASE')) return 'CREATE DATABASE';
-    if (q.startsWith('DROP TABLE')) return 'DROP TABLE';
-    if (q.startsWith('INSERT')) return 'INSERT';
-    if (q.startsWith('UPDATE')) return 'UPDATE';
-    if (q.startsWith('DELETE')) return 'DELETE';
-    if (q.startsWith('ALTER')) return 'ALTER';
-    if (q.startsWith('SET')) return 'SET';
-    if (q.startsWith('USE')) return 'USE';
-    return 'SQL';
-}
-
-function getQueryTypeClass(query) {
-    const type = getQueryType(query);
-    switch (type) {
-        case 'CREATE TABLE':
-        case 'CREATE DATABASE':
-            return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200';
-        case 'DROP TABLE':
-        case 'DELETE':
-            return 'bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200';
-        case 'INSERT':
-            return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
-        case 'UPDATE':
-        case 'ALTER':
-            return 'bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200';
-        default:
-            return 'bg-gray-100 dark:bg-gray-600 text-gray-800 dark:text-gray-200';
-    }
-}
-
-// Close modal with Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closePreviewModal();
-        closeHistoryModal();
-    }
-});
-
-// Import History Functions
-function showHistory() {
-    const modal = document.getElementById('historyModal');
-    const loading = document.getElementById('historyLoading');
-    const content = document.getElementById('historyContent');
-
-    modal.classList.remove('hidden');
-    loading.classList.remove('hidden');
-    content.classList.add('hidden');
-
-    fetch('?action=history&limit=20')
-        .then(response => response.json())
-        .then(data => {
-            loading.classList.add('hidden');
-
-            if (!data.success) {
-                content.textContent = 'Error loading history';
-                content.classList.remove('hidden');
-                return;
-            }
-
-            // Update statistics
-            const stats = data.statistics;
-            document.getElementById('histStatTotal').textContent = stats.total_imports;
-            document.getElementById('histStatSuccess').textContent = stats.successful_imports;
-            document.getElementById('histStatFailed').textContent = stats.failed_imports;
-            document.getElementById('histStatQueries').textContent = stats.total_queries.toLocaleString();
-
-            // Build history table
-            const tbody = document.getElementById('historyTableBody');
-            tbody.replaceChildren();
-
-            if (data.history.length === 0) {
-                const tr = document.createElement('tr');
-                const td = document.createElement('td');
-                td.colSpan = 5;
-                td.className = 'px-4 py-8 text-center text-gray-500 dark:text-gray-400';
-                td.textContent = 'No import history yet';
-                tr.appendChild(td);
-                tbody.appendChild(tr);
-            } else {
-                data.history.forEach(entry => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
-
-                    // Status icon
-                    const tdStatus = document.createElement('td');
-                    tdStatus.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-center';
-                    const icon = document.createElement('i');
-                    icon.className = entry.success
-                        ? 'fa-solid fa-circle-check text-green-500'
-                        : 'fa-solid fa-circle-xmark text-red-500';
-                    tdStatus.appendChild(icon);
-
-                    // Filename
-                    const tdFile = document.createElement('td');
-                    tdFile.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium';
-                    tdFile.textContent = entry.filename;
-
-                    // Date
-                    const tdDate = document.createElement('td');
-                    tdDate.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm';
-                    tdDate.textContent = entry.datetime;
-
-                    // Stats
-                    const tdStats = document.createElement('td');
-                    tdStats.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 text-sm';
-                    tdStats.textContent = entry.queries_executed.toLocaleString() + ' queries / ' + entry.size_formatted;
-
-                    // Result
-                    const tdResult = document.createElement('td');
-                    tdResult.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700';
-                    const badge = document.createElement('span');
-                    badge.className = entry.success
-                        ? 'px-2 py-1 rounded text-xs font-medium bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200'
-                        : 'px-2 py-1 rounded text-xs font-medium bg-red-100 dark:bg-red-900/50 text-red-800 dark:text-red-200';
-                    badge.textContent = entry.success ? 'Success' : 'Failed';
-                    tdResult.appendChild(badge);
-
-                    tr.appendChild(tdStatus);
-                    tr.appendChild(tdFile);
-                    tr.appendChild(tdDate);
-                    tr.appendChild(tdStats);
-                    tr.appendChild(tdResult);
-                    tbody.appendChild(tr);
-                });
-            }
-
-            content.classList.remove('hidden');
-        })
-        .catch(err => {
-            loading.classList.add('hidden');
-            content.textContent = 'Network error: ' + err.message;
-            content.classList.remove('hidden');
-        });
-}
-
-function closeHistoryModal(event) {
-    if (event && event.target !== event.currentTarget) return;
-    document.getElementById('historyModal').classList.add('hidden');
-}
-
-function clearHistory() {
-    if (!confirm('Are you sure you want to clear all import history?')) return;
-
-    fetch('?action=history&do=clear')
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showHistory(); // Refresh
-            }
-        });
-}
-
-// ============================================
-// Real-Time File List Polling
-// ============================================
-
-// State variables
-let filePollingInterval = null;
-let knownFiles = new Set();
-let uploadingFiles = new Set();
-const POLL_INTERVAL = 4000; // 4 seconds
-const DB_CONFIGURED = <?= json_encode($dbConfigured && $connectionInfo && $connectionInfo['success']) ?>;
-const GZIP_SUPPORTED = <?= json_encode(function_exists('gzopen')) ?>;
-
-// Initialize known files from current DOM
-function initKnownFiles() {
-    document.querySelectorAll('#fileTableBody tr[data-filename]').forEach(row => {
-        knownFiles.add(row.getAttribute('data-filename'));
-    });
-}
-
-// Start polling when page loads
-function startFilePolling() {
-    initKnownFiles();
-    filePollingInterval = setInterval(refreshFileList, POLL_INTERVAL);
-}
-
-// Stop polling
-function stopFilePolling() {
-    if (filePollingInterval) {
-        clearInterval(filePollingInterval);
-        filePollingInterval = null;
-    }
-}
-
-// Pause polling when tab is hidden, resume when visible
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        stopFilePolling();
-    } else {
-        startFilePolling();
-    }
-});
-
-// Pause polling when modals are open
-function isModalOpen() {
-    return !document.getElementById('previewModal').classList.contains('hidden') ||
-           !document.getElementById('historyModal').classList.contains('hidden');
-}
-
-// Refresh file list from server
-async function refreshFileList() {
-    // Skip if modal is open
-    if (isModalOpen()) return;
-
-    try {
-        const response = await fetch('?action=files_list');
-        const data = await response.json();
-
-        if (!data.success) return;
-
-        // Detect new files
-        const currentFiles = new Set(data.files.map(f => f.name));
-        const newFiles = data.files.filter(f => !knownFiles.has(f.name));
-
-        // Update the table
-        updateFileTable(data.files, newFiles);
-
-        // Update known files
-        knownFiles = currentFiles;
-
-        // Show/hide empty state
-        toggleEmptyState(data.files.length === 0);
-
-    } catch (err) {
-        console.error('File polling error:', err);
-    }
-}
-
-// Toggle empty state visibility
-function toggleEmptyState(isEmpty) {
-    const noFilesMsg = document.getElementById('noFilesMessage');
-    const tableContainer = document.getElementById('filesTableContainer');
-
-    if (isEmpty) {
-        noFilesMsg.classList.remove('hidden');
-        tableContainer.classList.add('hidden');
-    } else {
-        noFilesMsg.classList.add('hidden');
-        tableContainer.classList.remove('hidden');
-    }
-}
-
-// Get type badge class
-function getTypeBadgeClass(type) {
-    switch (type) {
-        case 'SQL': return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
-        case 'GZip': return 'bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-200';
-        case 'CSV': return 'bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200';
-        default: return 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200';
-    }
-}
-
-// Create a file row element using safe DOM methods
-function createFileRow(file, isNew = false, isUploading = false) {
-    const tr = document.createElement('tr');
-    tr.className = 'hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150';
-    tr.setAttribute('data-filename', file.name);
-
-    // Add highlight animation for new files
-    if (isNew) {
-        tr.classList.add('bg-green-50', 'dark:bg-green-900/20', 'animate-pulse');
-        setTimeout(() => {
-            tr.classList.remove('bg-green-50', 'dark:bg-green-900/20', 'animate-pulse');
-        }, 3000);
-    }
-
-    // Uploading state
-    if (isUploading) {
-        tr.classList.add('bg-amber-50', 'dark:bg-amber-900/20');
-    }
-
-    const canImport = DB_CONFIGURED && (file.type !== 'GZip' || GZIP_SUPPORTED);
-    const cellClass = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100';
-
-    // Cell 1: Filename
-    const td1 = document.createElement('td');
-    td1.className = cellClass;
-    const strong = document.createElement('strong');
-    strong.textContent = file.name;
-    td1.appendChild(strong);
-    if (isUploading) {
-        const uploadSpan = document.createElement('span');
-        uploadSpan.className = 'ml-2 text-amber-600 dark:text-amber-400 text-xs';
-        const spinner = document.createElement('i');
-        spinner.className = 'fa-solid fa-spinner fa-spin';
-        uploadSpan.appendChild(spinner);
-        uploadSpan.appendChild(document.createTextNode(' Uploading...'));
-        td1.appendChild(uploadSpan);
-    } else if (isNew) {
-        const newBadge = document.createElement('span');
-        newBadge.className = 'ml-2 px-1.5 py-0.5 bg-green-500 text-white text-xs rounded font-medium';
-        newBadge.textContent = 'NEW';
-        td1.appendChild(newBadge);
-    }
-    tr.appendChild(td1);
-
-    // Cell 2: Size
-    const td2 = document.createElement('td');
-    td2.className = cellClass;
-    td2.textContent = isUploading ? '--' : file.sizeFormatted;
-    tr.appendChild(td2);
-
-    // Cell 3: Date
-    const td3 = document.createElement('td');
-    td3.className = cellClass;
-    td3.textContent = isUploading ? '--' : file.date;
-    tr.appendChild(td3);
-
-    // Cell 4: Type badge
-    const td4 = document.createElement('td');
-    td4.className = cellClass;
-    const typeBadge = document.createElement('span');
-    typeBadge.className = 'px-2 py-1 rounded text-xs font-medium ' + getTypeBadgeClass(file.type);
-    typeBadge.textContent = file.type;
-    td4.appendChild(typeBadge);
-    tr.appendChild(td4);
-
-    // Cell 5: Actions
-    const td5 = document.createElement('td');
-    td5.className = cellClass + ' text-center';
-
-    if (isUploading) {
-        const placeholder = document.createElement('span');
-        placeholder.className = 'text-gray-400';
-        placeholder.textContent = '--';
-        td5.appendChild(placeholder);
-    } else {
-        if (canImport) {
-            // Preview button
-            const previewBtn = document.createElement('button');
-            previewBtn.type = 'button';
-            previewBtn.className = 'px-3 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-purple-500 hover:bg-purple-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
-            previewBtn.title = 'Preview SQL content';
-            previewBtn.onclick = () => previewFile(file.name);
-            const eyeIcon = document.createElement('i');
-            eyeIcon.className = 'fa-solid fa-eye';
-            previewBtn.appendChild(eyeIcon);
-            td5.appendChild(previewBtn);
-            td5.appendChild(document.createTextNode(' '));
-
-            // Import form
-            const form = document.createElement('form');
-            form.method = 'post';
-            form.action = '';
-            form.style.display = 'inline';
-            const hiddenInput = document.createElement('input');
-            hiddenInput.type = 'hidden';
-            hiddenInput.name = 'fn';
-            hiddenInput.value = file.name;
-            form.appendChild(hiddenInput);
-            const importBtn = document.createElement('button');
-            importBtn.type = 'submit';
-            importBtn.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
-            importBtn.textContent = 'Import';
-            form.appendChild(importBtn);
-            td5.appendChild(form);
-            td5.appendChild(document.createTextNode(' '));
-        } else if (file.type === 'GZip') {
-            const notSupported = document.createElement('span');
-            notSupported.className = 'text-gray-500 dark:text-gray-400';
-            notSupported.textContent = 'GZip not supported';
-            td5.appendChild(notSupported);
-            td5.appendChild(document.createTextNode(' '));
-        }
-
-        // Delete button
-        const deleteLink = document.createElement('a');
-        deleteLink.href = '?delete=' + encodeURIComponent(file.name);
-        deleteLink.className = 'px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-red-500 hover:bg-red-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white';
-        deleteLink.textContent = 'Delete';
-        deleteLink.onclick = () => confirm('Delete ' + file.name + '?');
-        td5.appendChild(deleteLink);
-    }
-
-    tr.appendChild(td5);
-    return tr;
-}
-
-// Update file table
-function updateFileTable(files, newFiles) {
-    const tbody = document.getElementById('fileTableBody');
-    const newFileNames = new Set(newFiles.map(f => f.name));
-
-    // Build new tbody content
-    const fragment = document.createDocumentFragment();
-
-    // First, add uploading files (not yet on server)
-    uploadingFiles.forEach(filename => {
-        if (!files.find(f => f.name === filename)) {
-            const uploadingFile = { name: filename, type: getFileType(filename), sizeFormatted: '--', date: '--' };
-            fragment.appendChild(createFileRow(uploadingFile, false, true));
-        }
-    });
-
-    // Then add server files
-    files.forEach(file => {
-        const isNew = newFileNames.has(file.name);
-        const isUploading = uploadingFiles.has(file.name);
-        fragment.appendChild(createFileRow(file, isNew, isUploading));
-    });
-
-    // Replace tbody content
-    tbody.replaceChildren(fragment);
-}
-
-// Get file type from extension
-function getFileType(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    if (ext === 'sql') return 'SQL';
-    if (ext === 'gz') return 'GZip';
-    if (ext === 'csv') return 'CSV';
-    return 'SQL';
-}
-
-// Track upload start
-function trackUploadStart(filename) {
-    uploadingFiles.add(filename);
-    refreshFileList();
-}
-
-// Track upload end
-function trackUploadEnd(filename) {
-    uploadingFiles.delete(filename);
-    knownFiles.add(filename); // Don't show as "new" if we just uploaded it
-    refreshFileList();
-}
-
-// Start polling on page load
-document.addEventListener('DOMContentLoaded', startFilePolling);
-</script>
-
 <!-- Import History Modal -->
-<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden" id="historyModal" onclick="closeHistoryModal(event)">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-4" onclick="event.stopPropagation()">
+<div class="modal-overlay hidden" id="historyModal" onclick="closeHistoryModal(event)">
+    <div class="modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="historyModalTitle"
+         aria-describedby="historyModalSubtitle"
+         onclick="event.stopPropagation()">
         <!-- Modal Header -->
-        <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div class="modal-header">
             <div>
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500"></i>Import History
+                <h3 class="modal-title" id="historyModalTitle">
+                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500" aria-hidden="true"></i>Import History
                 </h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Recent import operations</p>
+                <p class="modal-subtitle" id="historyModalSubtitle">Recent import operations</p>
             </div>
-            <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                <i class="fa-solid fa-xmark text-xl"></i>
+            <button onclick="closeHistoryModal()" class="modal-close" aria-label="Close history modal">
+                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Modal Body -->
-        <div class="flex-1 overflow-hidden flex flex-col p-6">
+        <div class="modal-body">
             <!-- Loading State -->
             <div id="historyLoading" class="flex-1 flex items-center justify-center">
                 <div class="text-center">
-                    <div class="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-3"></div>
-                    <div class="text-gray-500 dark:text-gray-400">Loading history...</div>
+                    <div class="spinner spinner-md mx-auto mb-3"></div>
+                    <div class="text-muted">Loading history...</div>
                 </div>
             </div>
 
@@ -868,34 +336,34 @@ document.addEventListener('DOMContentLoaded', startFilePolling);
             <div id="historyContent" class="hidden flex-1 flex flex-col overflow-hidden">
                 <!-- Statistics -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                    <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-1">Total Imports</div>
-                        <div class="font-semibold text-gray-900 dark:text-gray-100" id="histStatTotal">0</div>
+                    <div class="metric-box">
+                        <span class="metric-label">Total Imports</span>
+                        <span class="metric-value" id="histStatTotal">0</span>
                     </div>
-                    <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-green-600 dark:text-green-400 mb-1">Successful</div>
-                        <div class="font-semibold text-green-700 dark:text-green-300" id="histStatSuccess">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(34,197,94,0.1) 0%, rgba(34,197,94,0.05) 100%);">
+                        <span class="metric-label" style="color: #16a34a;">Successful</span>
+                        <span class="metric-value" style="color: #15803d;" id="histStatSuccess">0</span>
                     </div>
-                    <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-red-600 dark:text-red-400 mb-1">Failed</div>
-                        <div class="font-semibold text-red-700 dark:text-red-300" id="histStatFailed">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(239,68,68,0.1) 0%, rgba(239,68,68,0.05) 100%);">
+                        <span class="metric-label" style="color: #dc2626;">Failed</span>
+                        <span class="metric-value" style="color: #b91c1c;" id="histStatFailed">0</span>
                     </div>
-                    <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-center">
-                        <div class="text-xs uppercase tracking-wide text-blue-600 dark:text-blue-400 mb-1">Total Queries</div>
-                        <div class="font-semibold text-blue-700 dark:text-blue-300" id="histStatQueries">0</div>
+                    <div class="metric-box" style="background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(59,130,246,0.05) 100%);">
+                        <span class="metric-label" style="color: #2563eb;">Total Queries</span>
+                        <span class="metric-value" style="color: #1d4ed8;" id="histStatQueries">0</span>
                     </div>
                 </div>
 
                 <!-- History Table -->
                 <div class="flex-1 overflow-auto">
-                    <table class="w-full border-collapse bg-white dark:bg-gray-800 rounded-lg overflow-hidden">
-                        <thead class="bg-gray-50 dark:bg-gray-700 sticky top-0">
+                    <table class="table">
+                        <thead class="sticky top-0">
                             <tr>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600 w-12"></th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Filename</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Date</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Stats</th>
-                                <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 border-b-2 border-gray-200 dark:border-gray-600">Result</th>
+                                <th class="w-12"></th>
+                                <th>Filename</th>
+                                <th>Date</th>
+                                <th>Stats</th>
+                                <th>Result</th>
                             </tr>
                         </thead>
                         <tbody id="historyTableBody">
@@ -906,11 +374,11 @@ document.addEventListener('DOMContentLoaded', startFilePolling);
         </div>
 
         <!-- Modal Footer -->
-        <div class="flex justify-between gap-3 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-            <button onclick="clearHistory()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50 text-red-700 dark:text-red-300">
+        <div class="modal-footer" style="justify-content: space-between;">
+            <button onclick="clearHistory()" class="btn btn-danger-ghost">
                 <i class="fa-solid fa-trash mr-1"></i> Clear History
             </button>
-            <button onclick="closeHistoryModal()" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200">
+            <button onclick="closeHistoryModal()" class="btn btn-secondary">
                 Close
             </button>
         </div>

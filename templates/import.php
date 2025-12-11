@@ -34,7 +34,7 @@
 </div>
 
 <?php if ($testMode): ?>
-<div class="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4">
+<div class="alert alert-warning">
     <strong>Test Mode</strong> - Queries are being parsed but NOT executed.
 </div>
 <?php endif; ?>
@@ -153,34 +153,34 @@
 </div>
 -->
 <?php elseif ($statistics['gzip_mode']): ?>
-<div class="bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-200 border border-cyan-200 dark:border-cyan-800 rounded-lg px-4 py-3 mb-4 text-center">
+<div class="alert alert-info text-center">
     Progress bar not available for gzipped files
 </div>
 <?php endif; ?>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-        <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['lines_done']) ?></div>
-        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Lines Processed</div>
+    <div class="stat-box">
+        <div class="stat-value"><?= number_format($statistics['lines_done']) ?></div>
+        <div class="stat-label">Lines Processed</div>
     </div>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-        <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['queries_done']) ?></div>
-        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Queries Executed</div>
+    <div class="stat-box">
+        <div class="stat-value"><?= number_format($statistics['queries_done']) ?></div>
+        <div class="stat-label">Queries Executed</div>
     </div>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-        <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= $statistics['mb_done'] ?></div>
-        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">MB Processed</div>
+    <div class="stat-box">
+        <div class="stat-value"><?= $statistics['mb_done'] ?></div>
+        <div class="stat-label">MB Processed</div>
     </div>
     <?php if (!$statistics['gzip_mode'] && $statistics['pct_done'] !== null): ?>
-    <div class="stat-box bg-white dark:bg-gray-800 rounded-lg p-5 text-center shadow-sm border border-gray-200 dark:border-gray-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-1">
-        <div class="stat-value text-3xl font-bold text-gray-900 dark:text-gray-100"><?= number_format($statistics['pct_done'], 1) ?>%</div>
-        <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mt-2">Complete</div>
+    <div class="stat-box">
+        <div class="stat-value"><?= number_format($statistics['pct_done'], 1) ?>%</div>
+        <div class="stat-label">Complete</div>
     </div>
     <?php endif; ?>
 </div>
 
-<div class="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
-    <div class="px-6 py-3 border-b border-gray-200 dark:border-gray-700 font-semibold text-sm uppercase tracking-wide text-gray-500 dark:text-gray-400">Detailed Statistics</div>
+<div class="card mb-6 overflow-hidden">
+    <div class="card-header">Detailed Statistics</div>
     <div class="p-0">
         <table class="w-full">
             <thead>
@@ -248,28 +248,28 @@
 
 <!-- Performance Section (Auto-Tuner) -->
 <?php if (isset($autoTuner) && $autoTuner['enabled']): ?>
-<div class="bg-white dark:bg-gray-800 rounded-lg p-5 mb-6 shadow-sm border border-gray-200 dark:border-gray-700">
+<div class="card card-body mb-6">
     <h3 class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-4 font-semibold">Performance (Auto-Tuner)</h3>
     <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-600">
-            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">System</span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100" id="perf-system"><?= htmlspecialchars($autoTuner['os']) ?></span>
+        <div class="metric-box">
+            <span class="metric-label">System</span>
+            <span class="metric-value" id="perf-system"><?= htmlspecialchars($autoTuner['os']) ?></span>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-600">
-            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">RAM Available</span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100" id="perf-ram"><?= htmlspecialchars($autoTuner['available_ram_formatted']) ?></span>
+        <div class="metric-box">
+            <span class="metric-label">RAM Available</span>
+            <span class="metric-value" id="perf-ram"><?= htmlspecialchars($autoTuner['available_ram_formatted']) ?></span>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-600">
-            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Batch Size</span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100" id="perf-batch"><?= number_format($autoTuner['batch_size']) ?> (auto)</span>
+        <div class="metric-box">
+            <span class="metric-label">Batch Size</span>
+            <span class="metric-value" id="perf-batch"><?= number_format($autoTuner['batch_size']) ?> (auto)</span>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-600">
-            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Memory</span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
+        <div class="metric-box">
+            <span class="metric-label">Memory</span>
+            <span class="metric-value" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
         </div>
-        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg text-center border border-gray-200 dark:border-gray-600">
-            <span class="block text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Realtime Speed</span>
-            <span class="block text-sm font-semibold text-gray-900 dark:text-gray-100" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
+        <div class="metric-box">
+            <span class="metric-label">Realtime Speed</span>
+            <span class="metric-value" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
         </div>
     </div>
     <?php if (!empty($autoTuner['adjustment'])): ?>
@@ -283,7 +283,7 @@
 <?php endif; ?>
 
 <?php if ($session->isFinished() && !$session->hasError()): ?>
-<div class="bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800 rounded-lg px-4 py-3 mb-4 text-center">
+<div class="alert alert-success text-center">
     <strong style="font-size: 18px;">Import Completed Successfully!</strong><br><br>
     Total queries executed: <strong><?= number_format($statistics['queries_done']) ?></strong><br>
     Total lines processed: <strong><?= number_format($statistics['lines_done']) ?></strong><br><br>
@@ -293,8 +293,8 @@
 </div>
 
 <div class="text-center mt-3">
-    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Back to File List</a>
-    <a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" style="margin-left: 10px;">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Back to File List</a>
+    <a href="/" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -306,19 +306,19 @@
     <?php endif; ?>
 
     <noscript>
-        <div class="bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 mb-4 text-center">
+        <div class="alert alert-warning text-center">
             JavaScript is disabled. Click the link below to continue manually.<br><br>
-            <a href="?action=import" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">
+            <a href="?action=import" class="btn btn-blue">
                 Continue Import
             </a>
         </div>
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="?action=stop_import" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-gray-500 hover:bg-gray-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
+        <a href="?action=stop_import" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
         </a>
-        <span class="text-gray-500 dark:text-gray-400" style="margin-left: 15px;">or wait for automatic continuation</span>
+        <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
     </div>
 
     <?php if (isset($ajaxScript)): ?>
@@ -332,16 +332,16 @@
 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">
     <?php if ($tableAlreadyExists): ?>
     <a href="<?= $view->e($scriptUri) ?>/import/drop-restart?table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
-       class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white"
+       class="btn btn-amber"
        onclick="return confirm('This will DROP TABLE `<?= $view->e($tableAlreadyExists) ?>` and restart the import. Continue?');">
         Drop "<?= $view->e($tableAlreadyExists) ?>" &amp; Restart Import
     </a>
-    <span class="text-gray-500 dark:text-gray-400">or</span>
+    <span class="text-muted">or</span>
     <?php endif; ?>
-    <a href="<?= $view->e($scriptUri) ?>" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Start Over (resume)</a>
-    <a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-all duration-150 cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 hover:scale-105 hover:shadow-lg active:scale-95 text-white">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Start Over (resume)</a>
+    <a href="../" class="btn btn-cyan">Back to Home</a>
     <?php if (!$tableAlreadyExists): ?>
-    <span class="text-gray-500 dark:text-gray-400">(DROP old tables before restarting)</span>
+    <span class="text-muted">(DROP old tables before restarting)</span>
     <?php endif; ?>
 </div>
 
