@@ -1,0 +1,71 @@
+name: Build Assets
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'assets/src/**'
+      - 'templates/**'
+      - 'tailwind.config.js'
+      - 'scripts/generate-icons.php'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'assets/src/**'
+      - 'templates/**'
+      - 'tailwind.config.js'
+      - 'scripts/generate-icons.php'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Tailwind CLI
+        run: |
+          curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-linux-x64
+          chmod +x tailwindcss-linux-x64
+
+      - name: Build Tailwind CSS
+        run: |
+          mkdir -p assets/dist
+          ./tailwindcss-linux-x64 -i assets/src/css/tailwind.css -o assets/dist/app.min.css --minify
+
+      - name: Download esbuild
+        run: |
+          curl -fsSL https://esbuild.github.io/dl/latest | sh
+          chmod +x esbuild
+
+      - name: Minify JavaScript
+        run: |
+          ./esbuild assets/src/js/bigdump.js --minify --outfile=assets/dist/bigdump.min.js
+          ./esbuild assets/src/js/fileupload.js --minify --outfile=assets/dist/fileupload.min.js
+          ./esbuild assets/src/js/filepolling.js --minify --outfile=assets/dist/filepolling.min.js
+          ./esbuild assets/src/js/history.js --minify --outfile=assets/dist/history.min.js
+          ./esbuild assets/src/js/modal.js --minify --outfile=assets/dist/modal.min.js
+          ./esbuild assets/src/js/preview.js --minify --outfile=assets/dist/preview.min.js
+
+      - name: Generate SVG Icons
+        run: php scripts/generate-icons.php
+
+      - name: Report sizes
+        run: |
+          echo "=== Built Asset Sizes ==="
+          ls -lh assets/dist/
+          ls -lh assets/icons.svg
+          echo ""
+          echo "=== Total Size ==="
+          du -ch assets/dist/* assets/icons.svg | grep total
+
+      # Only commit on push (not on PR)
+      - name: Commit built assets
+        if: github.event_name == 'push'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "build: Auto-compiled assets [skip ci]"
+          file_pattern: 'assets/dist/* assets/icons.svg'
