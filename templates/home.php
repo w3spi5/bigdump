@@ -77,7 +77,7 @@
     <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Dump Files</h3>
         <button onclick="showHistory()" class="btn btn-sm btn-indigo">
-            <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+            <svg class="icon w-4 h-4 mr-1 fill-current"><use href="assets/icons.svg#clock-rotate-left"></use></svg> History
         </button>
     </div>
 
@@ -123,7 +123,7 @@
                                         onclick="previewFile('<?= $view->escapeJs($file['name']) ?>')"
                                         class="btn btn-icon btn-purple"
                                         title="Preview SQL content">
-                                    <i class="fa-solid fa-eye"></i>
+                                    <svg class="icon w-4 h-4 fill-current"><use href="assets/icons.svg#eye"></use></svg>
                                 </button>
                                 <form method="post" action="" style="display:inline">
                                     <input type="hidden" name="fn" value="<?= $view->e($file['name']) ?>">
@@ -224,7 +224,7 @@
                 <p class="modal-subtitle" id="previewModalSubtitle">Loading...</p>
             </div>
             <button onclick="closePreviewModal()" class="modal-close" aria-label="Close preview modal">
-                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
+                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="assets/icons.svg#xmark"></use></svg>
             </button>
         </div>
 
@@ -241,7 +241,7 @@
             <!-- Error State -->
             <div id="previewError" class="hidden flex-1 flex items-center justify-center">
                 <div class="text-center text-red-500">
-                    <i class="fa-solid fa-circle-exclamation text-4xl mb-3"></i>
+                    <svg class="icon w-10 h-10 mx-auto mb-3 fill-current"><use href="assets/icons.svg#circle-exclamation"></use></svg>
                     <div id="previewErrorMessage">Error loading preview</div>
                 </div>
             </div>
@@ -271,10 +271,10 @@
                 <!-- Tabs -->
                 <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
                     <button onclick="switchPreviewTab('raw')" class="preview-tab px-4 py-2 text-sm font-medium border-b-2 transition-colors" id="tabRaw" data-active="true">
-                        <i class="fa-solid fa-code mr-2"></i>Raw Content
+                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#code"></use></svg>Raw Content
                     </button>
                     <button onclick="switchPreviewTab('queries')" class="preview-tab px-4 py-2 text-sm font-medium border-b-2 transition-colors" id="tabQueries" data-active="false">
-                        <i class="fa-solid fa-database mr-2"></i>Queries (<span id="tabQueriesCount">0</span>)
+                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#database"></use></svg>Queries (<span id="tabQueriesCount">0</span>)
                     </button>
                 </div>
 
@@ -294,7 +294,7 @@
             <form method="post" action="" id="previewImportForm" style="display:inline">
                 <input type="hidden" name="fn" id="previewImportFilename" value="">
                 <button type="submit" class="btn btn-green">
-                    <i class="fa-solid fa-play mr-2"></i>Start Import
+                    <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#play"></use></svg>Start Import
                 </button>
             </form>
         </div>
@@ -313,12 +313,12 @@
         <div class="modal-header">
             <div>
                 <h3 class="modal-title" id="historyModalTitle">
-                    <i class="fa-solid fa-clock-rotate-left mr-2 text-indigo-500" aria-hidden="true"></i>Import History
+                    <svg class="icon w-5 h-5 mr-2 fill-indigo-500" aria-hidden="true"><use href="assets/icons.svg#clock-rotate-left"></use></svg>Import History
                 </h3>
                 <p class="modal-subtitle" id="historyModalSubtitle">Recent import operations</p>
             </div>
             <button onclick="closeHistoryModal()" class="modal-close" aria-label="Close history modal">
-                <i class="fa-solid fa-xmark text-xl" aria-hidden="true"></i>
+                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="assets/icons.svg#xmark"></use></svg>
             </button>
         </div>
 
@@ -376,7 +376,7 @@
         <!-- Modal Footer -->
         <div class="modal-footer" style="justify-content: space-between;">
             <button onclick="clearHistory()" class="btn btn-danger-ghost">
-                <i class="fa-solid fa-trash mr-1"></i> Clear History
+                <svg class="icon w-4 h-4 mr-1 fill-current"><use href="assets/icons.svg#trash"></use></svg> Clear History
             </button>
             <button onclick="closeHistoryModal()" class="btn btn-secondary">
                 Close

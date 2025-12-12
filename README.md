@@ -1,8 +1,9 @@
-# BigDump 2.12 - Staggered MySQL Dump Importer
+# BigDump 2.14 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.12-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.14-blue.svg)](https://php.net/)
+[![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
   <img src="docs/logo.png" alt="BigDump Logo" width="400">
@@ -21,6 +22,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 - **Import History**: Track all import operations with statistics
 - **Session Persistence**: Resume imports after browser refresh or server restart
 - **Modern Interface**: Tailwind CSS with dark mode, drag & drop upload, smooth animations
+- **Zero-CDN**: Self-hosted purged assets (~47KB total vs ~454KB CDN)
 - **Auto-Tuning**: Dynamic batch size based on available RAM (up to 1.5M lines/batch)
 - **Enhanced Security**: Protection against path traversal, XSS, and other vulnerabilities
 - **UTF-8 Support**: Proper handling of multi-byte characters and BOM
@@ -166,9 +168,15 @@ bigdump/
 ├── config/
 │   └── config.php
 ├── index.php              # Entry point
+├── tailwind.config.js     # Tailwind configuration
 ├── assets/
-│   ├── css/
-│   ├── js/
+│   ├── dist/              # Compiled assets (auto-generated)
+│   │   ├── app.min.css
+│   │   └── *.min.js
+│   ├── src/               # Source files
+│   │   ├── css/tailwind.css
+│   │   └── js/*.js
+│   ├── icons.svg          # SVG icon sprite
 │   └── img/
 │       └── logo.png
 ├── src/
@@ -198,6 +206,11 @@ bigdump/
 │   ├── import.php
 │   └── layout.php
 ├── uploads/
+├── scripts/
+│   └── generate-icons.php # SVG sprite generator
+├── .github/
+│   └── workflows/
+│       └── build-assets.yml  # CI asset pipeline
 ├── docs/
 │   ├── CHANGELOG.md
 │   └── logo.png
