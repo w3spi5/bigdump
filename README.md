@@ -168,7 +168,6 @@ bigdump/
 ├── config/
 │   └── config.php
 ├── index.php              # Entry point
-├── tailwind.config.js     # Tailwind configuration
 ├── assets/
 │   ├── dist/              # Compiled assets (auto-generated)
 │   │   ├── app.min.css

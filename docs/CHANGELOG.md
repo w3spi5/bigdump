@@ -12,8 +12,8 @@ All notable changes to BigDump are documented in this file.
   - Auto-commit built assets to repository
   - PR validation builds (no commit)
 - **SVG Icon Sprite**: Font Awesome icons replaced with optimized SVG sprite
-  - 15 icons: sun, moon, eye, play, trash, xmark, clock-rotate-left, circle-check, circle-xmark, circle-exclamation, code, database, spinner, upload, file
-  - Single `assets/icons.svg` file (6.3KB)
+  - 13 icons: sun, moon, eye, play, trash, xmark, clock-rotate-left, circle-check, circle-xmark, circle-exclamation, code, database, spinner
+  - Single `assets/icons.svg` file (~3KB)
   - Tailwind `animate-spin` for spinner animation
 - **New Asset Structure**:
   - `assets/src/css/tailwind.css` - Source CSS with Tailwind directives
@@ -40,9 +40,8 @@ All notable changes to BigDump are documented in this file.
 
 | File | Purpose |
 |------|---------|
-| `tailwind.config.js` | Tailwind configuration with safelist |
-| `assets/src/css/tailwind.css` | Tailwind directives + custom CSS |
-| `assets/icons.svg` | SVG icon sprite (15 icons) |
+| `assets/src/css/tailwind.css` | Tailwind v4 CSS-first config + custom styles |
+| `assets/icons.svg` | SVG icon sprite (13 icons) |
 | `scripts/generate-icons.php` | PHP script to generate icon sprite |
 | `.github/workflows/build-assets.yml` | CI workflow for asset builds |
 
