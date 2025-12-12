@@ -179,6 +179,16 @@ class InsertBatcherService
      */
     private function buildBatchedQuery(): string
     {
+        // Safety check: ensure prefix exists
+        if ($this->currentPrefix === null || $this->currentPrefix === '') {
+            // This should never happen, but if it does, return values as-is
+            // to avoid executing invalid SQL
+            throw new \RuntimeException(
+                'InsertBatcher: Cannot build query without prefix. ' .
+                'Values: ' . substr(implode(', ', $this->currentValues), 0, 200) . '...'
+            );
+        }
+
         $query = $this->currentPrefix . ' ' . implode(', ', $this->currentValues) . ';';
         $this->executedCount++;
         return $query;

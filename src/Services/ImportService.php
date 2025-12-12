@@ -466,8 +466,17 @@ class ImportService
         $pendingQuery = $this->sqlParser->getPendingQuery();
 
         if ($pendingQuery !== null) {
-            // Try to execute the final query
-            $this->executeQuery($session, $pendingQuery);
+            // Validate pendingQuery - must start with a SQL keyword to be valid
+            $trimmed = ltrim($pendingQuery);
+            $isValidSql = preg_match('/^(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|SET|LOCK|UNLOCK|START|COMMIT|ROLLBACK|REPLACE|TRUNCATE|USE|GRANT|REVOKE|SHOW|DESCRIBE|EXPLAIN|CALL|DELIMITER|\/\*|--)/i', $trimmed);
+
+            if ($isValidSql) {
+                // Try to execute the final query
+                $this->executeQuery($session, $pendingQuery);
+            } else {
+                // Invalid/corrupted pending query - log and skip
+                error_log("BigDump: Discarding invalid final query: " . substr($pendingQuery, 0, 200));
+            }
         }
 
         // Flush any remaining batched INSERTs
