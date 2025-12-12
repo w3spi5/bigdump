@@ -1,5 +1,19 @@
 [
     {
+        "id": "imp_693c572e9350d",
+        "filename": "wespy_diffusion.sql",
+        "timestamp": 1765562158,
+        "datetime": "2025-12-12 17:55:58",
+        "queries_executed": 184,
+        "lines_processed": 53293502,
+        "bytes_processed": 1844412058,
+        "size_formatted": "1.72 GB",
+        "success": false,
+        "error": "SQL Error at line 53293503:\nQuery: --\n--\n--\n--\nALTER TABLE `wespy_diffusion`\n  ADD PRIMARY KEY (`id_diffusion`),\n  ADD KEY `titre_id` (`titre_id`),\n  ADD KEY `station_id` (`station_id`),\n  ADD KEY `date_diffusion` (`date_diffusion`),\n  ADD KEY `idx_palmares_covering` (`station_id`,`date_diffusion`,`titre_id`)\nMySQL Error: Duplicate entry '53393673' for key 'wespy_diffusion.PRIMARY'",
+        "duration": 0,
+        "duration_formatted": "0s"
+    },
+    {
         "id": "imp_693c288e8854f",
         "filename": "wespy_diffusion.sql",
         "timestamp": 1765550222,
