@@ -2,6 +2,36 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.15] - Elapsed Timer & SQL Safety
+
+### Added in 2.15
+
+- **Elapsed Timer**: Real-time HH:MM:SS timer during import
+  - Synchronized with SSE connection lifecycle
+  - Starts on import begin, stops on complete/error/disconnect
+  - Client-side JavaScript with 1-second precision
+- **Progress Display**: Percentage shown next to elapsed timer
+  - Cleaner UI with dedicated display area
+  - Progress bar simplified (no text overlay)
+
+### Fixed in 2.15
+
+- **SQL Validation**: Pending queries validated before execution
+  - Prevents execution of corrupted/invalid SQL data
+  - Validates against SQL keyword whitelist (INSERT, UPDATE, DELETE, etc.)
+  - Invalid queries logged and discarded
+- **InsertBatcher Safety**: Exception thrown when building batch without prefix
+  - Prevents generation of invalid multi-value INSERT statements
+  - Clear error message with query preview for debugging
+
+### Changed in 2.15
+
+- Progress bar no longer displays percentage text (moved to dedicated area)
+- Percentage formatting: 1 decimal in stat box, 2 decimals in header display
+- Timer lifecycle integrated with SSE error handling and reconnection
+
+---
+
 ## [2.14] - Zero-CDN Asset Pipeline
 
 ### Added in 2.14
