@@ -1,8 +1,8 @@
-# BigDump 2.14 - Staggered MySQL Dump Importer
+# BigDump 2.15 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.14-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.15-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
@@ -17,7 +17,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 - **Staggered Import**: Imports dumps in sessions to bypass timeout limits
 - **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
-- **SSE Streaming**: Real-time progress with Server-Sent Events
+- **SSE Streaming**: Real-time progress with Server-Sent Events and elapsed timer
 - **SQL Preview**: Preview file contents and queries before importing
 - **Import History**: Track all import operations with statistics
 - **Session Persistence**: Resume imports after browser refresh or server restart
