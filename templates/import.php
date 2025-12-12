@@ -143,7 +143,13 @@
     <div class="bg-gray-200 dark:bg-gray-700 rounded h-2.5 overflow-hidden">
         <div class="progress-bar h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded transition-all duration-300 bg-[length:1rem_1rem] animate-progress-stripe" style="width: <?= $statistics['pct_done'] ?>%; background-image: linear-gradient(45deg, rgba(255,255,255,.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,.15) 50%, rgba(255,255,255,.15) 75%, transparent 75%, transparent);"></div>
     </div>
-    <div class="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-2 text-right"><?= number_format($statistics['pct_done'], 2) ?>% Complete</div>
+    <div class="flex justify-between items-center mt-2">
+        <div class="elapsed-timer text-center flex-1" id="elapsedTimer">
+            <span class="text-xs text-gray-500 dark:text-gray-400 mr-1">Elapsed:</span>
+            <span class="text-lg font-semibold text-gray-900 dark:text-gray-100 font-mono tracking-wider" id="elapsedTime">00:00:00</span>
+        </div>
+        <div class="text-sm font-semibold text-gray-900 dark:text-gray-100"><?= number_format($statistics['pct_done'], 2) ?>% Complete</div>
+    </div>
 </div>
 <!-- ETA disabled - needs stabilization
 <div class="eta-container text-center mb-3" id="eta-display">
