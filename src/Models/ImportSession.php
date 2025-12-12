@@ -146,6 +146,12 @@ class ImportSession
     private ?int $frozenQueriesTotal = null;
 
     /**
+     * File analysis data for file-aware auto-tuning
+     * @var array|null
+     */
+    private ?array $fileAnalysisData = null;
+
+    /**
      * Creates a new session from request parameters
      *
      * @param string $filename Filename
@@ -617,6 +623,68 @@ class ImportSession
     }
 
     /**
+     * Gets file analysis data
+     *
+     * @return array|null File analysis data
+     */
+    public function getFileAnalysisData(): ?array
+    {
+        return $this->fileAnalysisData;
+    }
+
+    /**
+     * Sets file analysis data
+     *
+     * @param array|null $data File analysis data
+     * @return self
+     */
+    public function setFileAnalysisData(?array $data): self
+    {
+        $this->fileAnalysisData = $data;
+        return $this;
+    }
+
+    /**
+     * Gets file category from analysis
+     *
+     * @return string|null Category (tiny/small/medium/large/massive)
+     */
+    public function getFileCategory(): ?string
+    {
+        return $this->fileAnalysisData['category'] ?? null;
+    }
+
+    /**
+     * Gets file category label for display
+     *
+     * @return string|null Category label
+     */
+    public function getFileCategoryLabel(): ?string
+    {
+        return $this->fileAnalysisData['category_label'] ?? null;
+    }
+
+    /**
+     * Checks if bulk INSERT detected
+     *
+     * @return bool True if bulk INSERT detected
+     */
+    public function isBulkInsert(): bool
+    {
+        return $this->fileAnalysisData['is_bulk_insert'] ?? false;
+    }
+
+    /**
+     * Gets target RAM usage percentage
+     *
+     * @return float|null Target RAM usage (0.0-1.0)
+     */
+    public function getTargetRamUsage(): ?float
+    {
+        return $this->fileAnalysisData['target_ram_usage'] ?? null;
+    }
+
+    /**
      * Calculates session statistics
      *
      * @return array<string, mixed> Statistics
@@ -744,6 +812,12 @@ class ImportSession
             'memory_percentage' => $this->memoryPercentage,
             'speed_lps' => $this->speedLps,
             'auto_tune_adjustment' => $this->autoTuneAdjustment,
+
+            // File analysis metrics
+            'file_category' => $this->getFileCategory(),
+            'file_category_label' => $this->getFileCategoryLabel(),
+            'is_bulk_insert' => $this->isBulkInsert(),
+            'target_ram_usage' => $this->getTargetRamUsage(),
         ];
     }
 
@@ -784,6 +858,7 @@ class ImportSession
             'file_size' => $this->fileSize,
             'frozen_lines_total' => $this->frozenLinesTotal,
             'frozen_queries_total' => $this->frozenQueriesTotal,
+            'file_analysis_data' => $this->fileAnalysisData,
             'active' => true,
         ];
     }
@@ -817,6 +892,11 @@ class ImportSession
         }
         if (isset($data['frozen_queries_total'])) {
             $session->frozenQueriesTotal = $data['frozen_queries_total'];
+        }
+
+        // Restore file analysis data if available
+        if (isset($data['file_analysis_data'])) {
+            $session->fileAnalysisData = $data['file_analysis_data'];
         }
 
         return $session;
