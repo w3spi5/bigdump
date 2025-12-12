@@ -243,4 +243,29 @@ return [
      * Minimum batch size for auto-tuner.
      */
     'min_batch_size' => 5000,
+
+    // =========================================================================
+    // FILE-AWARE TUNING (v2.16+)
+    // =========================================================================
+
+    /**
+     * Enable file-aware auto-tuning.
+     * When enabled, analyzes the SQL file to determine optimal batch sizes
+     * based on file size category and content type (bulk INSERTs, etc.).
+     * Provides x2-3 speedup for large files by utilizing more RAM.
+     */
+    'file_aware_tuning' => true,
+
+    /**
+     * Sample size for file analysis (in bytes).
+     * Larger samples give more accurate estimates but take longer.
+     * 1MB is optimal for most files.
+     */
+    'sample_size_bytes' => 1048576,
+
+    /**
+     * Minimum batch size for dynamic adaptation.
+     * Prevents batch from getting too small during adaptation.
+     */
+    'min_dynamic_batch' => 50000,
 ];

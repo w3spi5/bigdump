@@ -11,6 +11,8 @@ use BigDump\Models\SqlParser;
 use BigDump\Models\ImportSession;
 use BigDump\Services\AutoTunerService;
 use BigDump\Services\InsertBatcherService;
+use BigDump\Services\FileAnalysisService;
+use BigDump\Services\FileAnalysisResult;
 use RuntimeException;
 
 /**
@@ -70,6 +72,12 @@ class ImportService
     private InsertBatcherService $insertBatcher;
 
     /**
+     * File analysis service.
+     * @var FileAnalysisService
+     */
+    private FileAnalysisService $fileAnalyzer;
+
+    /**
      * Get AutoTuner metrics for UI display.
      *
      * @param int $currentLines Current line count for speed calculation
@@ -102,6 +110,50 @@ class ImportService
         // Initialize INSERT batcher
         $insertBatchSize = (int) $config->get('insert_batch_size', 1000);
         $this->insertBatcher = new InsertBatcherService($insertBatchSize);
+
+        // Initialize file analyzer
+        $sampleSize = (int) $config->get('sample_size_bytes', 1048576);
+        $this->fileAnalyzer = new FileAnalysisService($sampleSize);
+    }
+
+    /**
+     * Analyze file and initialize file-aware auto-tuning.
+     * Call this when starting a fresh import (offset = 0).
+     *
+     * @param string $filename Filename in uploads directory
+     * @return FileAnalysisResult|null Analysis result or null if analysis disabled
+     */
+    public function analyzeFile(string $filename): ?FileAnalysisResult
+    {
+        if (!$this->autoTuner->isEnabled() || !$this->autoTuner->isFileAwareTuningEnabled()) {
+            return null;
+        }
+
+        $filepath = $this->fileHandler->getFullPath($filename);
+        $extension = $this->fileHandler->getExtension($filename);
+        $isGzip = ($extension === 'gz');
+
+        $analysis = $this->fileAnalyzer->analyze($filepath, $isGzip);
+        $this->autoTuner->setFileAnalysis($analysis);
+        $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
+
+        return $analysis;
+    }
+
+    /**
+     * Restore file analysis from session data.
+     * Call this when resuming an import.
+     *
+     * @param array $analysisData Stored analysis data from ImportSession
+     */
+    public function restoreFileAnalysis(array $analysisData): void
+    {
+        if (!empty($analysisData)) {
+            $this->autoTuner->restoreFileAnalysis($analysisData);
+            if ($this->autoTuner->isEnabled()) {
+                $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
+            }
+        }
     }
 
     /**
@@ -185,10 +237,21 @@ class ImportService
             $session->setSpeedLps($metrics['speed_lps']);
             $session->setAutoTuneAdjustment($metrics['adjustment']);
 
-            // Check memory pressure for next session
-            $pressure = $this->autoTuner->checkMemoryPressure();
-            if ($pressure['adjustment']) {
-                $this->linesPerSession = $this->autoTuner->getCurrentBatchSize();
+            // Store file analysis data in session for persistence
+            if ($this->autoTuner->getFileAnalysis() !== null) {
+                $session->setFileAnalysisData($this->autoTuner->getFileAnalysis()->toArray());
+            }
+
+            // Dynamic batch adaptation (replaces simple checkMemoryPressure)
+            // Uses speed stability + memory history for smarter decisions
+            if ($this->autoTuner->isEnabled() && $metrics['speed_lps'] > 0) {
+                $adaptation = $this->autoTuner->adaptBatchSize(
+                    (float) $metrics['speed_lps'],
+                    (int) $metrics['memory_percentage']
+                );
+                if ($adaptation['action'] !== 'stable') {
+                    $this->linesPerSession = $this->autoTuner->getCurrentBatchSize();
+                }
             }
 
         } catch (RuntimeException $e) {

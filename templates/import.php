@@ -256,7 +256,7 @@
 <?php if (isset($autoTuner) && $autoTuner['enabled']): ?>
 <div class="card card-body mb-6">
     <h3 class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 mb-4 font-semibold">Performance (Auto-Tuner)</h3>
-    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div class="metric-box">
             <span class="metric-label">System</span>
             <span class="metric-value" id="perf-system"><?= htmlspecialchars($autoTuner['os']) ?></span>
@@ -266,16 +266,58 @@
             <span class="metric-value" id="perf-ram"><?= htmlspecialchars($autoTuner['available_ram_formatted']) ?></span>
         </div>
         <div class="metric-box">
+            <span class="metric-label">File Category</span>
+            <span class="metric-value" id="perf-category">
+                <?php
+                // Color-coded badge for file category
+                $categoryColors = [
+                    'tiny' => 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+                    'small' => 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300',
+                    'medium' => 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300',
+                    'large' => 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300',
+                    'massive' => 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300',
+                ];
+                $category = $autoTuner['file_category'] ?? 'small';
+                $categoryLabel = $autoTuner['file_category_label'] ?? ucfirst($category);
+                $colorClass = $categoryColors[$category] ?? $categoryColors['small'];
+                ?>
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium <?= $colorClass ?>">
+                    <?= htmlspecialchars($categoryLabel) ?>
+                    <?php if (!empty($autoTuner['is_bulk_insert'])): ?>
+                    <span class="text-green-600 dark:text-green-400 font-bold" title="Bulk INSERT detected">+B</span>
+                    <?php endif; ?>
+                </span>
+            </span>
+        </div>
+        <div class="metric-box">
             <span class="metric-label">Batch Size</span>
             <span class="metric-value" id="perf-batch"><?= number_format($autoTuner['batch_size']) ?> (auto)</span>
         </div>
         <div class="metric-box">
             <span class="metric-label">Memory</span>
-            <span class="metric-value" id="perf-memory"><?= $autoTuner['memory_percentage'] ?>%</span>
+            <span class="metric-value" id="perf-memory">
+                <?= $autoTuner['memory_percentage'] ?>% / <?= number_format(($autoTuner['target_ram_usage'] ?? 0.6) * 100) ?>% target
+            </span>
         </div>
         <div class="metric-box">
             <span class="metric-label">Realtime Speed</span>
-            <span class="metric-value" id="perf-speed"><?= number_format($autoTuner['speed_lps'], 0) ?> l/s</span>
+            <span class="metric-value" id="perf-speed">
+                <?= number_format($autoTuner['speed_lps'], 0) ?> l/s
+                <?php
+                // Speed trend arrow
+                $trend = $autoTuner['speed_trend'] ?? 'calculating';
+                $trendIcons = [
+                    'increasing' => ['icon' => '↑', 'color' => 'text-green-600 dark:text-green-400'],
+                    'decreasing' => ['icon' => '↓', 'color' => 'text-red-600 dark:text-red-400'],
+                    'stable' => ['icon' => '→', 'color' => 'text-gray-500 dark:text-gray-400'],
+                ];
+                if (isset($trendIcons[$trend])):
+                ?>
+                <span class="ml-1 <?= $trendIcons[$trend]['color'] ?>" title="Speed trend: <?= htmlspecialchars($trend) ?>">
+                    <?= $trendIcons[$trend]['icon'] ?>
+                </span>
+                <?php endif; ?>
+            </span>
         </div>
     </div>
     <?php if (!empty($autoTuner['adjustment'])): ?>

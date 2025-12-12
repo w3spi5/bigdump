@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BigDump\Services;
 
 use BigDump\Config\Config;
+use BigDump\Services\FileAnalysisResult;
 
 /**
  * AutoTunerService - Dynamic batch size optimization based on system resources
@@ -28,9 +29,58 @@ class AutoTunerService
     private float $sessionStartTime = 0;
     private int $sessionStartLines = 0;
 
+    // File-aware tuning properties
+    private ?FileAnalysisResult $fileAnalysis = null;
+    private bool $fileAwareTuningEnabled = true;
+    private array $speedHistory = [];
+    private array $memoryHistory = [];
+
+    /**
+     * RAM x File Size batch reference table.
+     * Values represent initial batch sizes for each RAM/FileCategory combination.
+     * Array keys are RAM in GB, values are [tiny, small, medium, large, massive].
+     */
+    private const BATCH_REFERENCE = [
+        1  => [10000,   30000,   50000,   80000,  100000],
+        2  => [20000,   50000,   80000,  150000,  250000],
+        3  => [25000,   70000,  120000,  200000,  350000],
+        4  => [30000,   80000,  150000,  250000,  400000],
+        5  => [40000,  100000,  200000,  350000,  500000],
+        6  => [45000,  120000,  250000,  400000,  600000],
+        8  => [50000,  150000,  300000,  500000,  750000],
+        12 => [50000,  175000,  350000,  575000,  875000],
+        16 => [50000,  200000,  400000,  650000, 1000000],
+    ];
+
+    /**
+     * Category index mapping for BATCH_REFERENCE lookup
+     */
+    private const CATEGORY_INDEX = [
+        'tiny'    => 0,
+        'small'   => 1,
+        'medium'  => 2,
+        'large'   => 3,
+        'massive' => 4,
+    ];
+
+    /**
+     * History size for speed/memory tracking (last N samples)
+     */
+    private const HISTORY_SIZE = 5;
+
+    /**
+     * Multiplier for bulk INSERT files (more efficient to process)
+     */
+    private const BULK_INSERT_MULTIPLIER = 1.3;
+
+    /**
+     * Minimum batch size during dynamic adaptation
+     */
+    private const MIN_DYNAMIC_BATCH = 50000;
+
     /**
      * RAM profiles: threshold (bytes) => batch size
-     * Aggressive profiles optimized for NVMe SSD systems
+     * Aggressive profiles optimized for NVMe SSD systems (fallback for non-file-aware mode)
      */
     private const PROFILES = [
         536870912    => 30000,    // < 512 MB →   30,000 lines
@@ -60,6 +110,7 @@ class AutoTunerService
         $this->minBatchSize = (int) $config->get('min_batch_size', 10000);
         $this->maxBatchSize = (int) $config->get('max_batch_size', 1500000);
         $this->currentBatchSize = (int) $config->get('linespersession', 50000);
+        $this->fileAwareTuningEnabled = (bool) $config->get('file_aware_tuning', true);
 
         // Force batch size bypasses all auto-tuning calculations
         $forcedSize = $config->get('force_batch_size', 0);
@@ -124,6 +175,74 @@ class AutoTunerService
             return $this->currentBatchSize;
         }
 
+        // Use file-aware calculation if analysis is available
+        if ($this->fileAwareTuningEnabled && $this->fileAnalysis !== null) {
+            return $this->calculateFileAwareBatchSize();
+        }
+
+        // Fall back to RAM-only calculation
+        return $this->calculateRamOnlyBatchSize();
+    }
+
+    /**
+     * File-aware batch calculation using RAM x FileSize matrix.
+     */
+    private function calculateFileAwareBatchSize(): int
+    {
+        $resources = $this->getSystemResources();
+        $availableRamBytes = $resources['available_ram'];
+        $availableRamGb = (int) floor($availableRamBytes / (1024 * 1024 * 1024));
+        $availableRamGb = max(1, $availableRamGb); // Minimum 1GB for lookup
+
+        $category = $this->fileAnalysis->category;
+        $categoryIndex = self::CATEGORY_INDEX[$category] ?? 2; // Default to 'medium'
+
+        // Find closest RAM tier
+        $ramTier = $this->findClosestRamTier($availableRamGb);
+
+        // Lookup base batch size
+        $baseBatch = self::BATCH_REFERENCE[$ramTier][$categoryIndex] ?? 50000;
+
+        // Apply bulk INSERT multiplier if detected (more efficient to process)
+        if ($this->fileAnalysis->isBulkInsert) {
+            $baseBatch = (int) ($baseBatch * self::BULK_INSERT_MULTIPLIER);
+        }
+
+        // Apply target RAM usage factor (larger files get more aggressive RAM usage)
+        $targetUsage = $this->fileAnalysis->targetRamUsage;
+        $adjustedBatch = (int) ($baseBatch * ($targetUsage / 0.40)); // 0.40 is baseline
+
+        // Clamp to configured min/max
+        $this->currentBatchSize = max(
+            $this->minBatchSize,
+            min($adjustedBatch, $this->maxBatchSize)
+        );
+
+        return $this->currentBatchSize;
+    }
+
+    /**
+     * Find closest RAM tier in reference table.
+     */
+    private function findClosestRamTier(int $ramGb): int
+    {
+        $tiers = array_keys(self::BATCH_REFERENCE);
+        sort($tiers);
+
+        foreach ($tiers as $tier) {
+            if ($ramGb <= $tier) {
+                return $tier;
+            }
+        }
+
+        return end($tiers); // Return highest tier if RAM exceeds all
+    }
+
+    /**
+     * Existing RAM-only calculation (fallback when file analysis unavailable).
+     */
+    private function calculateRamOnlyBatchSize(): int
+    {
         $resources = $this->getSystemResources();
 
         // Constraint 1: Available system RAM
@@ -271,6 +390,13 @@ class AutoTunerService
             'speed_lps' => $this->calculateSpeed($currentLines),
             'speed_formatted' => number_format($this->calculateSpeed($currentLines), 0) . ' l/s',
             'adjustment' => $this->lastAdjustment,
+            // File-aware tuning metrics
+            'file_aware_enabled' => $this->fileAwareTuningEnabled,
+            'file_category' => $this->fileAnalysis?->category,
+            'file_category_label' => $this->fileAnalysis?->categoryLabel,
+            'target_ram_usage' => $this->fileAnalysis?->targetRamUsage,
+            'is_bulk_insert' => $this->fileAnalysis?->isBulkInsert ?? false,
+            'speed_trend' => $this->getSpeedTrend(),
         ];
     }
 
@@ -315,6 +441,187 @@ class AutoTunerService
     public function clearCache(): void
     {
         $this->systemResources = null;
+    }
+
+    // ========================================================================
+    // FILE-AWARE TUNING METHODS
+    // ========================================================================
+
+    /**
+     * Set file analysis result for file-aware batch calculation.
+     */
+    public function setFileAnalysis(FileAnalysisResult $analysis): void
+    {
+        $this->fileAnalysis = $analysis;
+    }
+
+    /**
+     * Get current file analysis.
+     */
+    public function getFileAnalysis(): ?FileAnalysisResult
+    {
+        return $this->fileAnalysis;
+    }
+
+    /**
+     * Restore file analysis from session data.
+     */
+    public function restoreFileAnalysis(array $data): void
+    {
+        if (!empty($data)) {
+            $this->fileAnalysis = FileAnalysisResult::fromArray($data);
+        }
+    }
+
+    /**
+     * Check if file-aware tuning is enabled.
+     */
+    public function isFileAwareTuningEnabled(): bool
+    {
+        return $this->fileAwareTuningEnabled;
+    }
+
+    /**
+     * Dynamic batch adaptation based on speed and memory history.
+     * Call this after each session to adjust batch size for next session.
+     *
+     * Rules:
+     * - RAM <30% + stable speed → increase 1.5x (max +100k)
+     * - RAM >70% → decrease 0.7x (min 50k)
+     * - Speed drop >30% → decrease 0.8x (query complexity changed)
+     */
+    public function adaptBatchSize(float $currentSpeed, int $memoryPct): array
+    {
+        // Update history
+        $this->speedHistory[] = $currentSpeed;
+        $this->memoryHistory[] = $memoryPct;
+
+        // Keep only last N samples
+        if (count($this->speedHistory) > self::HISTORY_SIZE) {
+            $this->speedHistory = array_slice($this->speedHistory, -self::HISTORY_SIZE);
+        }
+        if (count($this->memoryHistory) > self::HISTORY_SIZE) {
+            $this->memoryHistory = array_slice($this->memoryHistory, -self::HISTORY_SIZE);
+        }
+
+        // Need at least 3 samples for stable decisions
+        if (count($this->speedHistory) < 3) {
+            return [
+                'action' => 'stable',
+                'reason' => 'collecting_samples',
+                'old_batch' => $this->currentBatchSize,
+                'new_batch' => $this->currentBatchSize,
+            ];
+        }
+
+        $avgSpeed = array_sum($this->speedHistory) / count($this->speedHistory);
+        $speedVariance = $this->calculateVariance($this->speedHistory);
+        $avgMemory = array_sum($this->memoryHistory) / count($this->memoryHistory);
+
+        $oldBatch = $this->currentBatchSize;
+        $newBatch = $oldBatch;
+        $action = 'stable';
+        $reason = 'optimal';
+
+        // RULE 1: Low memory + stable speed → INCREASE aggressively
+        // Speed variance check: variance < 10% of mean squared indicates stability
+        if ($avgMemory < 30 && $speedVariance < 0.1 * $avgSpeed * $avgSpeed) {
+            $factor = 1.5;
+            $maxIncrease = 100000;
+            $newBatch = (int) min($oldBatch * $factor, $oldBatch + $maxIncrease);
+            $newBatch = min($newBatch, $this->maxBatchSize);
+            $action = 'increase';
+            $reason = 'ram_underutilized';
+        }
+        // RULE 2: High memory → DECREASE to prevent OOM
+        elseif ($avgMemory > 70) {
+            $factor = 0.7;
+            $newBatch = (int) max($oldBatch * $factor, self::MIN_DYNAMIC_BATCH);
+            $action = 'decrease';
+            $reason = 'memory_pressure';
+        }
+        // RULE 3: Speed drop >30% → DECREASE (query complexity changed)
+        elseif (count($this->speedHistory) >= 4) {
+            $historyCount = count($this->speedHistory);
+            $recentAvg = ($this->speedHistory[$historyCount - 1] + $this->speedHistory[$historyCount - 2]) / 2;
+            $earlierAvg = ($this->speedHistory[0] + $this->speedHistory[1]) / 2;
+            if ($earlierAvg > 0 && $recentAvg < $earlierAvg * 0.7) {
+                $newBatch = (int) max($oldBatch * 0.8, self::MIN_DYNAMIC_BATCH);
+                $action = 'decrease';
+                $reason = 'speed_degradation';
+            }
+        }
+
+        if ($newBatch !== $oldBatch) {
+            $this->currentBatchSize = $newBatch;
+            $this->lastAdjustment = sprintf(
+                'Batch %s: %s → %s (%s)',
+                $action === 'increase' ? 'increased' : 'decreased',
+                number_format($oldBatch),
+                number_format($newBatch),
+                str_replace('_', ' ', $reason)
+            );
+        }
+
+        return [
+            'action' => $action,
+            'reason' => $reason,
+            'old_batch' => $oldBatch,
+            'new_batch' => $newBatch,
+            'avg_speed' => $avgSpeed,
+            'avg_memory' => $avgMemory,
+        ];
+    }
+
+    /**
+     * Calculate variance of an array of values.
+     */
+    private function calculateVariance(array $values): float
+    {
+        $count = count($values);
+        if ($count < 2) {
+            return 0.0;
+        }
+
+        $mean = array_sum($values) / $count;
+        $sumSquaredDiff = 0.0;
+
+        foreach ($values as $value) {
+            $sumSquaredDiff += ($value - $mean) ** 2;
+        }
+
+        return $sumSquaredDiff / ($count - 1);
+    }
+
+    /**
+     * Get speed trend indicator for UI.
+     */
+    public function getSpeedTrend(): string
+    {
+        if (count($this->speedHistory) < 3) {
+            return 'calculating';
+        }
+
+        $historyCount = count($this->speedHistory);
+        $recent = array_slice($this->speedHistory, -2);
+        $earlier = array_slice($this->speedHistory, 0, 2);
+
+        $recentAvg = array_sum($recent) / count($recent);
+        $earlierAvg = array_sum($earlier) / count($earlier);
+
+        if ($earlierAvg === 0.0) {
+            return 'stable';
+        }
+
+        $changeRatio = $recentAvg / $earlierAvg;
+
+        if ($changeRatio > 1.1) {
+            return 'increasing';
+        } elseif ($changeRatio < 0.9) {
+            return 'decreasing';
+        }
+
+        return 'stable';
     }
 
     // ========================================================================
