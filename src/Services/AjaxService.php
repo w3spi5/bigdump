@@ -268,6 +268,55 @@ class AjaxService
     var etaSeconds = null;
     var etaHistory = [];
 
+    // Elapsed timer variables
+    var elapsedTimerInterval = null;
+
+    /**
+     * Formats elapsed seconds into HH:MM:SS format.
+     */
+    function formatElapsedTime(seconds) {
+        var hours = String(Math.floor(seconds / 3600)).padStart(2, '0');
+        var minutes = String(Math.floor((seconds % 3600) / 60)).padStart(2, '0');
+        var secs = String(seconds % 60).padStart(2, '0');
+        return hours + ':' + minutes + ':' + secs;
+    }
+
+    /**
+     * Updates the elapsed timer display.
+     */
+    function updateElapsedTimer() {
+        var elapsed = Math.floor((Date.now() - startTime) / 1000);
+        var el = document.getElementById('elapsedTime');
+        if (el) {
+            el.textContent = formatElapsedTime(elapsed);
+        }
+    }
+
+    /**
+     * Starts the elapsed timer (call once when import begins).
+     */
+    function startElapsedTimer() {
+        // Reset start time
+        startTime = Date.now();
+        // Clear any existing interval
+        if (elapsedTimerInterval) {
+            clearInterval(elapsedTimerInterval);
+        }
+        // Update immediately, then every second
+        updateElapsedTimer();
+        elapsedTimerInterval = setInterval(updateElapsedTimer, 1000);
+    }
+
+    /**
+     * Stops the elapsed timer.
+     */
+    function stopElapsedTimer() {
+        if (elapsedTimerInterval) {
+            clearInterval(elapsedTimerInterval);
+            elapsedTimerInterval = null;
+        }
+    }
+
     /**
      * Formats seconds into human-readable time string.
      */
@@ -407,9 +456,7 @@ class AjaxService
         var progressBar = document.querySelector('.progress-bar');
         var pctDone = stats ? stats.pct_done : null;
         if (progressBar && pctDone !== null && pctDone !== undefined) {
-            var pctFormatted = parseFloat(pctDone).toFixed(2);
             progressBar.style.width = pctDone + '%';
-            progressBar.textContent = pctFormatted + '%';
         }
 
         // Update ETA based on new progress
@@ -422,7 +469,15 @@ class AjaxService
             statBoxes[1].textContent = Number(stats.queries_done || 0).toLocaleString();
             statBoxes[2].textContent = stats.mb_done || '0';
             if (statBoxes[3] && pctDone !== null) {
-                statBoxes[3].textContent = parseFloat(pctDone).toFixed(2) + '%';
+                statBoxes[3].textContent = parseFloat(pctDone).toFixed(1) + '%';
+            }
+        }
+
+        // Update percentage next to elapsed timer
+        if (pctDone !== null && pctDone !== undefined) {
+            var pctDisplay = document.querySelector('#elapsedTimer + div');
+            if (pctDisplay) {
+                pctDisplay.textContent = parseFloat(pctDone).toFixed(2) + '% Complete';
             }
         }
 
@@ -577,16 +632,21 @@ class AjaxService
                 statBoxes[2].textContent = mbDone;
             }
 
-            // Update progress bar
+            // Update progress bar and percentage display
             if (this.bytesTotal > 0) {
                 var pct = (bytes / this.bytesTotal) * 100;
                 var progressBar = document.querySelector('.progress-bar');
                 if (progressBar) {
                     progressBar.style.width = pct + '%';
-                    progressBar.textContent = pct.toFixed(2) + '%';
                 }
+                // Update percentage in stat box
                 if (statBoxes[3]) {
-                    statBoxes[3].textContent = pct.toFixed(2) + '%';
+                    statBoxes[3].textContent = pct.toFixed(1) + '%';
+                }
+                // Update percentage next to elapsed timer
+                var pctDisplay = document.querySelector('#elapsedTimer + div');
+                if (pctDisplay) {
+                    pctDisplay.textContent = pct.toFixed(2) + '% Complete';
                 }
             }
             // Note: Table is NOT updated here - only on real server events via updateProgress()
@@ -613,6 +673,8 @@ class AjaxService
             // Hide loading overlay
             var overlay = document.getElementById('sseLoadingOverlay');
             if (overlay) overlay.style.display = 'none';
+            // Start elapsed timer
+            startElapsedTimer();
         });
 
         // Handle progress events (real-time updates)
@@ -637,6 +699,7 @@ class AjaxService
         source.addEventListener('complete', function(e) {
             console.log('SSE: Import complete');
             smoothing.stop();
+            stopElapsedTimer();
             intentionalClose = true;
             source.close();
             location.reload();
@@ -649,10 +712,12 @@ class AjaxService
                     var data = JSON.parse(e.data);
                     console.log('SSE: Server error event:', data);
                     smoothing.stop();
+                    stopElapsedTimer();
                     // Display error in page instead of alert
                     displayErrorInPage(data.message || 'Unknown error', data.stats);
                 } catch (err) {
                     smoothing.stop();
+                    stopElapsedTimer();
                     displayErrorInPage('Import error occurred', null);
                 }
                 intentionalClose = true;
@@ -675,6 +740,7 @@ class AjaxService
             if (source.readyState === EventSource.CLOSED) {
                 reconnectAttempts++;
                 if (reconnectAttempts >= maxReconnectAttempts) {
+                    stopElapsedTimer();
                     alert('Connection lost after ' + maxReconnectAttempts + ' attempts. Please refresh the page.');
                     source.close();
                 }
@@ -697,6 +763,8 @@ class AjaxService
         if (stopLink) {
             // Close SSE connection immediately
             intentionalClose = true;
+            stopElapsedTimer();
+            smoothing.stop();
             if (source) {
                 source.close();
                 source = null;
