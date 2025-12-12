@@ -453,6 +453,18 @@ class BigDumpController
             return;
         }
 
+        // File-aware auto-tuning: analyze file at start, restore on resume
+        if ($session->getStartOffset() === 0 && $session->getFileAnalysisData() === null) {
+            // Fresh import - analyze file
+            $analysis = $this->importService->analyzeFile($session->getFilename());
+            if ($analysis !== null) {
+                $session->setFileAnalysisData($analysis->toArray());
+            }
+        } else {
+            // Resuming - restore analysis from session
+            $this->importService->restoreFileAnalysis($session->getFileAnalysisData() ?? []);
+        }
+
         // Stream loop: execute sessions and send progress events
         while (!$session->isFinished() && !$session->hasError()) {
             // Check if client disconnected
