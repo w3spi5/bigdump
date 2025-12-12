@@ -43,3 +43,7 @@ error_log
 *.temp
 *.swp
 *~
+
+# Tailwind CLI binary (downloaded for local builds)
+tailwindcss-linux-x64
+esbuild

@@ -2,6 +2,112 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.14] - Zero-CDN Asset Pipeline
+
+### Added in 2.14
+
+- **GitHub Actions Build Pipeline**: Automated asset compilation on push/PR
+  - Tailwind CSS purging with standalone CLI (no Node.js required)
+  - JavaScript minification with esbuild
+  - Auto-commit built assets to repository
+  - PR validation builds (no commit)
+- **SVG Icon Sprite**: Font Awesome icons replaced with optimized SVG sprite
+  - 13 icons: sun, moon, eye, play, trash, xmark, clock-rotate-left, circle-check, circle-xmark, circle-exclamation, code, database, spinner
+  - Single `assets/icons.svg` file (~3KB)
+  - Tailwind `animate-spin` for spinner animation
+- **New Asset Structure**:
+  - `assets/src/css/tailwind.css` - Source CSS with Tailwind directives
+  - `assets/src/js/*.js` - Source JavaScript files (6 files)
+  - `assets/dist/*.min.css` - Compiled and minified CSS
+  - `assets/dist/*.min.js` - Compiled and minified JavaScript
+  - `scripts/generate-icons.php` - SVG sprite generator
+
+### Changed in 2.14
+
+- **CDN Removal**: Eliminated all external CDN dependencies
+  - Removed Tailwind CSS CDN (~300KB)
+  - Removed Font Awesome CDN (~100KB)
+  - Self-hosted, purged assets only
+- **Asset Size Optimization**:
+  - Before: ~454KB (CDNs + unminified)
+  - After: ~47KB (purged + minified)
+  - **90% reduction** in asset size
+- **Icon Rendering**: All Font Awesome `<i>` tags replaced with SVG `<use>` elements
+  - Templates: layout.php, home.php
+  - JavaScript: history.js, filepolling.js (dynamic icon creation)
+
+### New Files in 2.14
+
+| File | Purpose |
+|------|---------|
+| `assets/src/css/tailwind.css` | Tailwind v4 CSS-first config + custom styles |
+| `assets/icons.svg` | SVG icon sprite (13 icons) |
+| `scripts/generate-icons.php` | PHP script to generate icon sprite |
+| `.github/workflows/build-assets.yml` | CI workflow for asset builds |
+
+### Asset Sizes in 2.14
+
+| Asset | Size |
+|-------|------|
+| app.min.css | 17KB |
+| bigdump.min.js | 767B |
+| filepolling.min.js | 5.7KB |
+| fileupload.min.js | 6.2KB |
+| history.min.js | 3.5KB |
+| modal.min.js | 3.1KB |
+| preview.min.js | 4.3KB |
+| icons.svg | 6.3KB |
+| **TOTAL** | **~47KB** |
+
+---
+
+## [2.13] - CSS Components & Accessibility
+
+### Added in 2.13
+
+- **CSS Component System**: Comprehensive reusable class library
+  - Button system: `.btn` base with color variants (blue, green, red, amber, cyan, purple, indigo, gray)
+  - Alert system: `.alert` with status variants (success, error, warning, info)
+  - Card system: `.card`, `.stat-box`, `.info-box`, `.metric-box` with child classes
+  - Table styling: `.table` with header, zebra stripes, hover states
+  - Additional components: `.code`, `.badge`, `.modal-*`, `.dropzone`, `.progress`, `.spinner`, `.tooltip-*`
+  - Full dark mode support via `[data-theme="dark"]` selectors
+- **JavaScript Modularization**: Split monolithic home.php JS into modules
+  - `preview.js` (196 lines) - SQL preview modal functionality
+  - `history.js` (149 lines) - Import history modal
+  - `filepolling.js` (371 lines) - Real-time file list updates
+  - `modal.js` (260 lines) - Focus trap and keyboard handling
+  - IIFE pattern with `window.BigDump` namespace
+  - PHP config via `data-*` attributes (no inline PHP in JS)
+- **Accessibility (WCAG 2.1 AA)**:
+  - Focus-visible styles for modal close buttons, tabs, links, dropzone, details/summary
+  - ARIA attributes on modals: `role="dialog"`, `aria-modal`, `aria-labelledby`, `aria-describedby`
+  - `aria-label` on close buttons, `aria-hidden` on decorative icons
+  - Focus trap in modals (Tab cycles within modal)
+  - ESC key to close modals
+  - Focus management: focus first element on open, restore focus on close
+  - Amber focus ring on blue buttons for better contrast
+
+### Changed in 2.13
+
+- **Template Refactoring**: Inline Tailwind classes replaced with component classes
+  - Button classes reduced from ~150 chars to ~14 chars per instance
+  - ~3000 characters reduction in home.php alone
+  - Dark mode centralized in CSS instead of repeated `dark:` classes
+- **CSS Growth**: `bigdump.css` expanded from 237 to 937 lines (component library)
+- **home.php Reduction**: 919 → 386 lines after JS extraction (-533 lines)
+
+### Files Added in 2.13
+
+| File | Lines | Purpose |
+|------|-------|---------|
+| `assets/js/preview.js` | 196 | SQL preview modal |
+| `assets/js/history.js` | 149 | Import history modal |
+| `assets/js/filepolling.js` | 371 | Real-time file list polling |
+| `assets/js/modal.js` | 260 | Focus trap & keyboard handling |
+
+---
+
 ## [2.12] - Real-time File List Refresh
 
 ### Changed in 2.12
