@@ -271,6 +271,14 @@ class FileHandler
             if (!empty($ext)) {
                 // Calculate max base length: 255 - dot (1) - extension length
                 $maxBaseLength = 255 - 1 - strlen($ext);
+
+                // If extension is too long, truncate the extension instead
+                if ($maxBaseLength < 1) {
+                    $maxExtLength = 255 - 1 - 1; // 253 chars for extension, 1 for base, 1 for dot
+                    $ext = substr($ext, 0, $maxExtLength);
+                    $maxBaseLength = 1;
+                }
+
                 // Find the dot position to get the base name
                 $dotPos = strrpos($filename, '.');
                 $base = substr($filename, 0, min($dotPos, $maxBaseLength));
