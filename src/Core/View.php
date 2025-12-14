@@ -203,6 +203,8 @@ class View
      * Escapes a string for safe use in JavaScript.
      *
      * Useful for onclick attributes and other inline JavaScript contexts.
+     * Also escapes Unicode line terminators (U+2028, U+2029) which are
+     * valid in JSON but treated as line terminators in JavaScript.
      *
      * @param mixed $value Value to escape.
      * @return string Value escaped for JavaScript.
@@ -217,6 +219,10 @@ class View
 
         // Escape control characters, quotes and backslashes
         $escaped = addcslashes($string, "\0..\37\"'\\");
+
+        // Escape Unicode line terminators (U+2028, U+2029)
+        // These are valid in JSON but treated as line terminators in JavaScript
+        $escaped = str_replace(["\u{2028}", "\u{2029}"], ['\\u2028', '\\u2029'], $escaped);
 
         // Escape sequences that could break out of script context
         $escaped = str_replace(['</', '<!--', '-->'], ['<\\/', '<\\!--', '--\\>'], $escaped);
