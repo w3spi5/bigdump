@@ -53,11 +53,12 @@ class Config
         'csv_add_slashes' => true,
 
         // SQL comment markers
+        // Note: /*! (MySQL conditional comments) are NOT treated as comments
+        // because they contain valid SQL code that MySQL executes
+        // DELIMITER is also not a comment - it's a client command
         'comment_markers' => [
             '#',
             '-- ',
-            'DELIMITER',
-            '/*!',
         ],
 
         // SQL pre-queries
@@ -125,21 +126,39 @@ class Config
      */
     private function loadConfigFile(string $file): array
     {
-        $config = [];
-
-        // The config file may define variables
-        // that will be retrieved in $config
+        // The config file may define variables or return an array
         ob_start();
         $result = include $file;
         ob_end_clean();
 
-        // If the file returns an array, use it
+        // If the file returns an array, use it directly
         if (is_array($result)) {
             return $result;
         }
 
-        // Otherwise, extract defined variables
-        // (compatibility with old format)
+        // Otherwise, extract defined variables (legacy format compatibility)
+        // Old BigDump format used variables like $db_server, $db_name, etc.
+        $config = [];
+        $legacyVarNames = [
+            'db_server', 'db_name', 'db_username', 'db_password',
+            'db_connection_charset', 'filename', 'ajax', 'linespersession',
+            'auto_tuning', 'min_batch_size', 'max_batch_size', 'delaypersession',
+            'csv_insert_table', 'csv_preempty_table', 'csv_delimiter',
+            'csv_enclosure', 'csv_add_quotes', 'csv_add_slashes',
+            'comment_markers', 'pre_queries', 'delimiter', 'string_quotes',
+            'max_query_lines', 'upload_dir', 'test_mode', 'debug',
+            'data_chunk_length', 'allowed_extensions', 'max_query_memory',
+        ];
+
+        // Get defined variables after including the file
+        $definedVars = get_defined_vars();
+
+        foreach ($legacyVarNames as $varName) {
+            if (isset($definedVars[$varName])) {
+                $config[$varName] = $definedVars[$varName];
+            }
+        }
+
         return $config;
     }
 
