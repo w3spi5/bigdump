@@ -203,6 +203,9 @@ class Request
     /**
      * Gets an integer from parameters.
      *
+     * Safely converts input to integer, rejecting scientific notation
+     * and values that would overflow PHP's integer range.
+     *
      * @param string $key Parameter key.
      * @param int $default Default value.
      * @return int Integer value.
@@ -211,11 +214,24 @@ class Request
     {
         $value = $this->input($key);
 
-        if ($value === null || !is_numeric($value)) {
+        if ($value === null) {
             return $default;
         }
 
-        return (int) floor((float) $value);
+        // Only accept simple integer or decimal strings, reject scientific notation
+        // This prevents 1e10 being accepted as 10000000000
+        if (!is_numeric($value) || preg_match('/[eE]/', (string) $value)) {
+            return $default;
+        }
+
+        $floatValue = (float) $value;
+
+        // Check for integer overflow
+        if ($floatValue > PHP_INT_MAX || $floatValue < PHP_INT_MIN) {
+            return $default;
+        }
+
+        return (int) floor($floatValue);
     }
 
     /**
