@@ -97,7 +97,9 @@ class SqlParser
         $this->delimiter = $config->get('delimiter', ';');
         // Support both single and double quotes for SQL strings
         $this->stringQuotes = ["'", '"'];
-        $this->commentMarkers = $config->get('comment_markers', ['#', '-- ', '/*!']);
+        // Note: /*! (MySQL conditional comments) are NOT in the default list
+        // because they contain valid SQL code that MySQL executes
+        $this->commentMarkers = $config->get('comment_markers', ['#', '-- ']);
         $this->maxQueryLines = $config->get('max_query_lines', 10000);
         $this->maxQueryMemory = $config->get('max_query_memory', 10485760);
     }
