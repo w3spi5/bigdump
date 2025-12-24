@@ -21,7 +21,7 @@
         loading.classList.remove('hidden');
         content.classList.add('hidden');
 
-        fetch('history?limit=20')
+        fetch('?action=history&limit=20')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 loading.classList.add('hidden');
@@ -123,7 +123,7 @@
     function clearHistory() {
         if (!confirm('Are you sure you want to clear all import history?')) return;
 
-        fetch('history?do=clear')
+        fetch('?action=history&do=clear')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data.success) {

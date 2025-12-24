@@ -189,18 +189,51 @@ class AjaxService
     /**
      * Displays an import error directly in the page (no popup).
      * Creates a styled error container similar to the PHP-rendered version.
+     *
+     * @param {string} message Error message
+     * @param {object} stats Statistics object (may contain hasCreateTable)
      */
     function displayErrorInPage(message, stats) {
-        // Check for "Table already exists" error and extract table name
-        var tableMatch = message.match(/Table\s+['"`]([^'"`]+)['"`]\s+already exists/i);
-        var dropButton = '';
-        if (tableMatch) {
-            var tableName = tableMatch[1];
-            dropButton = '<a href="' + scriptUri + '/import/drop-restart?table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
-                'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 text-white" ' +
-                'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
-                'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
-                '<span class="text-gray-500 dark:text-gray-400 mx-2">or</span>';
+        var hasCreateTable = stats && stats.hasCreateTable ? stats.hasCreateTable : false;
+
+        // Check for "Table already exists" error
+        var alreadyExistsMatch = message.match(/Table\s+['"`]([^'"`]+)['"`]\s+already exists/i);
+
+        // Check for "Table doesn't exist" error
+        var doesntExistMatch = message.match(/Table\s+['"`]([^'"`]+)['"`]\s+doesn't exist/i);
+
+        var actionButtons = '';
+        var helpText = '';
+
+        if (alreadyExistsMatch) {
+            var tableName = alreadyExistsMatch[1];
+            if (hasCreateTable) {
+                // Table exists AND CREATE TABLE in file → show Drop & Restart button
+                actionButtons = '<a href="' + scriptUri + '?action=drop_restart&table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
+                    'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 text-white" ' +
+                    'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
+                    'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
+                    '<span class="text-gray-500 dark:text-gray-400 mx-2">or</span>';
+            } else {
+                // Table exists but NO CREATE TABLE in file → show warning message
+                helpText = '<div class="text-amber-700 dark:text-amber-400 text-sm mb-3">' +
+                    '<strong>Note:</strong> Table "' + escapeHtml(tableName) + '" already exists but no CREATE TABLE found in file. ' +
+                    'Drop it manually or use a different file.</div>';
+            }
+        } else if (doesntExistMatch) {
+            var tableName = doesntExistMatch[1];
+            if (hasCreateTable) {
+                // Table doesn't exist BUT CREATE TABLE in file → show Restart from Beginning button
+                actionButtons = '<a href="' + scriptUri + '?action=restart_import&fn=' + encodeURIComponent(filename) + '" ' +
+                    'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 text-white">' +
+                    'Restart from Beginning</a>' +
+                    '<span class="text-gray-500 dark:text-gray-400 mx-2">or</span>';
+            } else {
+                // Table missing and NO CREATE TABLE in file → show warning message
+                helpText = '<div class="text-red-700 dark:text-red-400 text-sm mb-3">' +
+                    '<strong>Error:</strong> Table "' + escapeHtml(tableName) + '" is missing. No CREATE TABLE found in file. ' +
+                    'Create the table manually before importing.</div>';
+            }
         }
 
         // Create error HTML with Tailwind classes (matching import.php error display)
@@ -228,11 +261,11 @@ class AjaxService
                 '</div>' +
             '</details>' +
         '</div>' +
+        helpText +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
-            dropButton +
-            '<a href="' + scriptUri + '" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Start Over (resume)</a>' +
-            '<a href="../" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
-            (tableMatch ? '' : '<span class="text-gray-500 dark:text-gray-400">(DROP old tables before restarting)</span>') +
+            actionButtons +
+            '<a href="' + scriptUri + '?action=home" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</a>' +
+            '<a href="?action=home" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
         '</div>';
 
         // Find main content area and insert error at the beginning
@@ -653,11 +686,8 @@ class AjaxService
         }
     };
 
-    // Start smoothing engine
-    smoothing.start();
-
-    // SSE URL - scriptUri is already clean (no index.php)
-    var sseUrl = scriptUri.replace(/\/$/, '') + '/import/sse';
+    // SSE URL - use action parameter
+    var sseUrl = scriptUri + '?action=sse_import';
 
     // Create and setup EventSource connection
     function createConnection() {
@@ -668,11 +698,27 @@ class AjaxService
         // Handle initial connection established event
         source.addEventListener('connected', function(e) {
             console.log('SSE: Connection established');
+            console.log('SSE: Connected event data:', e.data);
+            console.log('SSE: Event type:', e.type);
+            console.log('SSE: Full event object:', e);
             connected = true;
             reconnectAttempts = 0;
             // Hide loading overlay
             var overlay = document.getElementById('sseLoadingOverlay');
-            if (overlay) overlay.style.display = 'none';
+            if (overlay) {
+                console.log('SSE: Loading overlay found, hiding it');
+                console.log('SSE: Overlay current display:', overlay.style.display);
+                overlay.style.display = 'none';
+                console.log('SSE: Overlay new display:', overlay.style.display);
+            } else {
+                console.warn('SSE: Loading overlay not found in DOM');
+                console.log('SSE: Searching for overlay by class...');
+                var overlayByClass = document.querySelector('.sse-loading-overlay');
+                if (overlayByClass) {
+                    console.log('SSE: Found overlay by class, hiding it');
+                    overlayByClass.style.display = 'none';
+                }
+            }
             // Start elapsed timer
             startElapsedTimer();
         });
@@ -682,9 +728,20 @@ class AjaxService
             try {
                 var data = JSON.parse(e.data);
                 connected = true;
-                // Hide loading overlay on first progress
+                // Hide loading overlay on first progress (fallback if 'connected' event missed)
                 var overlay = document.getElementById('sseLoadingOverlay');
-                if (overlay) overlay.style.display = 'none';
+                if (overlay && overlay.style.display !== 'none') {
+                    console.log('SSE: Hiding loading overlay (fallback from progress event)');
+                    overlay.style.display = 'none';
+                }
+                // Additional fallback: try by class name
+                if (!overlay || overlay.style.display !== 'none') {
+                    var overlayByClass = document.querySelector('.sse-loading-overlay');
+                    if (overlayByClass && overlayByClass.style.display !== 'none') {
+                        console.log('SSE: Hiding overlay by class (fallback)');
+                        overlayByClass.style.display = 'none';
+                    }
+                }
                 // Sync smoothing engine with real server data
                 if (data.stats) {
                     smoothing.sync(data.stats);
@@ -713,8 +770,11 @@ class AjaxService
                     console.log('SSE: Server error event:', data);
                     smoothing.stop();
                     stopElapsedTimer();
-                    // Display error in page instead of alert
-                    displayErrorInPage(data.message || 'Unknown error', data.stats);
+                    // Display error in page with hasCreateTable info
+                    // Combine stats and hasCreateTable into stats object for displayErrorInPage
+                    var errorStats = data.stats || {};
+                    errorStats.hasCreateTable = data.hasCreateTable || false;
+                    displayErrorInPage(data.message || 'Unknown error', errorStats);
                 } catch (err) {
                     smoothing.stop();
                     stopElapsedTimer();
@@ -748,8 +808,11 @@ class AjaxService
         };
     }
 
-    // Start the connection
-    createConnection();
+    // Wait for DOM before starting
+    document.addEventListener('DOMContentLoaded', function() {
+        smoothing.start();
+        createConnection();
+    });
 
     // Cleanup on page unload
     window.addEventListener('beforeunload', function() {

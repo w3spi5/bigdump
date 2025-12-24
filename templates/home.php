@@ -259,8 +259,8 @@
                         <span class="metric-value" id="previewFileType">-</span>
                     </div>
                     <div class="metric-box">
-                        <span class="metric-label">Lines Preview</span>
-                        <span class="metric-value" id="previewLinesCount">-</span>
+                        <span class="metric-label">Total Lines</span>
+                        <span class="metric-value" id="previewTotalLines">-</span>
                     </div>
                     <div class="metric-box">
                         <span class="metric-label">Queries Found</span>

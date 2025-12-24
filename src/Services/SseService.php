@@ -64,6 +64,9 @@ class SseService
     {
         echo "event: {$event}\n";
         echo "data: " . json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) . "\n\n";
+        if (ob_get_level() > 0) {
+            ob_flush();
+        }
         flush();
     }
 

@@ -147,6 +147,7 @@ class Application
             ->register('ajax_import', $controller, 'ajaxImport')
             ->register('sse_import', $controller, 'sseImport')
             ->register('drop_restart', $controller, 'dropRestart')
+            ->register('restart_import', $controller, 'restartFromBeginning')
             ->register('preview', $controller, 'preview')
             ->register('history', $controller, 'history')
             ->register('files_list', $controller, 'filesList');

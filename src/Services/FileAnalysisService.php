@@ -137,6 +137,63 @@ class FileAnalysisService
     {
         return self::FILE_CATEGORIES;
     }
+
+    /**
+     * Check if SQL file contains CREATE TABLE statement for a specific table.
+     *
+     * Scans the beginning of the file (up to 10MB) for CREATE TABLE statements.
+     * Supports both `tablename` and tablename formats.
+     *
+     * @param string $filepath Full path to SQL file
+     * @param string $tableName Table name to search for (without backticks)
+     * @return bool True if CREATE TABLE for the table is found
+     */
+    public function hasCreateTableFor(string $filepath, string $tableName): bool
+    {
+        if (!file_exists($filepath) || !is_readable($filepath)) {
+            return false;
+        }
+
+        // Determine if file is gzipped
+        $isGzip = str_ends_with(strtolower($filepath), '.gz');
+
+        // Read up to 10MB for analysis
+        $maxBytes = 10 * 1024 * 1024;
+
+        try {
+            // Open file (handle both regular and gzip files)
+            if ($isGzip && function_exists('gzopen')) {
+                $handle = @gzopen($filepath, 'rb');
+                if ($handle === false) {
+                    return false;
+                }
+                $content = @gzread($handle, $maxBytes);
+                gzclose($handle);
+            } else {
+                $content = @file_get_contents($filepath, false, null, 0, $maxBytes);
+            }
+
+            if ($content === false || $content === '') {
+                return false;
+            }
+
+            // Escape special regex characters in table name
+            $escapedTableName = preg_quote($tableName, '/');
+
+            // Pattern: CREATE TABLE (IF NOT EXISTS)? [`]?{tableName}[`]?
+            // Supports:
+            // - CREATE TABLE tablename
+            // - CREATE TABLE `tablename`
+            // - CREATE TABLE IF NOT EXISTS tablename
+            // - CREATE TABLE IF NOT EXISTS `tablename`
+            $pattern = '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?' . $escapedTableName . '`?\s*\(/i';
+
+            return (bool) preg_match($pattern, $content);
+        } catch (\Throwable $e) {
+            // Handle errors gracefully - return false on any exception
+            return false;
+        }
+    }
 }
 
 /**
