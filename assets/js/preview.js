@@ -78,7 +78,7 @@
         document.getElementById('previewImportFilename').value = filename;
 
         // Fetch preview
-        fetch('?action=preview&fn=' + encodeURIComponent(filename))
+        fetch('preview?fn=' + encodeURIComponent(filename))
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 loading.classList.add('hidden');
