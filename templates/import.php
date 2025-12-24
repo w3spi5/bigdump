@@ -356,14 +356,14 @@
     <noscript>
         <div class="alert alert-warning text-center">
             JavaScript is disabled. Click the link below to continue manually.<br><br>
-            <a href="?action=import" class="btn btn-blue">
+            <a href="<?= $view->e($scriptUri) ?>/import" class="btn btn-blue">
                 Continue Import
             </a>
         </div>
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="?action=stop_import" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
+        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
