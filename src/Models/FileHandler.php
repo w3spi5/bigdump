@@ -63,6 +63,18 @@ class FileHandler
     private string $currentFilename = '';
 
     /**
+     * Internal read buffer for optimized line reading
+     * @var string
+     */
+    private string $readBuffer = '';
+
+    /**
+     * Buffer size for chunked reading (64KB for better performance)
+     * @var int
+     */
+    private int $bufferSize = 65536;
+
+    /**
      * Constructor
      *
      * @param Config $config Configuration
@@ -433,6 +445,9 @@ class FileHandler
             return false;
         }
 
+        // Clear read buffer when seeking
+        $this->readBuffer = '';
+
         if ($this->gzipMode) {
             return @gzseek($this->fileHandle, $offset) === 0;
         }
@@ -443,6 +458,8 @@ class FileHandler
     /**
      * Retrieves current pointer position
      *
+     * Accounts for buffered data that hasn't been "consumed" yet.
+     *
      * @return int Position in bytes
      */
     public function tell(): int
@@ -452,14 +469,20 @@ class FileHandler
         }
 
         if ($this->gzipMode) {
-            return @gztell($this->fileHandle) ?: 0;
+            $pos = @gztell($this->fileHandle) ?: 0;
+        } else {
+            $pos = @ftell($this->fileHandle) ?: 0;
         }
 
-        return @ftell($this->fileHandle) ?: 0;
+        // Subtract buffered data that hasn't been consumed
+        return $pos - strlen($this->readBuffer);
     }
 
     /**
      * Reads a line from file
+     *
+     * OPTIMIZED: Uses internal buffer to reduce system calls.
+     * Reads larger chunks and extracts lines from buffer.
      *
      * @return string|false Read line or false if end of file
      */
@@ -469,32 +492,46 @@ class FileHandler
             return false;
         }
 
-        $chunkLength = $this->config->get('data_chunk_length', 16384);
-        $line = '';
+        // Check if buffer contains a complete line
+        $newlinePos = strpos($this->readBuffer, "\n");
 
-        while (!$this->eof()) {
+        while ($newlinePos === false) {
+            // Need to read more data
             if ($this->gzipMode) {
-                $chunk = @gzgets($this->fileHandle, $chunkLength);
+                $chunk = @gzread($this->fileHandle, $this->bufferSize);
+                $isEof = @gzeof($this->fileHandle);
             } else {
-                $chunk = @fgets($this->fileHandle, $chunkLength);
+                $chunk = @fread($this->fileHandle, $this->bufferSize);
+                $isEof = @feof($this->fileHandle);
             }
 
-            if ($chunk === false) {
-                break;
+            if ($chunk === false || $chunk === '') {
+                // End of file - return remaining buffer if not empty
+                if ($this->readBuffer !== '') {
+                    $line = $this->readBuffer;
+                    $this->readBuffer = '';
+                    return $line;
+                }
+                return false;
             }
 
-            $line .= $chunk;
+            $this->readBuffer .= $chunk;
+            $newlinePos = strpos($this->readBuffer, "\n");
 
-            // Check if end of line reached
-            $lastChar = substr($line, -1);
-            if ($lastChar === "\n" || $lastChar === "\r") {
-                break;
+            if ($isEof && $newlinePos === false) {
+                // EOF reached, return remaining buffer
+                if ($this->readBuffer !== '') {
+                    $line = $this->readBuffer;
+                    $this->readBuffer = '';
+                    return $line;
+                }
+                return false;
             }
         }
 
-        if ($line === '') {
-            return false;
-        }
+        // Extract line from buffer (including newline)
+        $line = substr($this->readBuffer, 0, $newlinePos + 1);
+        $this->readBuffer = substr($this->readBuffer, $newlinePos + 1);
 
         return $line;
     }
@@ -502,12 +539,19 @@ class FileHandler
     /**
      * Checks if end of file reached
      *
+     * Accounts for buffered data - not EOF if buffer still has data.
+     *
      * @return bool True if end of file
      */
     public function eof(): bool
     {
         if ($this->fileHandle === null) {
             return true;
+        }
+
+        // Not EOF if buffer still has data
+        if ($this->readBuffer !== '') {
+            return false;
         }
 
         if ($this->gzipMode) {
@@ -536,6 +580,7 @@ class FileHandler
         $this->gzipMode = false;
         $this->fileSize = 0;
         $this->currentFilename = '';
+        $this->readBuffer = '';
     }
 
     /**

@@ -61,8 +61,20 @@ class Config
             '-- ',
         ],
 
-        // SQL pre-queries
-        'pre_queries' => [],
+        // SQL pre-queries - Performance optimizations enabled by default
+        'pre_queries' => [
+            'SET autocommit=0',
+            'SET unique_checks=0',
+            'SET foreign_key_checks=0',
+            'SET sql_log_bin=0',
+        ],
+
+        // SQL post-queries - Restore settings after import
+        'post_queries' => [
+            'SET unique_checks=1',
+            'SET foreign_key_checks=1',
+            'SET autocommit=1',
+        ],
 
         // Default query delimiter
         'delimiter' => ';',
