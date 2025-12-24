@@ -2,6 +2,40 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.17] - Performance Optimizations & Import Speedup
+
+### Added in 2.17
+
+- **MySQL Pre-queries**: Added default performance-boosting queries at import start
+  - `SET autocommit = 0`
+  - `SET unique_checks = 0`
+  - `SET foreign_key_checks = 0`
+  - `SET sql_log_bin = 0`
+  - Post-queries automatically restore settings after import
+
+### Changed in 2.17
+
+- **SqlParser Optimization**: Replaced character-by-character iteration with `strpos()` for O(1) jumps instead of O(n) scanning
+- **InsertBatcherService**: Substituted complex regex patterns with efficient string functions for faster batch building
+- **FileHandler Buffering**: Implemented 64KB buffered reading to reduce system calls and improve I/O performance
+- **Buffer Handling Fixes**: Fixed `tell()`, `seek()`, and `eof()` methods for proper buffer management
+
+### Maintenance in 2.17
+
+- **Line Ending Normalization**: Standardized all 57 source files to Unix line endings (LF)
+- **Gitignore Update**: Added `uploads/.import_history.json` to prevent local dev data commits
+
+### Files Modified in 2.17
+
+| File | Change |
+|------|--------|
+| `src/Models/SqlParser.php` | Optimized with strpos() instead of char iteration |
+| `src/Services/InsertBatcherService.php` | String functions instead of regex |
+| `src/Models/FileHandler.php` | 64KB buffered reading, fixed buffer methods |
+| `config/config.example.php` | Added pre/post queries defaults |
+
+---
+
 ## [2.16] - File-Aware Auto-Tuning
 
 ### Added in 2.16

@@ -23,7 +23,7 @@ class Application
     /**
      * Application version.
      */
-    public const VERSION = '2.16';
+    public const VERSION = '2.17';
 
     /**
      * Configuration instance.
