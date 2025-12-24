@@ -259,13 +259,9 @@ class BigDumpController
         );
         $session->toSession();
 
-        // Redirect to import page using full URL to avoid browser issues
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseUri = $this->request->getScriptUri();
-        $path = ($baseUri === '' || $baseUri === '/') ? '/import' : $baseUri . '/import';
-        
-        $this->response->redirect($protocol . '://' . $host . $path);
+        // Redirect to import page using query parameter
+        $scriptUri = $this->request->getScriptUri();
+        $this->response->redirect($scriptUri . '?action=import');
     }
 
     /**
@@ -447,6 +443,10 @@ class BigDumpController
         // Now we can start SSE (sends headers)
         $sseService = new SseService();
         $sseService->initStream();
+        if (ob_get_level() > 0) {
+            ob_flush();
+        }
+        flush();
 
         if (!$session) {
             $sseService->sendEvent('error', ['message' => 'No active import session']);
@@ -513,9 +513,26 @@ class BigDumpController
                 0.0
             );
 
+            // Check for table-related errors and CREATE TABLE presence
+            $hasCreateTable = false;
+            $errorMessage = $session->getError() ?? '';
+
+            // Extract table name from error message
+            if (preg_match('/Table\s+[\'`]?([^\'\`\s]+)[\'`]?\s+(already exists|doesn\'t exist)/i', $errorMessage, $matches)) {
+                $tableName = $matches[1];
+                // Check if CREATE TABLE exists for this table
+                $fileHandler = $this->importService->getFileHandler();
+                $filepath = $fileHandler->getUploadDir() . '/' . $session->getFilename();
+
+                // Use FileAnalysisService to check for CREATE TABLE
+                $analysisService = new \BigDump\Services\FileAnalysisService();
+                $hasCreateTable = $analysisService->hasCreateTableFor($filepath, $tableName);
+            }
+
             $sseService->sendEvent('error', [
                 'message' => $session->getError(),
                 'stats' => $stats,
+                'hasCreateTable' => $hasCreateTable,
             ]);
         } else {
             // Log successful import to history
@@ -688,16 +705,59 @@ class BigDumpController
             ''
         );
         $session->toSession();
+        session_write_close();  // Force write to disk before redirect
 
-        // Redirect to import page
-        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-        $baseUri = $this->request->getScriptUri();
-        // Remove /import/drop-restart suffix to get base path
-        $baseUri = preg_replace('#/import/drop-restart$#', '', $baseUri);
-        $path = ($baseUri === '' || $baseUri === '/') ? '/import' : $baseUri . '/import';
+        // Redirect to import page using query parameter
+        $scriptUri = $this->request->getScriptUri();
+        $this->response->redirect($scriptUri . '?action=import');
+    }
 
-        $this->response->redirect($protocol . '://' . $host . $path);
+    /**
+     * Restarts import from the beginning without dropping tables.
+     *
+     * Used when user wants to restart after an error but tables still exist.
+     *
+     * @return void
+     */
+    public function restartFromBeginning(): void
+    {
+        $filename = $this->request->input('fn', '');
+
+        // Validate filename
+        if (empty($filename)) {
+            $this->view->assign(['error' => 'No filename specified']);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        // Check file exists
+        $fileHandler = $this->importService->getFileHandler();
+        if (!$fileHandler->exists($filename)) {
+            $this->view->assign(['error' => "File not found: {$filename}"]);
+            $content = $this->view->render('error');
+            $this->response->setContent($content);
+            return;
+        }
+
+        // Clear session and create new one with offset=0
+        ImportSession::clearSession();
+        $session = ImportSession::fromRequest(
+            $filename,
+            1,  // start line
+            0,  // offset = 0
+            0,  // total queries
+            $this->config->get('delimiter', ';'),
+            '',
+            false,
+            ''
+        );
+        $session->toSession();
+        session_write_close();  // Force write to disk
+
+        // Redirect to import
+        $scriptUri = $this->request->getScriptUri();
+        $this->response->redirect($scriptUri . '?action=import');
     }
 
     /**
@@ -801,6 +861,26 @@ class BigDumpController
                 fclose($handle);
             }
 
+            // Count total lines in the file
+            $totalLines = 0;
+            if ($isGzip && function_exists('gzopen')) {
+                $countHandle = gzopen($filepath, 'r');
+                if ($countHandle) {
+                    while (gzgets($countHandle) !== false) {
+                        $totalLines++;
+                    }
+                    gzclose($countHandle);
+                }
+            } else {
+                $countHandle = fopen($filepath, 'r');
+                if ($countHandle) {
+                    while (fgets($countHandle) !== false) {
+                        $totalLines++;
+                    }
+                    fclose($countHandle);
+                }
+            }
+
             // Prepare response
             $response = [
                 'success' => true,
@@ -808,6 +888,7 @@ class BigDumpController
                 'fileSize' => $fileSize,
                 'fileSizeFormatted' => $this->formatBytes($fileSize),
                 'isGzip' => $isGzip,
+                'totalLines' => $totalLines,
                 'linesPreview' => $lineCount,
                 'queriesPreview' => count($queries),
                 'rawContent' => implode('', $lines),

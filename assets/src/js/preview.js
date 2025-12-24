@@ -78,7 +78,7 @@
         document.getElementById('previewImportFilename').value = filename;
 
         // Fetch preview
-        fetch('preview?fn=' + encodeURIComponent(filename))
+        fetch('?action=preview&fn=' + encodeURIComponent(filename))
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 loading.classList.add('hidden');
@@ -93,7 +93,7 @@
                 document.getElementById('previewModalSubtitle').textContent = data.fileSizeFormatted + (data.isGzip ? ' (GZip compressed)' : '');
                 document.getElementById('previewFileSize').textContent = data.fileSizeFormatted;
                 document.getElementById('previewFileType').textContent = data.isGzip ? 'GZip' : 'SQL';
-                document.getElementById('previewLinesCount').textContent = data.linesPreview;
+                document.getElementById('previewTotalLines').textContent = data.totalLines.toLocaleString();
                 document.getElementById('previewQueriesCount').textContent = data.queriesPreview;
                 document.getElementById('tabQueriesCount').textContent = data.queriesPreview;
 

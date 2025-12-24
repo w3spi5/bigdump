@@ -356,14 +356,14 @@
     <noscript>
         <div class="alert alert-warning text-center">
             JavaScript is disabled. Click the link below to continue manually.<br><br>
-            <a href="<?= $view->e($scriptUri) ?>/import" class="btn btn-blue">
+            <a href="<?= $view->e($scriptUri) ?>?action=start_import" class="btn btn-blue">
                 Continue Import
             </a>
         </div>
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
+        <a href="<?= $view->e($scriptUri) ?>?action=stop_import" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
@@ -379,7 +379,7 @@
 
 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">
     <?php if ($tableAlreadyExists): ?>
-    <a href="<?= $view->e($scriptUri) ?>/import/drop-restart?table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
+    <a href="<?= $view->e($scriptUri) ?>?action=drop_restart&table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
        class="btn btn-amber"
        onclick="return confirm('This will DROP TABLE `<?= $view->e($tableAlreadyExists) ?>` and restart the import. Continue?');">
         Drop "<?= $view->e($tableAlreadyExists) ?>" &amp; Restart Import
