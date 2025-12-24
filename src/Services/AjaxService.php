@@ -832,7 +832,8 @@ JAVASCRIPT;
      * Escapes a string for safe use in JavaScript.
      *
      * Prevents XSS injections by escaping special characters,
-     * including sequences that could terminate a script block.
+     * including sequences that could terminate a script block
+     * and Unicode line terminators (U+2028, U+2029).
      *
      * @param string $string String to escape
      * @return string JavaScript-safe string
@@ -841,6 +842,10 @@ JAVASCRIPT;
     {
         // Escape control characters, quotes and backslashes
         $escaped = addcslashes($string, "\0..\37\"'\\");
+
+        // Escape Unicode line terminators (U+2028, U+2029)
+        // These are valid in JSON but treated as line terminators in JavaScript
+        $escaped = str_replace(["\u{2028}", "\u{2029}"], ['\\u2028', '\\u2029'], $escaped);
 
         // Escape sequences that could break out of script context
         // </script> could terminate the script block prematurely
