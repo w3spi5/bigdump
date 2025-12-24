@@ -97,7 +97,9 @@ class SqlParser
         $this->delimiter = $config->get('delimiter', ';');
         // Support both single and double quotes for SQL strings
         $this->stringQuotes = ["'", '"'];
-        $this->commentMarkers = $config->get('comment_markers', ['#', '-- ', '/*!']);
+        // Note: /*! (MySQL conditional comments) are NOT in the default list
+        // because they contain valid SQL code that MySQL executes
+        $this->commentMarkers = $config->get('comment_markers', ['#', '-- ']);
         $this->maxQueryLines = $config->get('max_query_lines', 10000);
         $this->maxQueryMemory = $config->get('max_query_memory', 10485760);
     }
@@ -270,6 +272,9 @@ class SqlParser
     /**
      * Analyzes quotes in a line to determine in-string state
      *
+     * OPTIMIZED: Uses strpos() to jump directly to quote positions
+     * instead of iterating character by character.
+     *
      * This method properly handles:
      * - Both single quotes (') and double quotes (")
      * - Double backslashes (\\) before quotes
@@ -282,47 +287,72 @@ class SqlParser
     private function analyzeQuotes(string $line): void
     {
         $length = strlen($line);
-        $i = 0;
+        $pos = 0;
 
-        while ($i < $length) {
-            $char = $line[$i];
-
+        while ($pos < $length) {
             if ($this->inString) {
-                // In a string, look for the matching closing quote
-                if ($char === $this->activeQuote) {
-                    // Check if it's a doubled quote (SQL escape: '' -> ' or "" -> ")
-                    if ($i + 1 < $length && $line[$i + 1] === $this->activeQuote) {
-                        // Doubled quote, skip both characters, stay in string
-                        $i += 2;
-                        continue;
-                    }
+                // Find the next occurrence of the active quote
+                $quotePos = strpos($line, $this->activeQuote, $pos);
 
-                    // Count preceding backslashes
-                    $backslashes = 0;
-                    $j = $i - 1;
-
-                    while ($j >= 0 && $line[$j] === '\\') {
-                        $backslashes++;
-                        $j--;
-                    }
-
-                    // If even number of backslashes (or zero), quote closes the string
-                    // If odd number, quote is escaped
-                    if ($backslashes % 2 === 0) {
-                        $this->inString = false;
-                        $this->activeQuote = '';
-                    }
+                if ($quotePos === false) {
+                    // No closing quote found in this line
+                    return;
                 }
+
+                // Check if it's a doubled quote (SQL escape: '' or "")
+                if ($quotePos + 1 < $length && $line[$quotePos + 1] === $this->activeQuote) {
+                    // Skip both characters, stay in string
+                    $pos = $quotePos + 2;
+                    continue;
+                }
+
+                // Count preceding backslashes
+                $backslashes = 0;
+                $j = $quotePos - 1;
+                while ($j >= 0 && $line[$j] === '\\') {
+                    $backslashes++;
+                    $j--;
+                }
+
+                // If even number of backslashes (or zero), quote closes the string
+                if ($backslashes % 2 === 0) {
+                    $this->inString = false;
+                    $this->activeQuote = '';
+                }
+
+                $pos = $quotePos + 1;
             } else {
-                // Outside string, look for the beginning of a string
-                // Check both single and double quotes
-                if (in_array($char, $this->stringQuotes, true)) {
-                    $this->inString = true;
-                    $this->activeQuote = $char;
-                }
-            }
+                // Find the next single or double quote
+                $singlePos = strpos($line, "'", $pos);
+                $doublePos = strpos($line, '"', $pos);
 
-            $i++;
+                // Determine which quote comes first
+                if ($singlePos === false && $doublePos === false) {
+                    // No quotes found
+                    return;
+                }
+
+                if ($singlePos === false) {
+                    $nextQuotePos = $doublePos;
+                    $quoteChar = '"';
+                } elseif ($doublePos === false) {
+                    $nextQuotePos = $singlePos;
+                    $quoteChar = "'";
+                } else {
+                    // Both found, take the first one
+                    if ($singlePos < $doublePos) {
+                        $nextQuotePos = $singlePos;
+                        $quoteChar = "'";
+                    } else {
+                        $nextQuotePos = $doublePos;
+                        $quoteChar = '"';
+                    }
+                }
+
+                $this->inString = true;
+                $this->activeQuote = $quoteChar;
+                $pos = $nextQuotePos + 1;
+            }
         }
     }
 
