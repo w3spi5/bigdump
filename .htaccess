@@ -4,7 +4,14 @@ RewriteEngine On
 RewriteRule ^(src|config|uploads|docs)/.*$ - [F,L]
 
 # Clean URL routing
+RewriteRule ^upload$ index.php?action=upload [L,QSA]
+RewriteRule ^delete$ index.php?action=delete [L,QSA]
 RewriteRule ^import$ index.php?action=import [L,QSA]
-RewriteRule ^import/sse$ index.php?action=sse_import [L,QSA]
+RewriteRule ^import/start$ index.php?action=start_import [L,QSA]
 RewriteRule ^import/stop$ index.php?action=stop_import [L,QSA]
+RewriteRule ^import/ajax$ index.php?action=ajax_import [L,QSA]
+RewriteRule ^import/sse$ index.php?action=sse_import [L,QSA]
 RewriteRule ^import/drop-restart$ index.php?action=drop_restart [L,QSA]
+RewriteRule ^preview$ index.php?action=preview [L,QSA]
+RewriteRule ^files/list$ index.php?action=files_list [L,QSA]
+RewriteRule ^history$ index.php?action=history [L,QSA]

@@ -47,3 +47,4 @@ error_log
 # Tailwind CLI binary (downloaded for local builds)
 tailwindcss-linux-x64
 esbuild
+uploads/.import_history.json

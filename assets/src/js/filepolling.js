@@ -298,7 +298,7 @@
         // Skip if modal is open
         if (isModalOpen()) return;
 
-        fetch('?action=files_list')
+        fetch('files/list')
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (!data.success) return;
