@@ -1,8 +1,8 @@
-# BigDump 2.17 - Staggered MySQL Dump Importer
+# BigDump 2.18 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.17-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.18-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">

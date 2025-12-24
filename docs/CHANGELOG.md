@@ -2,6 +2,31 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.18] - UI Improvements & URL Compatibility
+
+### Added in 2.18
+
+- **Total Lines in Preview**: Preview modal now shows exact total line count
+  - Supports both gzip-compressed and regular SQL files
+  - Formatted with locale-aware number display
+
+### Changed in 2.18
+
+- **URL Pattern Migration**: Replaced clean URLs with action parameters for Apache compatibility
+  - `/import/sse` → `?action=sse_import`
+  - `/import/stop` → `?action=stop_import`
+  - `/import/start` → `?action=start_import`
+  - All other routes follow `?action=xxx` pattern
+  - Fixes SSE connection issues on servers without mod_rewrite
+
+### Fixed in 2.18
+
+- **Button Icon Sizing**: Fixed inconsistent button icon sizes (eye/view button)
+  - Added `min-height` and `min-width` to `.btn-icon` class
+- **Smart Error Handling**: Improved CREATE TABLE error detection and reporting
+
+---
+
 ## [2.17] - Performance Optimizations & Import Speedup
 
 ### Added in 2.17
