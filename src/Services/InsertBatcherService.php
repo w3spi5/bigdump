@@ -91,6 +91,8 @@ class InsertBatcherService
     /**
      * Parse a simple INSERT statement.
      *
+     * OPTIMIZED: Uses string functions instead of complex regex.
+     *
      * Matches: INSERT INTO table VALUES (...)
      * Matches: INSERT INTO table (cols) VALUES (...)
      * Does NOT match: INSERT ... ON DUPLICATE KEY, INSERT ... SELECT, etc.
@@ -99,29 +101,61 @@ class InsertBatcherService
      */
     private function parseSimpleInsert(string $query): ?array
     {
-        // Pattern for simple INSERT INTO table [(cols)] VALUES (values);
-        // Capture: table name, optional column list, and the VALUES part
-        $pattern = '/^INSERT\s+(?:INTO\s+)?(`?\w+`?(?:\.\`?\w+`?)?)\s*(\([^)]*\))?\s*VALUES\s*(\(.*\))\s*;?$/is';
+        $upperQuery = strtoupper($query);
 
-        if (!preg_match($pattern, $query, $matches)) {
+        // Quick rejection: must start with INSERT
+        if (!str_starts_with($upperQuery, 'INSERT')) {
             return null;
         }
 
-        $table = $matches[1];
-        $columns = $matches[2] ?? '';
-        $values = $matches[3];
-
-        // Reject if contains ON DUPLICATE KEY, IGNORE, etc.
-        if (preg_match('/\b(ON\s+DUPLICATE|IGNORE|REPLACE)\b/i', $query)) {
+        // Quick rejection for complex INSERT types
+        if (
+            str_contains($upperQuery, 'ON DUPLICATE') ||
+            str_contains($upperQuery, 'IGNORE') ||
+            str_contains($upperQuery, ' SELECT ')
+        ) {
             return null;
         }
 
-        // Build prefix: INSERT INTO table (cols) VALUES
-        $prefix = 'INSERT INTO ' . $table;
-        if ($columns !== '') {
-            $prefix .= ' ' . $columns;
+        // Find VALUES position
+        $valuesPos = strpos($upperQuery, 'VALUES');
+        if ($valuesPos === false) {
+            return null;
         }
-        $prefix .= ' VALUES';
+
+        // Find the opening parenthesis after VALUES
+        $openParenPos = strpos($query, '(', $valuesPos);
+        if ($openParenPos === false) {
+            return null;
+        }
+
+        // Extract prefix (everything before VALUES + "VALUES")
+        $prefix = rtrim(substr($query, 0, $valuesPos)) . ' VALUES';
+
+        // Extract table name from prefix
+        $prefixUpper = strtoupper($prefix);
+        $intoPos = strpos($prefixUpper, 'INTO');
+        if ($intoPos !== false) {
+            $afterInto = ltrim(substr($prefix, $intoPos + 4));
+        } else {
+            // INSERT table (no INTO)
+            $afterInto = ltrim(substr($prefix, 6));
+        }
+
+        // Table name is the first word (may include backticks)
+        if (preg_match('/^(`?[\w]+`?(?:\.`?[\w]+`?)?)/', $afterInto, $tableMatch)) {
+            $table = $tableMatch[1];
+        } else {
+            return null;
+        }
+
+        // Extract values (from opening paren to end, trimming semicolon)
+        $values = rtrim(substr($query, $openParenPos), " \t\n\r;");
+
+        // Validate that values starts with ( and ends with )
+        if (!str_starts_with($values, '(') || !str_ends_with($values, ')')) {
+            return null;
+        }
 
         return [
             'table' => strtolower($table),

@@ -111,8 +111,8 @@ class Database
             }
 
             if (!$this->connection->set_charset($safeCharset)) {
-                // Fallback with SET NAMES
-                $this->connection->query("SET NAMES `{$safeCharset}`");
+                // Fallback with SET NAMES (no quotes/backticks - charset is already validated)
+                $this->connection->query("SET NAMES {$safeCharset}");
             }
         }
 
