@@ -24,6 +24,48 @@ class Config
     private array $values = [];
 
     /**
+     * Effective performance profile after validation
+     * @var string
+     */
+    private string $effectiveProfile = 'conservative';
+
+    /**
+     * Whether profile was downgraded due to memory constraints
+     * @var bool
+     */
+    private bool $profileDowngraded = false;
+
+    /**
+     * Profile-specific default values
+     * @var array<string, array<string, mixed>>
+     */
+    private static array $profileDefaults = [
+        'conservative' => [
+            'file_buffer_size' => 65536,      // 64KB
+            'insert_batch_size' => 2000,
+            'max_batch_bytes' => 16777216,    // 16MB
+            'commit_frequency' => 1,
+        ],
+        'aggressive' => [
+            'file_buffer_size' => 131072,     // 128KB
+            'insert_batch_size' => 5000,
+            'max_batch_bytes' => 33554432,    // 32MB
+            'commit_frequency' => 3,
+        ],
+    ];
+
+    /**
+     * Minimum PHP memory_limit for aggressive mode (128MB)
+     */
+    private const AGGRESSIVE_MIN_MEMORY = 134217728;
+
+    /**
+     * Buffer size constraints
+     */
+    private const MIN_BUFFER_SIZE = 65536;   // 64KB
+    private const MAX_BUFFER_SIZE = 262144;  // 256KB
+
+    /**
      * Default values
      * @var array<string, mixed>
      */
@@ -43,6 +85,16 @@ class Config
         'min_batch_size' => 3000,     // Minimum batch size (safety floor)
         'max_batch_size' => 50000,    // Maximum batch size (ceiling)
         'delaypersession' => 0,
+
+        // Performance profile (v2.19+)
+        'performance_profile' => 'conservative', // 'conservative' or 'aggressive'
+
+        // Profile-dependent options (defaults are conservative values)
+        // These are overridden based on effective profile during validation
+        'file_buffer_size' => 65536,      // 64KB conservative, 128KB aggressive
+        'insert_batch_size' => 2000,      // 2000 conservative, 5000 aggressive
+        'max_batch_bytes' => 16777216,    // 16MB conservative, 32MB aggressive
+        'commit_frequency' => 1,          // 1 conservative, 3 aggressive
 
         // CSV configuration
         'csv_insert_table' => '',
@@ -126,7 +178,7 @@ class Config
             $this->values['upload_dir'] = dirname($configFile, 2) . '/uploads';
         }
 
-        // Validate configuration
+        // Validate configuration (includes profile validation)
         $this->validate();
     }
 
@@ -160,6 +212,9 @@ class Config
             'comment_markers', 'pre_queries', 'delimiter', 'string_quotes',
             'max_query_lines', 'upload_dir', 'test_mode', 'debug',
             'data_chunk_length', 'allowed_extensions', 'max_query_memory',
+            // Performance profile options (v2.19+)
+            'performance_profile', 'file_buffer_size', 'insert_batch_size',
+            'max_batch_bytes', 'commit_frequency',
         ];
 
         // Get defined variables after including the file
@@ -182,6 +237,9 @@ class Config
      */
     private function validate(): void
     {
+        // Validate and apply performance profile first
+        $this->validatePerformanceProfile();
+
         // Check that the charset is valid
         $validCharsets = [
             'utf8', 'utf8mb4', 'latin1', 'latin2', 'ascii',
@@ -208,6 +266,160 @@ class Config
         if ($this->values['data_chunk_length'] < 1024) {
             $this->values['data_chunk_length'] = 16384;
         }
+
+        // Validate buffer size within allowed range
+        $this->validateBufferSize();
+    }
+
+    /**
+     * Validates and applies performance profile settings
+     *
+     * @return void
+     */
+    private function validatePerformanceProfile(): void
+    {
+        $requestedProfile = $this->values['performance_profile'] ?? 'conservative';
+
+        // Validate profile value
+        if (!in_array($requestedProfile, ['conservative', 'aggressive'], true)) {
+            error_log("BigDump Warning: Invalid performance_profile '{$requestedProfile}', using 'conservative'");
+            $requestedProfile = 'conservative';
+        }
+
+        // If aggressive mode requested, check memory requirements
+        if ($requestedProfile === 'aggressive') {
+            $memoryLimit = $this->getPhpMemoryLimitBytes();
+
+            if ($memoryLimit !== -1 && $memoryLimit < self::AGGRESSIVE_MIN_MEMORY) {
+                $memoryLimitMB = round($memoryLimit / 1024 / 1024);
+                $requiredMB = round(self::AGGRESSIVE_MIN_MEMORY / 1024 / 1024);
+                error_log(
+                    "BigDump Warning: Aggressive mode requires {$requiredMB}MB+ memory_limit, " .
+                    "current limit is {$memoryLimitMB}MB. Falling back to conservative mode."
+                );
+                $this->effectiveProfile = 'conservative';
+                $this->profileDowngraded = true;
+            } else {
+                $this->effectiveProfile = 'aggressive';
+            }
+        } else {
+            $this->effectiveProfile = 'conservative';
+        }
+
+        // Apply profile defaults for options not explicitly set by user
+        $this->applyProfileDefaults();
+    }
+
+    /**
+     * Applies profile-specific defaults for options not explicitly configured
+     *
+     * @return void
+     */
+    private function applyProfileDefaults(): void
+    {
+        $profileDefaults = self::$profileDefaults[$this->effectiveProfile];
+
+        // For each profile-dependent option, use profile default if user didn't specify
+        // We check against the base defaults to see if user overrode
+        foreach ($profileDefaults as $key => $profileValue) {
+            // If user config matches the base default, apply profile-specific value
+            // This allows profile to cascade while respecting explicit user overrides
+            if ($this->values[$key] === self::$defaults[$key]) {
+                $this->values[$key] = $profileValue;
+            }
+        }
+    }
+
+    /**
+     * Validates the file buffer size within allowed range
+     *
+     * @return void
+     */
+    private function validateBufferSize(): void
+    {
+        $bufferSize = $this->values['file_buffer_size'];
+
+        if ($bufferSize < self::MIN_BUFFER_SIZE) {
+            error_log(
+                "BigDump Warning: file_buffer_size {$bufferSize} below minimum " .
+                self::MIN_BUFFER_SIZE . ", using minimum."
+            );
+            $this->values['file_buffer_size'] = self::MIN_BUFFER_SIZE;
+        } elseif ($bufferSize > self::MAX_BUFFER_SIZE) {
+            error_log(
+                "BigDump Warning: file_buffer_size {$bufferSize} exceeds maximum " .
+                self::MAX_BUFFER_SIZE . ", using maximum."
+            );
+            $this->values['file_buffer_size'] = self::MAX_BUFFER_SIZE;
+        }
+    }
+
+    /**
+     * Gets the PHP memory_limit in bytes
+     *
+     * @return int Memory limit in bytes, or -1 if unlimited
+     */
+    private function getPhpMemoryLimitBytes(): int
+    {
+        $memoryLimit = ini_get('memory_limit');
+
+        if ($memoryLimit === false || $memoryLimit === '' || $memoryLimit === '-1') {
+            return -1; // Unlimited
+        }
+
+        return $this->parseSize($memoryLimit);
+    }
+
+    /**
+     * Returns the effective performance profile after validation
+     *
+     * This method returns the actual profile being used, which may differ
+     * from the configured profile if memory constraints forced a downgrade.
+     *
+     * @return string 'conservative' or 'aggressive'
+     */
+    public function getEffectiveProfile(): string
+    {
+        return $this->effectiveProfile;
+    }
+
+    /**
+     * Returns whether the profile was downgraded due to memory constraints
+     *
+     * @return bool True if profile was downgraded from aggressive to conservative
+     */
+    public function wasProfileDowngraded(): bool
+    {
+        return $this->profileDowngraded;
+    }
+
+    /**
+     * Returns profile-specific information for debugging
+     *
+     * @return array{
+     *     requested_profile: string,
+     *     effective_profile: string,
+     *     was_downgraded: bool,
+     *     memory_limit_bytes: int,
+     *     aggressive_min_memory: int,
+     *     profile_settings: array<string, mixed>
+     * }
+     */
+    public function getProfileInfo(): array
+    {
+        return [
+            'requested_profile' => $this->values['performance_profile'],
+            'effective_profile' => $this->effectiveProfile,
+            'was_downgraded' => $this->profileDowngraded,
+            'memory_limit_bytes' => $this->getPhpMemoryLimitBytes(),
+            'aggressive_min_memory' => self::AGGRESSIVE_MIN_MEMORY,
+            'profile_settings' => [
+                'file_buffer_size' => $this->values['file_buffer_size'],
+                'insert_batch_size' => $this->values['insert_batch_size'],
+                'max_batch_bytes' => $this->values['max_batch_bytes'],
+                'commit_frequency' => $this->values['commit_frequency'],
+            ],
+        ];
     }
 
     /**
