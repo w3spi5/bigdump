@@ -1,8 +1,8 @@
-# BigDump 2.18 - Staggered MySQL Dump Importer
+# BigDump 2.19 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.18-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.19-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
@@ -55,6 +55,36 @@ BigDump 2.16 includes several performance optimizations that significantly reduc
 | Quote parsing | O(n) per char | O(1) jumps | ~3x |
 | INSERT detection | Complex regex | String functions | ~2x |
 | File I/O | 16KB fgets | 64KB buffer | ~2x |
+
+## Performance Profiles (v2.19)
+
+BigDump 2.19 introduces a **performance profile system** allowing you to choose between optimized configurations:
+
+### Conservative Mode (Default)
+Best for shared hosting environments with limited memory (64MB).
+
+```php
+'performance_profile' => 'conservative',
+```
+
+### Aggressive Mode
+For dedicated servers with 128MB+ memory, providing +20-30% throughput improvement.
+
+```php
+'performance_profile' => 'aggressive',
+```
+
+### Profile Comparison
+
+| Setting | Conservative | Aggressive |
+|---------|-------------|------------|
+| `insert_batch_size` | 2,000 | 5,000 |
+| `file_buffer_size` | 64KB | 128KB |
+| `max_batch_bytes` | 16MB | 32MB |
+| `commit_frequency` | Every batch | Every 3 batches |
+| Memory limit | <64MB | <128MB |
+
+**Note:** Aggressive mode automatically falls back to conservative if PHP `memory_limit` is below 128MB.
 
 ## Requirements
 

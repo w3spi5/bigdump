@@ -45,6 +45,84 @@ return [
     'db_connection_charset' => 'utf8mb4',
 
     // =========================================================================
+    // PERFORMANCE PROFILE (v2.19+)
+    // =========================================================================
+
+    /**
+     * Performance profile selection.
+     *
+     * 'conservative' (default):
+     *   - Targets 64MB PHP memory_limit
+     *   - Safe for shared hosting environments
+     *   - 64KB file buffer, 2000 INSERT batch size, 16MB max batch bytes
+     *   - COMMIT after every batch
+     *
+     * 'aggressive':
+     *   - Targets 128MB PHP memory_limit (REQUIRED: 128MB+ memory_limit)
+     *   - +20-30% throughput improvement on INSERT-heavy dumps
+     *   - 128KB file buffer, 5000 INSERT batch size, 32MB max batch bytes
+     *   - COMMIT every 3 batches
+     *
+     * WARNING: If memory_limit < 128MB, aggressive mode automatically falls
+     * back to conservative to prevent memory exhaustion. Check logs for warnings.
+     */
+    'performance_profile' => 'conservative',
+
+    /**
+     * File read buffer size (in bytes).
+     * Controls how much data is read from the SQL file per I/O operation.
+     * Larger buffers reduce system calls but use more memory.
+     *
+     * Defaults (profile-dependent):
+     *   - Conservative: 65536 (64KB)
+     *   - Aggressive: 131072 (128KB)
+     *
+     * Valid range: 65536 (64KB) to 262144 (256KB)
+     * Values outside this range are automatically clamped.
+     *
+     * Only override if you have specific I/O performance requirements.
+     */
+    // 'file_buffer_size' => 65536,
+
+    /**
+     * INSERT batch size (number of rows per batched INSERT).
+     * Groups consecutive simple INSERTs into multi-value INSERTs.
+     * Example: 2000 single INSERTs become 1 INSERT with 2000 value sets.
+     *
+     * Defaults (profile-dependent):
+     *   - Conservative: 2000
+     *   - Aggressive: 5000
+     *
+     * Higher values = faster imports, but more memory usage.
+     * Set to 0 to disable INSERT batching entirely.
+     */
+    // 'insert_batch_size' => 2000,
+
+    /**
+     * Maximum batch size in bytes.
+     * Prevents individual batched INSERT statements from exceeding this size.
+     * Protects against MySQL max_allowed_packet limits and memory exhaustion.
+     *
+     * Defaults (profile-dependent):
+     *   - Conservative: 16777216 (16MB)
+     *   - Aggressive: 33554432 (32MB)
+     *
+     * Should not exceed your MySQL server's max_allowed_packet setting.
+     */
+    // 'max_batch_bytes' => 16777216,
+
+    /**
+     * COMMIT frequency (every N batches).
+     * Controls how often COMMIT is issued during import.
+     * Higher values reduce transaction overhead but increase rollback risk.
+     *
+     * Defaults (profile-dependent):
+     *   - Conservative: 1 (COMMIT after every batch)
+     *   - Aggressive: 3 (COMMIT every 3 batches)
+     */
+    // 'commit_frequency' => 1,
+
+    // =========================================================================
     // IMPORT CONFIGURATION (OPTIONAL)
     // =========================================================================
 
@@ -65,12 +143,12 @@ return [
      * Number of lines to process per session (base value).
      * With auto-tuning enabled (default), this is dynamically adjusted
      * based on available RAM (NVMe-optimized profiles):
-     *   < 512 MB  →  10,000 lines
-     *   < 1 GB    →  30,000 lines
-     *   < 2 GB    →  60,000 lines
-     *   < 4 GB    → 100,000 lines
-     *   < 8 GB    → 150,000 lines
-     *   > 8 GB    → 200,000 lines
+     *   < 512 MB  ->  10,000 lines
+     *   < 1 GB    ->  30,000 lines
+     *   < 2 GB    ->  60,000 lines
+     *   < 4 GB    -> 100,000 lines
+     *   < 8 GB    -> 150,000 lines
+     *   > 8 GB    -> 200,000 lines
      */
     'linespersession' => 3000,
 
@@ -164,15 +242,6 @@ return [
         'SET unique_checks = 1',
         'SET foreign_key_checks = 1',
     ],
-
-    /**
-     * Batch INSERT optimization.
-     * Groups consecutive simple INSERTs into multi-value INSERTs.
-     * Example: 10000 single INSERTs become 1 INSERT with 10000 value sets.
-     * Provides x10-50 speed improvement for dumps with simple INSERTs.
-     * Set to 0 to disable. Higher values = faster (10000 recommended for NVMe).
-     */
-    'insert_batch_size' => 10000,
 
     /**
      * Default query end delimiter.

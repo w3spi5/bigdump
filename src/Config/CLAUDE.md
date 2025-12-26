@@ -2,7 +2,7 @@
 
 ## Overview
 
-Configuration management for BigDump. Handles loading, validation, and access to all application settings.
+Configuration management for BigDump. Handles loading, validation, and access to all application settings including the performance profile system (v2.19).
 
 ## Files
 
@@ -14,6 +14,22 @@ Central configuration class with default values and user overrides.
 - Loads from `config/config.php` (array or legacy variable format)
 - Provides typed getters: `get()`, `getDatabase()`, `getCsv()`
 - Validates charset, numeric limits, file extensions
+- **Performance Profile System** (v2.19): Conservative/aggressive modes with automatic fallback
+
+**Performance Profile Options (v2.19):**
+
+```php
+'performance_profile' => 'conservative', // or 'aggressive'
+'file_buffer_size' => 65536,    // 64KB (conservative) / 131072 (aggressive)
+'insert_batch_size' => 2000,    // 2000 (conservative) / 5000 (aggressive)
+'max_batch_bytes' => 16777216,  // 16MB (conservative) / 32MB (aggressive)
+'commit_frequency' => 1,        // 1 (conservative) / 3 (aggressive)
+```
+
+**Profile Methods:**
+- `getEffectiveProfile()` - Returns actual profile after validation
+- `wasProfileDowngraded()` - True if aggressive fell back to conservative
+- `getProfileInfo()` - Complete profile debugging information
 
 **Performance-Critical Defaults:**
 
@@ -42,6 +58,13 @@ These pre-queries provide 5-10x import speedup by eliminating per-row overhead.
 3. Add validation in `validate()` if needed
 4. Update `config/config.example.php`
 
+### Working with Performance Profiles
+
+Profile validation happens in `validate()`:
+- Aggressive mode requires PHP `memory_limit` >= 128MB
+- Automatic fallback to conservative with warning if memory insufficient
+- Buffer sizes clamped to range: 64KB - 256KB
+
 ### Modifying pre-queries
 
 Pre-queries execute at connection time. Post-queries execute after import completion.
@@ -52,3 +75,5 @@ Pre-queries execute at connection time. Post-queries execute after import comple
 
 - `config/config.example.php` - User-facing configuration template
 - `src/Models/Database.php` - Executes pre/post queries
+- `src/Services/AutoTunerService.php` - Uses profile for batch calculations
+- `src/Services/ImportService.php` - Uses profile for COMMIT frequency
