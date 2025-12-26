@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BigDump\Models;
 
 use BigDump\Config\Config;
+use BigDump\Services\FileAnalysisResult;
 use RuntimeException;
 
 /**
@@ -20,6 +21,7 @@ use RuntimeException;
  * - Protection against path traversal attacks
  * - Better gzip file handling
  * - Proper BOM handling for UTF-8, UTF-16, UTF-32
+ * - Configurable buffer size based on performance profile (v2.19+)
  *
  * @package BigDump\Models
  * @author  w3spi5
@@ -69,10 +71,29 @@ class FileHandler
     private string $readBuffer = '';
 
     /**
-     * Buffer size for chunked reading (64KB for better performance)
+     * Buffer size for chunked reading
+     * Configurable via config (default: 64KB conservative, 128KB aggressive)
      * @var int
      */
-    private int $bufferSize = 65536;
+    private int $bufferSize;
+
+    /**
+     * Buffer size constraints
+     */
+    private const MIN_BUFFER_SIZE = 65536;   // 64KB
+    private const MAX_BUFFER_SIZE = 262144;  // 256KB
+
+    /**
+     * Buffer size recommendations by file category
+     * @var array<string, int>
+     */
+    private const CATEGORY_BUFFER_SIZES = [
+        'tiny'    => 65536,   // 64KB for small files
+        'small'   => 65536,   // 64KB for small files
+        'medium'  => 98304,   // 96KB for medium files
+        'large'   => 131072,  // 128KB for large files
+        'massive' => 262144,  // 256KB for massive files
+    ];
 
     /**
      * Constructor
@@ -83,7 +104,123 @@ class FileHandler
     {
         $this->config = $config;
         $this->uploadDir = $config->getUploadDir();
+
+        // Read configurable buffer size from config (profile-based)
+        $configuredBufferSize = (int) $config->get('file_buffer_size', self::MIN_BUFFER_SIZE);
+
+        // Validate and clamp buffer size within allowed range
+        $this->bufferSize = $this->clampBufferSize($configuredBufferSize);
+
         $this->ensureUploadDir();
+    }
+
+    /**
+     * Clamps buffer size to valid range
+     *
+     * @param int $bufferSize Requested buffer size
+     * @return int Clamped buffer size
+     */
+    private function clampBufferSize(int $bufferSize): int
+    {
+        if ($bufferSize < self::MIN_BUFFER_SIZE) {
+            return self::MIN_BUFFER_SIZE;
+        }
+
+        if ($bufferSize > self::MAX_BUFFER_SIZE) {
+            return self::MAX_BUFFER_SIZE;
+        }
+
+        return $bufferSize;
+    }
+
+    /**
+     * Sets buffer size based on file category for optimal performance
+     *
+     * Call this method after file analysis to optimize buffer size
+     * for the specific file being imported.
+     *
+     * @param string $category File category from FileAnalysisResult (tiny/small/medium/large/massive)
+     * @return void
+     */
+    public function setBufferSizeForCategory(string $category): void
+    {
+        // Get category-specific buffer size recommendation
+        $categoryBufferSize = self::CATEGORY_BUFFER_SIZES[$category] ?? self::MIN_BUFFER_SIZE;
+
+        // Get the profile's configured buffer size as a ceiling
+        $profileBufferSize = (int) $this->config->get('file_buffer_size', self::MIN_BUFFER_SIZE);
+
+        // Use the smaller of category recommendation or profile limit
+        // This ensures we don't exceed profile-based memory constraints
+        $targetSize = min($categoryBufferSize, max($profileBufferSize, self::MIN_BUFFER_SIZE));
+
+        // If aggressive profile and large files, allow larger buffer
+        if ($this->config->getEffectiveProfile() === 'aggressive') {
+            // In aggressive mode, for large/massive files, use larger buffers
+            if (in_array($category, ['large', 'massive'], true)) {
+                $targetSize = max($targetSize, $categoryBufferSize);
+            }
+        }
+
+        // Apply with validation
+        $this->bufferSize = $this->clampBufferSize($targetSize);
+    }
+
+    /**
+     * Sets buffer size based on FileAnalysisResult
+     *
+     * Convenience method that extracts the category from the analysis result.
+     *
+     * @param FileAnalysisResult $analysisResult File analysis result
+     * @return void
+     */
+    public function setBufferSizeFromAnalysis(FileAnalysisResult $analysisResult): void
+    {
+        $this->setBufferSizeForCategory($analysisResult->category);
+    }
+
+    /**
+     * Gets the current buffer size
+     *
+     * @return int Buffer size in bytes
+     */
+    public function getBufferSize(): int
+    {
+        return $this->bufferSize;
+    }
+
+    /**
+     * Sets buffer size directly (with validation)
+     *
+     * @param int $bufferSize Buffer size in bytes
+     * @return void
+     */
+    public function setBufferSize(int $bufferSize): void
+    {
+        $this->bufferSize = $this->clampBufferSize($bufferSize);
+    }
+
+    /**
+     * Gets buffer size constraints
+     *
+     * @return array{min: int, max: int}
+     */
+    public static function getBufferSizeConstraints(): array
+    {
+        return [
+            'min' => self::MIN_BUFFER_SIZE,
+            'max' => self::MAX_BUFFER_SIZE,
+        ];
+    }
+
+    /**
+     * Gets recommended buffer sizes by category
+     *
+     * @return array<string, int>
+     */
+    public static function getCategoryBufferSizes(): array
+    {
+        return self::CATEGORY_BUFFER_SIZES;
     }
 
     /**
@@ -483,6 +620,7 @@ class FileHandler
      *
      * OPTIMIZED: Uses internal buffer to reduce system calls.
      * Reads larger chunks and extracts lines from buffer.
+     * Buffer size is configurable via config for performance tuning.
      *
      * @return string|false Read line or false if end of file
      */
@@ -496,7 +634,7 @@ class FileHandler
         $newlinePos = strpos($this->readBuffer, "\n");
 
         while ($newlinePos === false) {
-            // Need to read more data
+            // Need to read more data - uses configurable buffer size
             if ($this->gzipMode) {
                 $chunk = @gzread($this->fileHandle, $this->bufferSize);
                 $isEof = @gzeof($this->fileHandle);

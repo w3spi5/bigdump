@@ -78,6 +78,19 @@ class ImportService
     private FileAnalysisService $fileAnalyzer;
 
     /**
+     * COMMIT frequency - how many batch flushes between COMMITs.
+     * Conservative: 1 (every batch), Aggressive: 3 (every 3 batches)
+     * @var int
+     */
+    private int $commitFrequency;
+
+    /**
+     * Counter for batches since last COMMIT.
+     * @var int
+     */
+    private int $batchesSinceCommit = 0;
+
+    /**
      * Get AutoTuner metrics for UI display.
      *
      * @param int $currentLines Current line count for speed calculation
@@ -107,13 +120,22 @@ class ImportService
             $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
         }
 
-        // Initialize INSERT batcher
-        $insertBatchSize = (int) $config->get('insert_batch_size', 1000);
-        $this->insertBatcher = new InsertBatcherService($insertBatchSize);
+        // Initialize INSERT batcher with profile-based configuration
+        // Read both insert_batch_size and max_batch_bytes from config
+        // These values are automatically set based on effective performance profile:
+        // - Conservative: batch_size=2000, max_bytes=16MB
+        // - Aggressive: batch_size=5000, max_bytes=32MB
+        $insertBatchSize = (int) $config->get('insert_batch_size', 2000);
+        $maxBatchBytes = (int) $config->get('max_batch_bytes', 16777216);
+        $this->insertBatcher = new InsertBatcherService($insertBatchSize, $maxBatchBytes);
 
         // Initialize file analyzer
         $sampleSize = (int) $config->get('sample_size_bytes', 1048576);
         $this->fileAnalyzer = new FileAnalysisService($sampleSize);
+
+        // Initialize COMMIT frequency from config
+        // Conservative: 1 (every batch), Aggressive: 3 (every 3 batches)
+        $this->commitFrequency = (int) $config->get('commit_frequency', 1);
     }
 
     /**
@@ -466,6 +488,27 @@ class ImportService
         // Execute any queries returned by the batcher
         foreach ($result['queries'] as $batchedQuery) {
             $this->executeQueryDirect($session, $batchedQuery);
+            $this->checkBatchCommit();
+        }
+    }
+
+    /**
+     * Check if we should COMMIT based on batch frequency.
+     *
+     * Commits every N batch flushes based on commit_frequency config:
+     * - Conservative (1): COMMIT after every batch flush
+     * - Aggressive (3): COMMIT after every 3 batch flushes
+     *
+     * This reduces COMMIT overhead in aggressive mode while maintaining
+     * data durability with periodic commits.
+     */
+    private function checkBatchCommit(): void
+    {
+        $this->batchesSinceCommit++;
+
+        if ($this->batchesSinceCommit >= $this->commitFrequency) {
+            $this->database->query('COMMIT');
+            $this->batchesSinceCommit = 0;
         }
     }
 
@@ -513,6 +556,7 @@ class ImportService
         $result = $this->insertBatcher->flush();
         foreach ($result['queries'] as $batchedQuery) {
             $this->executeQueryDirect($session, $batchedQuery);
+            $this->checkBatchCommit();
         }
     }
 
@@ -613,5 +657,15 @@ class ImportService
                 'charset' => '',
             ];
         }
+    }
+
+    /**
+     * Get INSERT batcher statistics.
+     *
+     * @return array INSERT batcher statistics
+     */
+    public function getInsertBatcherStatistics(): array
+    {
+        return $this->insertBatcher->getStatistics();
     }
 }

@@ -2,7 +2,57 @@
 
 All notable changes to BigDump are documented in this file.
 
-## [2.18] - UI Improvements & URL Compatibility
+## [2.19] - 2025-12-26 - Performance Profile System
+
+### Added in 2.19
+
+- **Performance Profile System**: Choose between `conservative` (default) and `aggressive` modes
+  - Conservative: Optimized for shared hosting (64MB memory limit)
+  - Aggressive: Higher throughput for dedicated servers (128MB+ required)
+- **Configurable INSERT Batch Sizes**: 2,000 (conservative) / 5,000 (aggressive)
+- **Configurable File Buffer**: 64KB-256KB based on file category
+- **INSERT IGNORE Batching**: Now properly batches INSERT IGNORE statements
+- **Adaptive Batch Sizing**: Automatically adjusts based on average row size
+- **Memory Caching**: Reduced overhead from memory_get_usage() calls
+- **Configurable COMMIT Frequency**: Every batch (conservative) / every 3 batches (aggressive)
+
+### Changed in 2.19
+
+- **AutoTuner Profile-Aware**: Now supports profile-based multiplier and safety margins
+  - Aggressive: 1.3x batch reference multiplier, 70% safety margin, 2M max batch
+  - Conservative: 1.0x multiplier, 80% safety margin, 1.5M max batch
+- **System Resources Cached**: 60-second TTL for system detection
+- **Memory Checks Cached**: 1-second TTL reduces redundant memory_get_usage() calls
+
+### Config Options in 2.19
+
+| Option | Conservative | Aggressive |
+|--------|-------------|------------|
+| `performance_profile` | `'conservative'` | `'aggressive'` |
+| `file_buffer_size` | 64KB | 128KB |
+| `insert_batch_size` | 2,000 | 5,000 |
+| `max_batch_bytes` | 16MB | 32MB |
+| `commit_frequency` | 1 | 3 |
+
+### Performance Targets
+
+- **Conservative**: Baseline performance, <64MB memory
+- **Aggressive**: +20-30% throughput, <128MB memory
+
+### Files Modified in 2.19
+
+| File | Change |
+|------|--------|
+| `src/Config/Config.php` | Profile system, validation, profile-dependent defaults |
+| `src/Services/InsertBatcherService.php` | Configurable batch limits, INSERT IGNORE, adaptive sizing |
+| `src/Models/FileHandler.php` | Configurable buffer size, category-based adjustment |
+| `src/Services/AutoTunerService.php` | Profile-aware thresholds, resource caching |
+| `src/Services/ImportService.php` | Profile-based config, commit frequency |
+| `config/config.example.php` | New performance options documented |
+
+---
+
+## [2.18] - 2025-12-24 - UI Improvements & URL Compatibility
 
 ### Added in 2.18
 
@@ -27,7 +77,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.17] - Performance Optimizations & Import Speedup
+## [2.17] - 2025-12-24 - Performance Optimizations & Import Speedup
 
 ### Added in 2.17
 
@@ -61,7 +111,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.16] - File-Aware Auto-Tuning
+## [2.16] - 2025-12-12 - File-Aware Auto-Tuning
 
 ### Added in 2.16
 
@@ -122,7 +172,10 @@ All notable changes to BigDump are documented in this file.
 | `src/Controllers/BigDumpController.php` | Call analyzeFile at import start |
 | `templates/import.php` | Enhanced Performance section with new metrics |
 | `config/config.example.php` | Added file-aware tuning options |
-## [2.15] - Elapsed Timer & SQL Safety
+
+---
+
+## [2.15] - 2025-12-14 - Elapsed Timer & SQL Safety
 
 ### Added in 2.15
 
@@ -152,7 +205,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.14] - Zero-CDN Asset Pipeline
+## [2.14] - 2025-12-12 - Zero-CDN Asset Pipeline
 
 ### Added in 2.14
 
@@ -211,7 +264,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.13] - CSS Components & Accessibility
+## [2.13] - 2025-12-10 - CSS Components & Accessibility
 
 ### Added in 2.13
 
@@ -258,7 +311,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.12] - Real-time File List Refresh
+## [2.12] - 2025-12-11 - Real-time File List Refresh
 
 ### Changed in 2.12
 
@@ -274,12 +327,12 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.11] - Quick Wins: Animations, Preview & History
+## [2.11] - 2025-12-09 - Quick Wins: Animations, Preview & History
 
 ### Added in 2.11
 
 - **SQL Preview Modal**: Preview file contents before importing
-  - Click the eye icon (👁️) on any file to open preview
+  - Click the eye icon on any file to open preview
   - Raw SQL content display (first 50 lines)
   - Extracted queries with type badges (CREATE, INSERT, DROP, UPDATE, etc.)
   - Tabbed interface: Raw Content / Queries
@@ -315,7 +368,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.10] - Tailwind CSS Migration
+## [2.10] - 2025-12-09 - Tailwind CSS Migration
 
 ### Added in 2.10
 
@@ -358,7 +411,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.9] - UI Overhaul & Drop Table Recovery
+## [2.9] - 2025-12-08 - UI Overhaul & Drop Table Recovery
 
 ### Added in 2.9
 
@@ -411,7 +464,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.8] - Session Persistence & Aggressive Auto-Tuning
+## [2.8] - 2025-12-08 - Session Persistence & Aggressive Auto-Tuning
 
 ### Added in 2.8
 
@@ -470,7 +523,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.7] - Post-Queries & NVMe Optimization
+## [2.7] - 2025-12-07 - Post-Queries & NVMe Optimization
 
 ### Added in 2.7
 
@@ -520,7 +573,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.6] - INSERT Batching & Statistics Estimation
+## [2.6] - 2025-12-07 - INSERT Batching & Statistics Estimation
 
 ### Added in 2.6
 
@@ -568,7 +621,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.5] - Auto-Tuning & SQL Parser Fixes
+## [2.5] - 2025-12-06 - Auto-Tuning & SQL Parser Fixes
 
 ### Added in 2.5
 
@@ -606,7 +659,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.4] - Session Cleanup & URI Fix
+## [2.4] - 2025-12-06 - Session Cleanup & URI Fix
 
 ### Fixed in 2.4
 
@@ -628,7 +681,7 @@ All notable changes to BigDump are documented in this file.
 
 ---
 
-## [2.3] - Multi-line INSERT Persistence
+## [2.3] - 2025-12-06 - Multi-line INSERT Persistence
 
 ### Added in 2.3
 
@@ -647,7 +700,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.2] - Error Display & Security
+## [2.2] - 2025-12-06 - Error Display & Security
 
 ### Added in 2.2
 
@@ -665,7 +718,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.1] - Drag & Drop Upload
+## [2.1] - 2025-12-06 - Drag & Drop Upload
 
 ### Added in 2.1
 
@@ -693,7 +746,7 @@ Session N+1 starts → restore parser state → continue parsing
 
 ---
 
-## [2.0] - MVC Refactoring
+## [2.0] - 2025-12-06 - MVC Refactoring
 
 ### Added in 2.0
 

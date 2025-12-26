@@ -28,17 +28,28 @@ src/
    - Handles multi-line strings, escaped quotes, SQL delimiters
 
 2. **`src/Models/FileHandler.php`** - Buffered file reading
-   - 64KB internal buffer for reduced system calls
+   - Configurable buffer size: 64KB-256KB based on profile (v2.19)
    - `tell()` accounts for buffered but unconsumed data
    - Supports both normal and gzip files
+   - `setBufferSizeForCategory()`: Adjusts buffer based on file size category
 
 3. **`src/Services/InsertBatcherService.php`** - INSERT query batching
    - Groups consecutive simple INSERTs into multi-value queries
    - `parseSimpleInsert()`: Uses string functions instead of regex
+   - Supports INSERT IGNORE batching (v2.19)
+   - Configurable batch sizes: 2000/5000 based on profile (v2.19)
+   - Adaptive batch sizing based on average row size (v2.19)
 
-4. **`src/Config/Config.php`** - Default configuration
+4. **`src/Config/Config.php`** - Configuration with performance profiles
    - Pre-queries: `autocommit=0`, `unique_checks=0`, `foreign_key_checks=0`
    - Post-queries: Restore settings after import
+   - **Performance Profile System** (v2.19): `conservative` / `aggressive` modes
+   - `getEffectiveProfile()`: Returns validated profile after memory check
+
+5. **`src/Services/AutoTunerService.php`** - Dynamic batch sizing (v2.19)
+   - Profile-aware: multiplier 1.3x, safety margin 70% in aggressive mode
+   - Memory caching (1s TTL) reduces `memory_get_usage()` overhead
+   - System resources cache (60s TTL)
 
 ### Import Flow
 
@@ -67,7 +78,18 @@ When modifying performance-critical code:
 
 ## Testing Changes
 
-No automated tests exist. Manual testing:
+### Automated Tests (v2.19)
+
+```bash
+# Run all feature tests (36 tests)
+php tests/PerformanceProfileTest.php    # 10 tests - Profile system
+php tests/InsertBatcherTest.php         # 7 tests - INSERT batching
+php tests/FileHandlerBufferTest.php     # 7 tests - File I/O buffers
+php tests/AutoTunerProfileTest.php      # 7 tests - AutoTuner profiles
+php tests/IntegrationTest.php           # 5 tests - Integration tests
+```
+
+### Manual Testing
 
 ```bash
 # Syntax check
@@ -96,7 +118,9 @@ Edit `src/Models/SqlParser.php`:
 - Query completion: `isQueryComplete()`
 - Delimiter changes: `isDelimiterCommand()`
 
-### Adjusting buffer sizes
-- File buffer: `src/Models/FileHandler.php` → `$bufferSize`
-- INSERT batch: `src/Config/Config.php` → `insert_batch_size`
-- Query memory limit: `src/Config/Config.php` → `max_query_memory`
+### Adjusting buffer sizes (v2.19)
+- **Performance Profile**: `src/Config/Config.php` → `performance_profile` (`conservative` / `aggressive`)
+- File buffer: `src/Config/Config.php` → `file_buffer_size` (64KB-256KB)
+- INSERT batch: `src/Config/Config.php` → `insert_batch_size` (2000/5000)
+- Max batch bytes: `src/Config/Config.php` → `max_batch_bytes` (16MB/32MB)
+- COMMIT frequency: `src/Config/Config.php` → `commit_frequency` (1/3)

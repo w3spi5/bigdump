@@ -35,6 +35,22 @@ class AutoTunerService
     private array $speedHistory = [];
     private array $memoryHistory = [];
 
+    // Performance profile properties (Task Group 4)
+    private string $effectiveProfile = 'conservative';
+    private bool $profileDowngraded = false;
+    private float $profileMultiplier = 1.0;
+    private float $safetyMargin = 0.8;
+
+    // Memory caching properties (reduces redundant memory_get_usage calls)
+    private ?int $cachedMemoryUsage = null;
+    private float $memoryCacheTime = 0.0;
+    private int $memoryCacheCallCount = 0;
+
+    // Cache TTL constants
+    private const MEMORY_CACHE_TTL = 1.0;          // 1 second TTL for memory cache
+    private const SYSTEM_RESOURCES_TTL = 60.0;    // 60 seconds TTL for system resources
+    private const AGGRESSIVE_MIN_RAM = 268435456; // 256MB minimum for aggressive mode
+
     /**
      * RAM x File Size batch reference table.
      * Values represent initial batch sizes for each RAM/FileCategory combination.
@@ -108,9 +124,11 @@ class AutoTunerService
         $this->config = $config;
         $this->enabled = (bool) $config->get('auto_tuning', true);
         $this->minBatchSize = (int) $config->get('min_batch_size', 10000);
-        $this->maxBatchSize = (int) $config->get('max_batch_size', 1500000);
         $this->currentBatchSize = (int) $config->get('linespersession', 50000);
         $this->fileAwareTuningEnabled = (bool) $config->get('file_aware_tuning', true);
+
+        // Initialize performance profile settings
+        $this->initializeProfileSettings($config);
 
         // Force batch size bypasses all auto-tuning calculations
         $forcedSize = $config->get('force_batch_size', 0);
@@ -118,15 +136,97 @@ class AutoTunerService
             $this->forcedBatchSize = (int) $forcedSize;
             $this->currentBatchSize = $this->forcedBatchSize;
         }
+
+        // Check aggressive mode viability and warn if RAM is low
+        $this->checkAggressiveModeViability();
     }
 
     /**
-     * Get all system resource information
+     * Initialize profile-based settings.
+     *
+     * Applies performance profile adjustments:
+     * - Conservative: 80% safety margin, 1.5M max batch lines, 1.0x multiplier
+     * - Aggressive: 70% safety margin, 2M max batch lines, 1.3x multiplier
+     *
+     * Note: AutoTuner's max_batch_size refers to maximum LINES per session,
+     * NOT the Config's max_batch_size (which is a user-configurable ceiling).
+     * These profile-based maximums are internal AutoTuner limits.
+     */
+    private function initializeProfileSettings(Config $config): void
+    {
+        // Get effective profile from Config (handles validation and downgrade)
+        $this->effectiveProfile = $config->getEffectiveProfile();
+        $this->profileDowngraded = $config->wasProfileDowngraded();
+
+        // Apply profile-based settings with internal maximums
+        // These are AutoTuner's internal ceilings, not user-configurable
+        if ($this->effectiveProfile === 'aggressive') {
+            // Aggressive mode: higher limits and smaller safety margin
+            // Max batch ceiling: 2M lines (vs 1.5M conservative)
+            $this->maxBatchSize = 2000000;
+            $this->profileMultiplier = 1.3;  // +30% batch reference multiplier
+            $this->safetyMargin = 0.7;       // 70% safety margin (vs 80%)
+        } else {
+            // Conservative mode: standard limits
+            // Max batch ceiling: 1.5M lines
+            $this->maxBatchSize = 1500000;
+            $this->profileMultiplier = 1.0;
+            $this->safetyMargin = 0.8;       // 80% safety margin
+        }
+    }
+
+    /**
+     * Check if aggressive mode has sufficient memory headroom.
+     *
+     * Emits a warning if available RAM is below 256MB threshold.
+     * Does not downgrade - just warns about potential issues.
+     */
+    private function checkAggressiveModeViability(): void
+    {
+        if ($this->effectiveProfile !== 'aggressive') {
+            return;
+        }
+
+        // Get system resources (this will populate cache)
+        $resources = $this->getSystemResources();
+        $availableRam = $resources['available_ram'];
+
+        if ($availableRam < self::AGGRESSIVE_MIN_RAM) {
+            $formattedRam = $this->formatBytes($availableRam);
+            $formattedMin = $this->formatBytes(self::AGGRESSIVE_MIN_RAM);
+            error_log(
+                "BigDump: Aggressive mode enabled with low available RAM ({$formattedRam}). " .
+                "Recommended minimum: {$formattedMin}. Performance may be degraded."
+            );
+        }
+    }
+
+    /** @var float Timestamp when system resources were cached */
+    private float $systemResourcesCacheTime = 0.0;
+
+    /**
+     * Get all system resource information with TTL-based caching.
+     *
+     * System resources (OS detection, RAM) are relatively static and expensive to detect.
+     * This method caches results for 60 seconds to avoid redundant OS/RAM detection
+     * within the same PHP request or across rapid consecutive requests.
      */
     public function getSystemResources(): array
     {
+        $now = microtime(true);
+
+        // Check if cached data is still valid (within TTL)
         if ($this->systemResources !== null) {
-            return $this->systemResources;
+            $cacheAge = $now - $this->systemResourcesCacheTime;
+            if ($cacheAge < self::SYSTEM_RESOURCES_TTL) {
+                // Return cached data with cache metadata
+                return array_merge($this->systemResources, [
+                    'cache_time' => $this->systemResourcesCacheTime,
+                    'cache_ttl' => self::SYSTEM_RESOURCES_TTL,
+                    'cache_age' => $cacheAge,
+                ]);
+            }
+            // Cache expired - will refresh below
         }
 
         $os = PHP_OS_FAMILY;
@@ -148,6 +248,8 @@ class AutoTunerService
         $phpMemoryUsage = memory_get_usage(true);
         $phpPeakUsage = memory_get_peak_usage(true);
 
+        // Cache the results with timestamp
+        $this->systemResourcesCacheTime = $now;
         $this->systemResources = [
             'os' => $os,
             'total_ram' => $memory['total'],
@@ -158,7 +260,12 @@ class AutoTunerService
             'detection_method' => $memory['method'] ?? 'unknown',
         ];
 
-        return $this->systemResources;
+        // Return with cache metadata
+        return array_merge($this->systemResources, [
+            'cache_time' => $this->systemResourcesCacheTime,
+            'cache_ttl' => self::SYSTEM_RESOURCES_TTL,
+            'cache_age' => 0.0,
+        ]);
     }
 
     /**
@@ -240,6 +347,10 @@ class AutoTunerService
 
     /**
      * Existing RAM-only calculation (fallback when file analysis unavailable).
+     *
+     * This method is profile-aware:
+     * - Conservative: 80% safety margin, 1.0x multiplier
+     * - Aggressive: 70% safety margin, 1.3x multiplier
      */
     private function calculateRamOnlyBatchSize(): int
     {
@@ -254,15 +365,21 @@ class AutoTunerService
         // Take minimum of both constraints
         $effectiveLimit = min($availableRam, $phpHeadroom);
 
-        // AGGRESSIVE: 80% safety margin for NVMe systems
-        $safeBuffer = (int) ($effectiveLimit * 0.8);
+        // Apply profile-based safety margin (80% conservative, 70% aggressive)
+        $safeBuffer = (int) ($effectiveLimit * $this->safetyMargin);
 
         // Estimate ~150 bytes per SQL line (aggressive for INSERT dumps)
         $bytesPerLine = 150;
         $calculatedLines = (int) floor($safeBuffer / $bytesPerLine);
 
+        // Apply profile multiplier (1.0x conservative, 1.3x aggressive)
+        $calculatedLines = (int) ($calculatedLines * $this->profileMultiplier);
+
         // Lookup profile based on available RAM
         $profileBatch = $this->getProfileBatchSize($availableRam);
+
+        // Apply multiplier to profile batch as well
+        $profileBatch = (int) ($profileBatch * $this->profileMultiplier);
 
         // Take minimum of calculated and profile
         $optimal = min($calculatedLines, $profileBatch);
@@ -277,11 +394,38 @@ class AutoTunerService
     }
 
     /**
-     * Check memory pressure and suggest adjustments
+     * Check memory pressure and suggest adjustments.
+     *
+     * This method uses cached memory values to reduce redundant memory_get_usage() calls.
+     * Memory is cached for 1 second (MEMORY_CACHE_TTL) to balance accuracy with efficiency.
      */
     public function checkMemoryPressure(): array
     {
-        $usage = memory_get_usage(true);
+        $now = microtime(true);
+        $cached = false;
+
+        // Check if cached memory value is still valid
+        if ($this->cachedMemoryUsage !== null) {
+            $cacheAge = $now - $this->memoryCacheTime;
+            if ($cacheAge < self::MEMORY_CACHE_TTL) {
+                // Use cached value
+                $usage = $this->cachedMemoryUsage;
+                $cached = true;
+            } else {
+                // Cache expired - refresh
+                $usage = memory_get_usage(true);
+                $this->cachedMemoryUsage = $usage;
+                $this->memoryCacheTime = $now;
+                $this->memoryCacheCallCount++;
+            }
+        } else {
+            // First call - populate cache
+            $usage = memory_get_usage(true);
+            $this->cachedMemoryUsage = $usage;
+            $this->memoryCacheTime = $now;
+            $this->memoryCacheCallCount++;
+        }
+
         $limit = $this->parseMemoryLimit((string) ini_get('memory_limit'));
         $ratio = $limit > 0 ? $usage / $limit : 0;
 
@@ -332,6 +476,8 @@ class AutoTunerService
             'ratio' => $ratio,
             'percentage' => (int) ($ratio * 100),
             'adjustment' => $adjustment,
+            'cached' => $cached,
+            'memory_call_count' => $this->memoryCacheCallCount,
         ];
     }
 
@@ -363,7 +509,9 @@ class AutoTunerService
     }
 
     /**
-     * Get metrics for UI display
+     * Get metrics for UI display.
+     *
+     * Includes performance profile information for debugging and display.
      */
     public function getMetrics(int $currentLines = 0): array
     {
@@ -397,6 +545,11 @@ class AutoTunerService
             'target_ram_usage' => $this->fileAnalysis?->targetRamUsage,
             'is_bulk_insert' => $this->fileAnalysis?->isBulkInsert ?? false,
             'speed_trend' => $this->getSpeedTrend(),
+            // Performance profile metrics (Task Group 4)
+            'effective_profile' => $this->effectiveProfile,
+            'profile_downgraded' => $this->profileDowngraded,
+            'profile_multiplier' => $this->profileMultiplier,
+            'safety_margin' => $this->safetyMargin,
         ];
     }
 
@@ -436,11 +589,16 @@ class AutoTunerService
     }
 
     /**
-     * Clear cached resources (for re-detection between sessions)
+     * Clear cached resources (for re-detection between sessions).
+     *
+     * Clears both system resources cache and memory usage cache.
      */
     public function clearCache(): void
     {
         $this->systemResources = null;
+        $this->systemResourcesCacheTime = 0.0;
+        $this->cachedMemoryUsage = null;
+        $this->memoryCacheTime = 0.0;
     }
 
     // ========================================================================
