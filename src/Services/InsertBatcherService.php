@@ -17,28 +17,64 @@ namespace BigDump\Services;
  *
  * This provides x10-50 speed improvement for dumps with simple INSERTs
  *
+ * Features (v2.19+):
+ * - Configurable batch size via constructor
+ * - Configurable max_batch_bytes (16MB conservative, 32MB aggressive)
+ * - INSERT IGNORE statement batching support
+ * - Adaptive batch sizing based on average row size
+ * - Extended batch efficiency metrics
+ *
  * @package BigDump\Services
  * @author  w3spi5
  */
 class InsertBatcherService
 {
+    /**
+     * Maximum batch row count
+     */
     private int $batchSize;
+
+    /**
+     * Whether batching is enabled
+     */
     private bool $enabled;
 
-    // Maximum batch size in bytes (16MB - safe for MySQL max_allowed_packet)
-    private int $maxBatchBytes = 16777216;
+    /**
+     * Maximum batch size in bytes (configurable, default 16MB)
+     */
+    private int $maxBatchBytes;
 
     // Current batch state
     private ?string $currentTable = null;
     private ?string $currentPrefix = null;
+    /** @var string[] */
     private array $currentValues = [];
-    private int $batchedCount = 0;
-    private int $executedCount = 0;
     private int $currentBatchBytes = 0;
 
-    public function __construct(int $batchSize = 1000)
+    // Statistics tracking
+    private int $batchedCount = 0;
+    private int $executedCount = 0;
+    private int $totalBytesProcessed = 0;
+
+    // Adaptive sizing: row size tracking
+    private int $rowSizeSampleCount = 0;
+    private int $rowSizeSampleTotal = 0;
+
+    /**
+     * Number of rows to sample for average row size calculation
+     */
+    private const ROW_SIZE_SAMPLE_LIMIT = 100;
+
+    /**
+     * Constructor.
+     *
+     * @param int $batchSize Maximum rows per batch (default 1000, recommend 2000 conservative / 5000 aggressive)
+     * @param int $maxBatchBytes Maximum bytes per batch (default 16MB, max 32MB for aggressive mode)
+     */
+    public function __construct(int $batchSize = 1000, int $maxBatchBytes = 16777216)
     {
         $this->batchSize = $batchSize;
+        $this->maxBatchBytes = $maxBatchBytes;
         $this->enabled = $batchSize > 0;
     }
 
@@ -56,7 +92,7 @@ class InsertBatcherService
 
         $trimmedQuery = trim($query);
 
-        // Try to parse as simple INSERT
+        // Try to parse as simple INSERT (including INSERT IGNORE)
         $parsed = $this->parseSimpleInsert($trimmedQuery);
 
         if ($parsed === null) {
@@ -65,6 +101,9 @@ class InsertBatcherService
             $result['queries'][] = $query;
             return $result;
         }
+
+        // Track row size for adaptive sizing
+        $this->trackRowSize(strlen($parsed['values']));
 
         // It's a simple INSERT - try to batch it
         return $this->addToBatch($parsed['table'], $parsed['prefix'], $parsed['values']);
@@ -95,6 +134,7 @@ class InsertBatcherService
      *
      * Matches: INSERT INTO table VALUES (...)
      * Matches: INSERT INTO table (cols) VALUES (...)
+     * Matches: INSERT IGNORE INTO table VALUES (...)
      * Does NOT match: INSERT ... ON DUPLICATE KEY, INSERT ... SELECT, etc.
      *
      * @return array{table: string, prefix: string, values: string}|null
@@ -109,9 +149,9 @@ class InsertBatcherService
         }
 
         // Quick rejection for complex INSERT types
+        // Note: ON DUPLICATE KEY and SELECT are rejected, but IGNORE is now allowed
         if (
             str_contains($upperQuery, 'ON DUPLICATE') ||
-            str_contains($upperQuery, 'IGNORE') ||
             str_contains($upperQuery, ' SELECT ')
         ) {
             return null;
@@ -134,12 +174,21 @@ class InsertBatcherService
 
         // Extract table name from prefix
         $prefixUpper = strtoupper($prefix);
+
+        // Handle INSERT IGNORE INTO pattern
         $intoPos = strpos($prefixUpper, 'INTO');
         if ($intoPos !== false) {
             $afterInto = ltrim(substr($prefix, $intoPos + 4));
         } else {
-            // INSERT table (no INTO)
-            $afterInto = ltrim(substr($prefix, 6));
+            // INSERT table (no INTO) - handle both INSERT and INSERT IGNORE
+            $ignorePos = strpos($prefixUpper, 'IGNORE');
+            if ($ignorePos !== false) {
+                // "INSERT IGNORE table" pattern
+                $afterInto = ltrim(substr($prefix, $ignorePos + 6));
+            } else {
+                // "INSERT table" pattern
+                $afterInto = ltrim(substr($prefix, 6));
+            }
         }
 
         // Table name is the first word (may include backticks)
@@ -165,6 +214,56 @@ class InsertBatcherService
     }
 
     /**
+     * Track row size for adaptive batch sizing.
+     *
+     * @param int $rowBytes Size of the row values in bytes
+     */
+    private function trackRowSize(int $rowBytes): void
+    {
+        if ($this->rowSizeSampleCount < self::ROW_SIZE_SAMPLE_LIMIT) {
+            $this->rowSizeSampleTotal += $rowBytes;
+            $this->rowSizeSampleCount++;
+        }
+    }
+
+    /**
+     * Calculate effective batch size based on average row size.
+     *
+     * Uses formula: effectiveBatchSize = min(maxBatchSize, maxBatchBytes / avgRowSize)
+     * This prevents memory spikes when rows are larger than expected.
+     *
+     * @return int Effective batch size
+     */
+    private function getEffectiveBatchSize(): int
+    {
+        $avgRowSize = $this->getAverageRowSize();
+
+        if ($avgRowSize <= 0) {
+            return $this->batchSize;
+        }
+
+        // Calculate byte-limited batch size (account for ", " separator = 2 bytes)
+        $byteBasedLimit = (int) floor($this->maxBatchBytes / ($avgRowSize + 2));
+
+        // Return the minimum of configured batch size and byte-based limit
+        return max(1, min($this->batchSize, $byteBasedLimit));
+    }
+
+    /**
+     * Get average row size from samples.
+     *
+     * @return int Average row size in bytes, or 0 if no samples
+     */
+    private function getAverageRowSize(): int
+    {
+        if ($this->rowSizeSampleCount === 0) {
+            return 0;
+        }
+
+        return (int) round($this->rowSizeSampleTotal / $this->rowSizeSampleCount);
+    }
+
+    /**
      * Add parsed INSERT to current batch.
      *
      * @return array{queries: string[], batched: bool}
@@ -183,7 +282,9 @@ class InsertBatcherService
             $needsFlush = true;
         }
 
-        if (count($this->currentValues) >= $this->batchSize) {
+        // Use effective batch size (considers adaptive sizing)
+        $effectiveBatchSize = $this->getEffectiveBatchSize();
+        if (count($this->currentValues) >= $effectiveBatchSize) {
             $needsFlush = true;
         }
 
@@ -204,6 +305,7 @@ class InsertBatcherService
         $this->currentValues[] = $values;
         $this->currentBatchBytes += $valuesBytes + 2; // +2 for ", "
         $this->batchedCount++;
+        $this->totalBytesProcessed += $valuesBytes;
 
         return $result;
     }
@@ -240,22 +342,61 @@ class InsertBatcherService
     }
 
     /**
-     * Get batching statistics.
+     * Get batching statistics with extended efficiency metrics.
      *
-     * @return array{enabled: bool, batch_size: int, batched_inserts: int, executed_queries: int, reduction_ratio: float}
+     * @return array{
+     *     enabled: bool,
+     *     batch_size: int,
+     *     max_batch_bytes: int,
+     *     batched_inserts: int,
+     *     executed_queries: int,
+     *     reduction_ratio: float,
+     *     rows_batched: int,
+     *     queries_executed: int,
+     *     bytes_processed: int,
+     *     avg_rows_per_batch: float,
+     *     batch_efficiency: float,
+     *     avg_row_size: int,
+     *     effective_batch_size: int
+     * }
      */
     public function getStatistics(): array
     {
+        // Calculate reduction ratio
         $ratio = $this->executedCount > 0
             ? round($this->batchedCount / $this->executedCount, 1)
-            : 0;
+            : 0.0;
+
+        // Calculate average rows per batch
+        $avgRowsPerBatch = $this->executedCount > 0
+            ? round($this->batchedCount / $this->executedCount, 1)
+            : 0.0;
+
+        // Calculate batch efficiency (0-1 scale)
+        // Efficiency = 1 - (1 / reduction_ratio), capped at 0.99
+        // A ratio of 1:1 (no batching) = 0% efficiency
+        // A ratio of 10:1 = 90% efficiency
+        $batchEfficiency = $this->batchedCount > 0 && $this->executedCount > 0
+            ? min(0.99, 1 - ($this->executedCount / $this->batchedCount))
+            : 0.0;
 
         return [
+            // Original fields (backward compatible)
             'enabled' => $this->enabled,
             'batch_size' => $this->batchSize,
             'batched_inserts' => $this->batchedCount,
             'executed_queries' => $this->executedCount,
             'reduction_ratio' => $ratio,
+
+            // Extended fields (v2.19+)
+            'max_batch_bytes' => $this->maxBatchBytes,
+            'rows_batched' => $this->batchedCount,
+            'queries_executed' => $this->executedCount,
+            'bytes_processed' => $this->totalBytesProcessed,
+            'avg_rows_per_batch' => $avgRowsPerBatch,
+            'batch_efficiency' => round($batchEfficiency, 3),
+            'avg_row_size' => $this->getAverageRowSize(),
+            'effective_batch_size' => $this->getEffectiveBatchSize(),
         ];
     }
 
@@ -273,5 +414,25 @@ class InsertBatcherService
     public function getBufferCount(): int
     {
         return count($this->currentValues);
+    }
+
+    /**
+     * Get the configured maximum batch bytes.
+     *
+     * @return int Maximum batch bytes
+     */
+    public function getMaxBatchBytes(): int
+    {
+        return $this->maxBatchBytes;
+    }
+
+    /**
+     * Get the configured batch size.
+     *
+     * @return int Batch size
+     */
+    public function getBatchSize(): int
+    {
+        return $this->batchSize;
     }
 }
