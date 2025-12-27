@@ -259,6 +259,9 @@ class BigDumpController
         );
         $session->toSession();
 
+        // Release session lock before redirect to ensure data is written
+        session_write_close();
+
         // Redirect to import page using query parameter
         $scriptUri = $this->request->getScriptUri();
         $this->response->redirect($scriptUri . '?action=import');
@@ -356,6 +359,11 @@ class BigDumpController
             }
         }
 
+        // Release session lock BEFORE rendering to prevent blocking SSE requests
+        // The browser will open SSE connection as soon as it receives the HTML,
+        // and we don't want it to wait for this request to fully complete
+        session_write_close();
+
         $content = $this->view->render('import');
         $this->response->setContent($content);
     }
@@ -440,6 +448,11 @@ class BigDumpController
         // Release session lock BEFORE starting SSE stream
         session_write_close();
 
+        // Disable Apache mod_deflate gzip buffering
+        if (function_exists('apache_setenv')) {
+            apache_setenv('no-gzip', '1');
+        }
+
         // Now we can start SSE (sends headers)
         $sseService = new SseService();
         $sseService->initStream();
@@ -450,7 +463,7 @@ class BigDumpController
 
         if (!$session) {
             $sseService->sendEvent('error', ['message' => 'No active import session']);
-            return;
+            exit; // Must exit to prevent Response::send() corruption
         }
 
         // File-aware auto-tuning: analyze file at start, restore on resume
@@ -550,6 +563,10 @@ class BigDumpController
                 'stats' => $stats,
             ]);
         }
+
+        // Exit to prevent Application::run() from calling Response::send()
+        // which would corrupt the SSE stream with empty content
+        exit;
     }
 
     /**
