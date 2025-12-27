@@ -1,6 +1,6 @@
-# Claude Code
-claude.md
-CLAUDE.md
+# Claude Code - ignore ALL CLAUDE.md files in any directory
+**/claude.md
+**/CLAUDE.md
 agent-os/
 .claude/
 .serena/

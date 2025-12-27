@@ -11,6 +11,11 @@ RewriteRule ^import/start$ index.php?action=start_import [L,QSA]
 RewriteRule ^import/stop$ index.php?action=stop_import [L,QSA]
 RewriteRule ^import/ajax$ index.php?action=ajax_import [L,QSA]
 RewriteRule ^import/sse$ index.php?action=sse_import [L,QSA]
+
+# Disable gzip for SSE requests (prevents buffering)
+SetEnvIf Request_URI "action=sse_import" no-gzip=1
+SetEnvIf Request_URI "import/sse" no-gzip=1
+
 RewriteRule ^import/drop-restart$ index.php?action=drop_restart [L,QSA]
 RewriteRule ^preview$ index.php?action=preview [L,QSA]
 RewriteRule ^files/list$ index.php?action=files_list [L,QSA]

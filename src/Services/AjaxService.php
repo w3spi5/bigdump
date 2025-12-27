@@ -768,6 +768,26 @@ class AjaxService
                 try {
                     var data = JSON.parse(e.data);
                     console.log('SSE: Server error event:', data);
+
+                    // Check for timing issue - session not ready yet
+                    // This can happen if SSE connects before session is fully written
+                    if (data.message && data.message.indexOf('No active import session') !== -1) {
+                        console.log('SSE: Session not ready, will retry...');
+                        reconnectAttempts++;
+                        if (reconnectAttempts < maxReconnectAttempts) {
+                            source.close();
+                            // Exponential backoff: 100ms, 200ms, 400ms, 800ms, 1600ms
+                            var delay = Math.min(100 * Math.pow(2, reconnectAttempts - 1), 2000);
+                            console.log('SSE: Retrying in ' + delay + 'ms (attempt ' + reconnectAttempts + '/' + maxReconnectAttempts + ')');
+                            setTimeout(function() {
+                                createConnection();
+                            }, delay);
+                            return; // Don't display error yet
+                        }
+                        // Max retries exceeded - show error
+                        console.log('SSE: Max retries exceeded, showing error');
+                    }
+
                     smoothing.stop();
                     stopElapsedTimer();
                     // Display error in page with hasCreateTable info

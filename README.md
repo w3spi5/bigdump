@@ -1,8 +1,8 @@
-# BigDump 2.19 - Staggered MySQL Dump Importer
+# BigDump 2.20 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.19-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.20-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
@@ -275,6 +275,55 @@ bigdump/
 ├── LICENSE
 └── README.md
 ```
+
+## How It Works
+
+### Staggered Import (Progress in Steps)
+
+BigDump uses a **staggered import** approach - you'll notice the progress counters increment in steps (every ~5 seconds) rather than continuously. **This is by design:**
+
+- **Avoids PHP timeouts**: Each batch completes within `max_execution_time`
+- **Server breathing room**: Prevents overloading shared hosting environments
+- **Shared hosting compatible**: Works on hosts with strict execution limits
+- **Resume capability**: If interrupted, import can resume from the last batch
+
+The batch size is automatically tuned based on your server's available RAM (see Auto-Tuning section).
+
+### Real-time Progress with SSE
+
+BigDump uses **Server-Sent Events (SSE)** for real-time progress updates:
+- Single persistent HTTP connection (no polling overhead)
+- Progress updates sent after each batch completes
+- Elapsed time counter updates every second
+- Automatic reconnection if connection drops
+
+## Troubleshooting
+
+### SSE "Connecting..." Modal Stuck
+
+If the progress modal stays on "Connecting..." indefinitely but the import actually works (data appears in database), your server is buffering SSE responses.
+
+**Solutions by server type:**
+
+| Server | Configuration File | Fix |
+|--------|-------------------|-----|
+| **Apache + mod_fcgid** | `conf/extra/httpd-fcgid.conf` | Add `FcgidOutputBufferSize 0` |
+| **Apache + mod_proxy_fcgi** | VirtualHost config | Add `flushpackets=on` to ProxyPass |
+| **nginx + PHP-FPM** | `nginx.conf` | Add `proxy_buffering off;` and `fastcgi_buffering off;` |
+| **Laragon (Windows)** | Uses mod_fcgid | Edit `laragon/bin/apache/httpd-2.4.x/conf/extra/httpd-fcgid.conf` |
+
+**Quick diagnostic**: Test with PHP's built-in server:
+```bash
+cd /path/to/bigdump
+php -S localhost:8000
+```
+If the built-in server works but Apache/nginx doesn't, it's definitely a server buffering issue.
+
+### Import Errors
+
+- **"Table already exists"**: Use the "Drop & Restart" button to drop tables and restart
+- **"No active import session"**: Refresh the page and try again (timing issue, auto-retries)
+- **Timeout errors**: Reduce `linespersession` in config or enable `auto_tuning`
 
 ## Security
 

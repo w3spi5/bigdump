@@ -2,6 +2,59 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.20] - 2025-12-27 - SSE Reliability & Session Handling
+
+### Fixed in 2.20
+
+- **SSE Session Locking**: Fixed critical issue where SSE connections could be blocked by PHP session locks
+  - Added `session_write_close()` before rendering import page to release lock early
+  - SSE endpoint now properly releases session lock before streaming
+  - Prevents "Connecting..." modal from staying stuck indefinitely
+
+- **SSE Retry Mechanism**: Added automatic retry with exponential backoff for timing issues
+  - If "No active import session" error occurs, JavaScript retries automatically
+  - Backoff: 100ms → 200ms → 400ms → 800ms → 1600ms (max 5 attempts)
+  - Handles race conditions between page load and SSE connection
+
+- **SSE Output Buffering**: Fixed PHP output buffering order in `SseService`
+  - `ini_set('output_buffering', 'Off')` now called BEFORE `ob_end_clean()`
+  - Prevents PHP from recreating buffers after clearing them
+  - Added ~8KB padding to force Apache/mod_fcgid buffer flush
+
+### Server Configuration Notes
+
+If the "Connecting..." modal stays stuck, check your server configuration:
+
+| Server | Configuration |
+|--------|---------------|
+| **Apache + mod_fcgid** | Add `FcgidOutputBufferSize 0` to disable buffering |
+| **Apache + mod_proxy_fcgi** | Add `ProxyPassReverse` with `flushpackets=on` |
+| **nginx** | Add `proxy_buffering off;` and `fastcgi_buffering off;` |
+| **PHP built-in server** | Works without configuration (`php -S localhost:8000`) |
+
+### Documentation Added in 2.20
+
+- **README.md**: New "How It Works" section explaining:
+  - Staggered import behavior (progress in steps is normal)
+  - SSE real-time progress mechanism
+- **README.md**: Enhanced Troubleshooting section with:
+  - Laragon-specific configuration path
+  - Quick diagnostic command (`php -S`)
+  - Clearer explanations of SSE buffering issues
+
+### Files Modified in 2.20
+
+| File | Change |
+|------|--------|
+| `src/Services/SseService.php` | Fixed output buffering order, added padding |
+| `src/Services/AjaxService.php` | Added SSE retry with exponential backoff |
+| `src/Controllers/BigDumpController.php` | Added `session_write_close()` in import flow |
+| `.htaccess` | Added `SetEnvIf` to disable gzip for SSE requests |
+| `README.md` | Added "How It Works" section, enhanced Troubleshooting |
+| `docs/CHANGELOG.md` | Documented v2.20 changes |
+
+---
+
 ## [2.19] - 2025-12-26 - Performance Profile System
 
 ### Added in 2.19

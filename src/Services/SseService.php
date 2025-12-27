@@ -15,28 +15,22 @@ namespace BigDump\Services;
  */
 class SseService
 {
-    /**
-     * Initialize SSE stream with proper headers.
-     *
-     * Disables output buffering and sets required headers for SSE.
-     * Handles Apache/mod_fcgid, nginx, and other proxies.
-     */
     public function initStream(): void
     {
-        // Disable output buffering at all levels
+        // 1. FIRST: Disable PHP buffering at runtime BEFORE anything else
+        @ini_set('output_buffering', 'Off');
+        @ini_set('zlib.output_compression', 'Off');
+        @ini_set('implicit_flush', '1');
+
+        // 2. THEN: Close ALL existing output buffers
         while (ob_get_level()) {
             ob_end_clean();
         }
 
-        // Disable implicit flush buffering
-        @ini_set('output_buffering', '0');
-        @ini_set('zlib.output_compression', '0');
-        @ini_set('implicit_flush', '1');
-
-        // Enable implicit flush
+        // 3. Enable implicit flush
         ob_implicit_flush(true);
 
-        // SSE headers
+        // 4. NOW send headers (they go directly to client, not buffer)
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache, no-store, must-revalidate');
         header('Pragma: no-cache');
@@ -44,13 +38,17 @@ class SseService
         header('Connection: keep-alive');
         header('X-Accel-Buffering: no'); // Disable nginx buffering
 
-        // Disable PHP timeout for long-running imports
+        // 5. Disable PHP timeout
         set_time_limit(0);
-
-        // Don't ignore user abort - we want to detect disconnections
         ignore_user_abort(false);
 
-        // Send initial connection established event
+        // 6. Send padding to force Apache/mod_fcgid buffer flush (~8KB minimum)
+        // SSE comments (lines starting with ':') are ignored by browsers
+        $padding = str_repeat(": " . str_repeat("X", 2048) . "\n", 4);
+        echo $padding;
+        flush();
+
+        // 7. Send initial connection established event
         $this->sendEvent('connected', ['status' => 'ok', 'time' => time()]);
     }
 
