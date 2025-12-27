@@ -15,11 +15,12 @@ use RuntimeException;
  * - Listing available files
  * - Uploading files
  * - Deleting files
- * - Reading files (normal and gzipped)
+ * - Reading files (normal, gzipped, and bz2 compressed)
  *
  * Improvements over original:
  * - Protection against path traversal attacks
  * - Better gzip file handling
+ * - BZ2 compression support with seek workaround (v2.20+)
  * - Proper BOM handling for UTF-8, UTF-16, UTF-32
  * - Configurable buffer size based on performance profile (v2.19+)
  *
@@ -53,6 +54,12 @@ class FileHandler
     private bool $gzipMode = false;
 
     /**
+     * BZ2 mode
+     * @var bool
+     */
+    private bool $bz2Mode = false;
+
+    /**
      * File size
      * @var int
      */
@@ -63,6 +70,12 @@ class FileHandler
      * @var string
      */
     private string $currentFilename = '';
+
+    /**
+     * Current file path (needed for BZ2 seek workaround)
+     * @var string
+     */
+    private string $currentFilepath = '';
 
     /**
      * Internal read buffer for optimized line reading
@@ -271,6 +284,11 @@ class FileHandler
                 continue;
             }
 
+            // Skip .bz2 files if bz2 extension is not available
+            if ($extension === 'bz2' && !function_exists('bzopen')) {
+                continue;
+            }
+
             $files[] = [
                 'name' => $filename,
                 'size' => filesize($filepath) ?: 0,
@@ -316,6 +334,7 @@ class FileHandler
         return match ($extension) {
             'sql' => 'SQL',
             'gz' => 'GZip',
+            'bz2' => 'BZ2',
             'csv' => 'CSV',
             default => 'Unknown',
         };
@@ -356,7 +375,16 @@ class FileHandler
         if (!$this->config->isExtensionAllowed($extension)) {
             return [
                 'success' => false,
-                'message' => 'File type not allowed. Only .sql, .gz and .csv files are accepted.',
+                'message' => 'File type not allowed. Only .sql, .gz, .bz2 and .csv files are accepted.',
+                'filename' => '',
+            ];
+        }
+
+        // Check for bz2 extension availability
+        if ($extension === 'bz2' && !function_exists('bzopen')) {
+            return [
+                'success' => false,
+                'message' => 'BZip2 files require the PHP bz2 extension which is not installed.',
                 'filename' => '',
             ];
         }
@@ -541,12 +569,18 @@ class FileHandler
         }
 
         $this->gzipMode = ($extension === 'gz');
+        $this->bz2Mode = ($extension === 'bz2');
 
         if ($this->gzipMode) {
             if (!function_exists('gzopen')) {
                 throw new RuntimeException('GZip support not available in PHP');
             }
             $this->fileHandle = @gzopen($filepath, 'rb');
+        } elseif ($this->bz2Mode) {
+            if (!function_exists('bzopen')) {
+                throw new RuntimeException('BZip2 files require the PHP bz2 extension which is not installed');
+            }
+            $this->fileHandle = @bzopen($filepath, 'r');
         } else {
             $this->fileHandle = @fopen($filepath, 'rb');
         }
@@ -557,12 +591,13 @@ class FileHandler
         }
 
         $this->currentFilename = $cleanName;
+        $this->currentFilepath = $filepath;
 
         // Determine file size
-        if (!$this->gzipMode) {
+        if (!$this->gzipMode && !$this->bz2Mode) {
             $this->fileSize = filesize($filepath) ?: 0;
         } else {
-            // For gzip files, we cannot know the uncompressed size
+            // For gzip/bz2 files, we cannot know the uncompressed size
             // without reading the entire file, so leave it at 0
             $this->fileSize = 0;
         }
@@ -573,10 +608,15 @@ class FileHandler
     /**
      * Sets file pointer position
      *
+     * For BZ2 files, this uses a workaround that re-reads from the start
+     * to the target position, as BZ2 streams don't support random seek.
+     * This is O(n) with the offset position but preserves resume functionality.
+     *
      * @param int $offset Position in bytes
+     * @param callable|null $progressCallback Optional callback for seek progress (receives bytes read)
      * @return bool True if seek succeeds
      */
-    public function seek(int $offset): bool
+    public function seek(int $offset, ?callable $progressCallback = null): bool
     {
         if ($this->fileHandle === null) {
             return false;
@@ -589,7 +629,72 @@ class FileHandler
             return @gzseek($this->fileHandle, $offset) === 0;
         }
 
+        if ($this->bz2Mode) {
+            return $this->seekBz2($offset, $progressCallback);
+        }
+
         return @fseek($this->fileHandle, $offset) === 0;
+    }
+
+    /**
+     * BZ2 seek workaround - re-reads from start to target position
+     *
+     * BZ2 streams don't support random seek like gzip's gzseek().
+     * This method implements seek by:
+     * 1. Closing the current stream
+     * 2. Reopening the file from the beginning
+     * 3. Reading and discarding bytes until reaching the target position
+     *
+     * Performance note: Time scales linearly O(n) with the offset position.
+     *
+     * @param int $offset Target position in bytes
+     * @param callable|null $progressCallback Optional callback for seek progress
+     * @return bool True if seek succeeds
+     */
+    private function seekBz2(int $offset, ?callable $progressCallback = null): bool
+    {
+        if ($offset === 0) {
+            // Seeking to start: close and reopen
+            @bzclose($this->fileHandle);
+            $this->fileHandle = @bzopen($this->currentFilepath, 'r');
+            return $this->fileHandle !== false;
+        }
+
+        // Close current stream
+        @bzclose($this->fileHandle);
+
+        // Reopen from start
+        $this->fileHandle = @bzopen($this->currentFilepath, 'r');
+
+        if ($this->fileHandle === false) {
+            $this->fileHandle = null;
+            return false;
+        }
+
+        // Read and discard bytes until we reach the target offset
+        $bytesRead = 0;
+        $remaining = $offset;
+
+        while ($remaining > 0) {
+            $chunkSize = min($remaining, $this->bufferSize);
+            $chunk = @bzread($this->fileHandle, $chunkSize);
+
+            if ($chunk === false || $chunk === '') {
+                // Reached EOF before target position
+                return false;
+            }
+
+            $actualRead = strlen($chunk);
+            $bytesRead += $actualRead;
+            $remaining -= $actualRead;
+
+            // Call progress callback if provided
+            if ($progressCallback !== null) {
+                $progressCallback($bytesRead, $offset);
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -607,6 +712,12 @@ class FileHandler
 
         if ($this->gzipMode) {
             $pos = @gztell($this->fileHandle) ?: 0;
+        } elseif ($this->bz2Mode) {
+            // BZ2 doesn't have a tell function, so we track position manually
+            // This is calculated based on how much we've read minus buffer
+            // Note: This requires tracking position externally for accurate results
+            // For now, we return 0 as BZ2 position tracking is handled by ImportService
+            $pos = 0;
         } else {
             $pos = @ftell($this->fileHandle) ?: 0;
         }
@@ -638,6 +749,9 @@ class FileHandler
             if ($this->gzipMode) {
                 $chunk = @gzread($this->fileHandle, $this->bufferSize);
                 $isEof = @gzeof($this->fileHandle);
+            } elseif ($this->bz2Mode) {
+                $chunk = @bzread($this->fileHandle, $this->bufferSize);
+                $isEof = ($chunk === false || $chunk === '');
             } else {
                 $chunk = @fread($this->fileHandle, $this->bufferSize);
                 $isEof = @feof($this->fileHandle);
@@ -696,6 +810,18 @@ class FileHandler
             return @gzeof($this->fileHandle);
         }
 
+        if ($this->bz2Mode) {
+            // BZ2 doesn't have a dedicated EOF function
+            // We check by attempting a small read
+            $peek = @bzread($this->fileHandle, 1);
+            if ($peek === false || $peek === '') {
+                return true;
+            }
+            // Put the byte back into buffer
+            $this->readBuffer = $peek;
+            return false;
+        }
+
         return @feof($this->fileHandle);
     }
 
@@ -709,6 +835,8 @@ class FileHandler
         if ($this->fileHandle !== null) {
             if ($this->gzipMode) {
                 @gzclose($this->fileHandle);
+            } elseif ($this->bz2Mode) {
+                @bzclose($this->fileHandle);
             } else {
                 @fclose($this->fileHandle);
             }
@@ -716,8 +844,10 @@ class FileHandler
         }
 
         $this->gzipMode = false;
+        $this->bz2Mode = false;
         $this->fileSize = 0;
         $this->currentFilename = '';
+        $this->currentFilepath = '';
         $this->readBuffer = '';
     }
 
@@ -762,7 +892,7 @@ class FileHandler
     /**
      * Retrieves file size
      *
-     * @return int Size in bytes (0 for gzip files)
+     * @return int Size in bytes (0 for gzip/bz2 files)
      */
     public function getFileSize(): int
     {
@@ -777,6 +907,16 @@ class FileHandler
     public function isGzipMode(): bool
     {
         return $this->gzipMode;
+    }
+
+    /**
+     * Checks if file is in BZ2 mode
+     *
+     * @return bool True if BZ2 mode
+     */
+    public function isBz2Mode(): bool
+    {
+        return $this->bz2Mode;
     }
 
     /**

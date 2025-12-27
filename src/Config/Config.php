@@ -36,6 +36,12 @@ class Config
     private bool $profileDowngraded = false;
 
     /**
+     * Cached BZ2 extension availability check result
+     * @var bool|null
+     */
+    private static ?bool $bz2Supported = null;
+
+    /**
      * Profile-specific default values
      * @var array<string, array<string, mixed>>
      */
@@ -149,8 +155,8 @@ class Config
         // Read chunk size
         'data_chunk_length' => 16384,
 
-        // Allowed file extensions
-        'allowed_extensions' => ['sql', 'gz', 'csv'],
+        // Allowed file extensions (v2.20+: includes bz2)
+        'allowed_extensions' => ['sql', 'gz', 'bz2', 'csv'],
 
         // Maximum memory size for a query (in bytes)
         'max_query_memory' => 10485760, // 10 MB
@@ -581,5 +587,32 @@ class Config
     {
         $extension = strtolower($extension);
         return in_array($extension, $this->values['allowed_extensions'], true);
+    }
+
+    /**
+     * Checks if BZ2 compression is supported by PHP
+     *
+     * This method caches the result of function_exists('bzopen')
+     * for repeated checks during a request.
+     *
+     * @return bool True if PHP bz2 extension is available
+     */
+    public static function isBz2Supported(): bool
+    {
+        if (self::$bz2Supported === null) {
+            self::$bz2Supported = function_exists('bzopen');
+        }
+
+        return self::$bz2Supported;
+    }
+
+    /**
+     * Resets the cached BZ2 support check (for testing purposes)
+     *
+     * @return void
+     */
+    public static function resetBz2SupportCache(): void
+    {
+        self::$bz2Supported = null;
     }
 }
