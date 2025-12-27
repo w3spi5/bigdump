@@ -16,12 +16,17 @@
  * @var string $dbServer Database server
  * @var bool $testMode Test mode
  */
+
+// Check compression extension availability
+$gzipSupported = function_exists('gzopen');
+$bz2Supported = function_exists('bzopen');
 ?>
 
 <!-- Configuration for JavaScript modules -->
 <script id="bigdump-config"
         data-db-configured="<?= json_encode($dbConfigured && $connectionInfo && $connectionInfo['success']) ?>"
-        data-gzip-supported="<?= json_encode(function_exists('gzopen')) ?>">
+        data-gzip-supported="<?= json_encode($gzipSupported) ?>"
+        data-bz2-supported="<?= json_encode($bz2Supported) ?>">
 </script>
 
 <?php if ($testMode): ?>
@@ -84,7 +89,7 @@
     <!-- Empty state message (shown when no files) -->
     <div id="noFilesMessage" class="alert alert-warning <?= empty($files) ? '' : 'hidden' ?>">
         No dump files found in <code class="code"><?= $view->e($uploadDir) ?></code><br>
-        Upload a .sql, .gz or .csv file using the form below, or via FTP.
+        Upload a .sql, .gz<?= $bz2Supported ? ', .bz2' : '' ?> or .csv file using the form below, or via FTP.
     </div>
 
     <!-- Files table (always rendered, hidden when empty) -->
@@ -110,6 +115,7 @@
                         $badgeClass = match($file['type']) {
                             'SQL' => 'badge badge-blue',
                             'GZip' => 'badge badge-purple',
+                            'BZ2' => 'badge badge-purple',
                             'CSV' => 'badge badge-green',
                             default => 'badge badge-blue'
                         };
@@ -118,7 +124,19 @@
                     </td>
                     <td class="text-center">
                         <?php if ($dbConfigured && $connectionInfo && $connectionInfo['success']): ?>
-                            <?php if ($file['type'] !== 'GZip' || function_exists('gzopen')): ?>
+                            <?php
+                            // Check if compression format is supported
+                            $compressionSupported = true;
+                            $compressionType = null;
+                            if ($file['type'] === 'GZip') {
+                                $compressionSupported = $gzipSupported;
+                                $compressionType = 'GZip';
+                            } elseif ($file['type'] === 'BZ2') {
+                                $compressionSupported = $bz2Supported;
+                                $compressionType = 'BZ2';
+                            }
+                            ?>
+                            <?php if ($compressionSupported): ?>
                                 <button type="button"
                                         onclick="previewFile('<?= $view->escapeJs($file['name']) ?>')"
                                         class="btn btn-icon btn-purple"
@@ -130,7 +148,7 @@
                                     <button type="submit" class="btn btn-green">Import</button>
                                 </form>
                             <?php else: ?>
-                                <span class="text-muted">GZip not supported</span>
+                                <span class="text-muted"><?= $compressionType ?> not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
                         <a href="<?= $view->url(['delete' => $file['name']]) ?>"
@@ -155,9 +173,26 @@
             Set permissions to 755 or 777, or upload files via FTP.
         </div>
     <?php else: ?>
+        <?php
+        // Build allowed types string
+        $allowedTypesArray = ['.sql', '.gz'];
+        if ($bz2Supported) {
+            $allowedTypesArray[] = '.bz2';
+        }
+        $allowedTypesArray[] = '.csv';
+        $allowedTypesStr = implode(', ', $allowedTypesArray);
+
+        // Build accept attribute value
+        $acceptTypesArray = ['.sql', '.gz'];
+        if ($bz2Supported) {
+            $acceptTypesArray[] = '.bz2';
+        }
+        $acceptTypesArray[] = '.csv';
+        $acceptTypesStr = implode(',', $acceptTypesArray);
+        ?>
         <p class="text-muted mb-3">
             Maximum file size: <strong><?= $view->formatBytes($uploadMaxSize) ?></strong> &bull;
-            Allowed types: <strong>.sql, .gz, .csv</strong><br>
+            Allowed types: <strong><?= $allowedTypesStr ?></strong><br>
             For larger files, use FTP to upload directly to <code class="code"><?= $view->e($uploadDir) ?></code>
         </p>
 
@@ -173,12 +208,12 @@
                     <strong>Click to upload</strong> or drag and drop
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
-                    SQL, GZip or CSV files up to <?= $view->formatBytes($uploadMaxSize) ?>
+                    SQL, GZip<?= $bz2Supported ? ', BZ2' : '' ?> or CSV files up to <?= $view->formatBytes($uploadMaxSize) ?>
                 </div>
                 <input type="file"
                        class="hidden"
                        id="fileInput"
-                       accept=".sql,.gz,.csv"
+                       accept="<?= $acceptTypesStr ?>"
                        multiple>
             </div>
 
