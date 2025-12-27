@@ -1,8 +1,8 @@
-# BigDump 2.22 - Staggered MySQL Dump Importer
+# BigDump 2.20 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.22-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.20-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
@@ -16,8 +16,7 @@ See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 ## Features
 
 - **Staggered Import**: Imports dumps in sessions to bypass timeout limits
-- **Multi-format Support**: `.sql`, `.gz` (gzip), `.bz2` (bzip2), and `.csv` files
-- **CLI Optimizer**: Standalone command-line tool to optimize SQL dumps with INSERT batching
+- **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
 - **SSE Streaming**: Real-time progress with Server-Sent Events and elapsed timer
 - **SQL Preview**: Preview file contents and queries before importing
 - **Import History**: Track all import operations with statistics
@@ -87,70 +86,6 @@ For dedicated servers with 128MB+ memory, providing +20-30% throughput improveme
 
 **Note:** Aggressive mode automatically falls back to conservative if PHP `memory_limit` is below 128MB.
 
-## CLI SQL Optimizer (v2.22)
-
-BigDump includes a **standalone CLI tool** for optimizing SQL dump files without requiring a database connection. It rewrites dumps with INSERT batching for faster imports.
-
-### Basic Usage
-
-```bash
-php cli.php <input-file> --output <output-file> [options]
-```
-
-### Examples
-
-```bash
-# Basic optimization
-php cli.php dump.sql -o optimized.sql
-
-# With gzip compressed input
-php cli.php dump.sql.gz --output optimized.sql --batch-size=5000
-
-# Aggressive profile with force overwrite
-php cli.php backup.sql.bz2 -o backup_batched.sql --profile=aggressive -f
-```
-
-### CLI Options
-
-| Option | Description |
-|--------|-------------|
-| `-o, --output <file>` | Output file path (required) |
-| `--batch-size=<n>` | INSERT batch size (default: profile-based) |
-| `--profile=<name>` | Performance profile: `conservative` or `aggressive` |
-| `-f, --force` | Overwrite output file if it exists |
-| `-h, --help` | Display help message |
-
-### CLI Profile Defaults
-
-| Profile | Batch Size | Max Batch Bytes |
-|---------|------------|-----------------|
-| conservative | 2,000 | 16MB |
-| aggressive | 5,000 | 32MB |
-
-### What It Does
-
-The CLI optimizer transforms individual INSERT statements into batched multi-value INSERTs:
-
-**Before:**
-```sql
-INSERT INTO users VALUES (1, 'Alice');
-INSERT INTO users VALUES (2, 'Bob');
-INSERT INTO users VALUES (3, 'Charlie');
-```
-
-**After:**
-```sql
-INSERT INTO users VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
-```
-
-This can provide **10-50x speedup** when importing the optimized file.
-
-### Supported Input Formats
-
-- `.sql` - Plain SQL files
-- `.sql.gz` - Gzip compressed SQL
-- `.sql.bz2` - Bzip2 compressed SQL
-
 ## Requirements
 
 - PHP 8.1 or higher
@@ -160,16 +95,16 @@ This can provide **10-50x speedup** when importing the optimized file.
 
 ## Installation
 
-### Option 1: Download ZIP (Recommended for Shared Hosting)
-
-1. **Download** the latest release from GitHub:
-   - Go to [Releases](https://github.com/w3spi5/bigdump/releases)
-   - Download the ZIP file of the latest version
-   - Extract and upload the `bigdump` folder to your web server via FTP or your hosting's File Manager
+1. **Download** the project to your web server:
+   ```bash
+   git clone https://github.com/w3spi5/bigdump.git
+   ```
 
 2. **Configure** the database:
-   - Copy `config/config.example.php` to `config/config.php`
-   - Edit `config/config.php` with your database credentials:
+   ```bash
+   cp config/config.example.php config/config.php
+   ```
+   Then edit `config/config.php` with your database credentials:
    ```php
    return [
        'db_server' => 'localhost',
@@ -180,26 +115,15 @@ This can provide **10-50x speedup** when importing the optimized file.
    ];
    ```
 
-3. **Set permissions** (if needed):
-   - Ensure the `uploads/` directory is writable (755 or 775)
-   - Most hosting control panels allow this via File Manager → Permissions
+3. **Set permissions**:
+   ```bash
+   chmod 755 uploads/
+   ```
 
 4. **Access** BigDump via your browser:
    ```
    http://your-site.com/bigdump/
    ```
-
-### Option 2: Git Clone (For Developers with Terminal Access)
-
-```bash
-git clone https://github.com/w3spi5/bigdump.git
-cd bigdump
-cp config/config.example.php config/config.php
-# Edit config/config.php with your credentials
-chmod 755 uploads/
-```
-
-> **Note:** If you have SSH access with `mysql` CLI available, you can import dumps directly with `mysql -u user -p database < dump.sql`. BigDump is specifically designed for environments where this isn't possible (shared hosting with only phpMyAdmin/web access).
 
 ## Configuration
 
@@ -302,8 +226,7 @@ Pre-queries disable constraints for speed; post-queries restore them automatical
 bigdump/
 ├── config/
 │   └── config.php
-├── index.php              # Web entry point
-├── cli.php                # CLI optimizer entry point
+├── index.php              # Entry point
 ├── assets/
 │   ├── dist/              # Compiled assets (auto-generated)
 │   │   ├── app.min.css
@@ -331,9 +254,6 @@ bigdump/
 │   └── Services/
 │       ├── AjaxService.php
 │       ├── AutoTunerService.php
-│       ├── CliFileReader.php      # CLI file reading
-│       ├── CliOptimizerService.php # CLI orchestration
-│       ├── CliSqlParser.php       # CLI SQL parsing
 │       ├── ImportService.php
 │       ├── InsertBatcherService.php
 │       └── SseService.php
@@ -343,9 +263,6 @@ bigdump/
 │   ├── home.php
 │   ├── import.php
 │   └── layout.php
-├── tests/                 # Test suite
-│   ├── Cli*.php           # CLI tests (7 files)
-│   └── *.php              # Other tests
 ├── uploads/
 ├── scripts/
 │   └── generate-icons.php # SVG sprite generator
