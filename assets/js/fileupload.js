@@ -12,12 +12,27 @@
     var fileUploadEl = document.getElementById('fileUpload');
     if (!fileUploadEl) return;
 
+    // Read BZ2 support from bigdump-config element
+    var configEl = document.getElementById('bigdump-config');
+    var bz2Supported = false;
+    if (configEl && configEl.dataset.bz2Supported !== undefined) {
+        bz2Supported = configEl.dataset.bz2Supported === 'true';
+    }
+
+    // Build allowed types array based on extension support
+    var allowedTypes = ['sql', 'gz'];
+    if (bz2Supported) {
+        allowedTypes.push('bz2');
+    }
+    allowedTypes.push('csv');
+
     // Read configuration from data attributes
     var CONFIG = {
         maxFileSize: parseInt(fileUploadEl.dataset.maxFileSize, 10) || 0,
         maxConcurrent: 2,
-        allowedTypes: ['sql', 'gz', 'csv'],
-        uploadUrl: fileUploadEl.dataset.uploadUrl || ''
+        allowedTypes: allowedTypes,
+        uploadUrl: fileUploadEl.dataset.uploadUrl || '',
+        bz2Supported: bz2Supported
     };
 
     // State
@@ -81,6 +96,11 @@
     // Validate file
     function validateFile(file) {
         var ext = getExtension(file.name);
+
+        // Special error message for .bz2 when extension not supported
+        if (ext === 'bz2' && !CONFIG.bz2Supported) {
+            return { valid: false, error: 'BZ2 files require the PHP bz2 extension which is not installed on the server' };
+        }
 
         if (CONFIG.allowedTypes.indexOf(ext) === -1) {
             return { valid: false, error: 'Invalid file type. Allowed: ' + CONFIG.allowedTypes.join(', ') };

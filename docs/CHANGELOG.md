@@ -2,6 +2,88 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.21] - 2025-12-27 - BZ2 Compression Support
+
+### Added in 2.21
+
+- **BZ2 (bzip2) Compressed File Support**: Import `.bz2` and `.sql.bz2` files alongside existing `.gz` support
+  - Extension-based detection using case-insensitive matching
+  - Uses PHP's `bzopen()`, `bzread()`, `bzclose()` functions
+  - Graceful fallback when PHP ext-bz2 is not installed
+  - Purple "BZ2" badge in file listing (same color as GZip)
+
+- **BZ2 Seek Workaround (ADR-001)**: Full resume functionality for interrupted BZ2 imports
+  - PHP's bz2 extension lacks `bzseek()` unlike gzip's `gzseek()`
+  - Implemented re-read strategy: close stream → reopen → read to target position
+  - Optional progress callback for seek status display
+  - Trade-off: O(n) resume time, acceptable for large files typically FTP-uploaded
+
+- **BZ2 Extension Availability Check**: Conditional support based on PHP configuration
+  - New `Config::isBz2Supported()` static method with result caching
+  - `.bz2` files hidden from listing when ext-bz2 unavailable
+  - Frontend validation via `data-bz2-supported` attribute
+  - Custom error message: "BZ2 files require the PHP bz2 extension which is not installed"
+
+- **BZ2 Test Suite**: Comprehensive test coverage for BZ2 functionality
+  - `FileHandlerBz2Test.php`: 6 tests for file handling
+  - `ConfigBz2Test.php`: 4 tests for configuration
+  - `FrontendBz2Test.php`: 4 tests for UI/JavaScript
+  - `Bz2IntegrationTest.php`: 10 tests for integration and edge cases
+  - Test fixture: `tests/fixtures/test_bz2_import.sql.bz2`
+
+### Changed in 2.21
+
+- **allowed_extensions**: Updated from `['sql', 'gz', 'csv']` to `['sql', 'gz', 'bz2', 'csv']`
+- **FileHandler**: Added `$bz2Mode` property mirroring `$gzipMode` pattern
+- **home.php**: Added `data-bz2-supported` attribute and BZ2 badge case
+- **fileupload.js**: Conditional BZ2 validation based on extension availability
+
+### Technical Notes
+
+**ADR-001: BZ2 Seek Workaround**
+
+The BZ2 resume implementation differs from GZip due to PHP limitations:
+
+```php
+// GZip: Direct seek supported
+gzseek($handle, $offset);
+
+// BZ2: Re-read strategy required
+bzclose($handle);
+$handle = bzopen($filepath, 'r');
+while ($bytesRead < $offset) {
+    $chunk = bzread($handle, min($remaining, $bufferSize));
+    $bytesRead += strlen($chunk);
+}
+```
+
+**Performance Implications:**
+- Resume from 500MB position in 1GB file: ~500MB re-read required
+- Acceptable trade-off: preserves BigDump's critical resume feature
+- Large BZ2 files typically uploaded via FTP, not browser
+
+### Files Modified in 2.21
+
+| File | Change |
+|------|--------|
+| `src/Models/FileHandler.php` | Added $bz2Mode, isBz2Mode(), seekBz2() workaround, bzopen/bzread/bzclose |
+| `src/Config/Config.php` | Added 'bz2' to allowed_extensions, isBz2Supported() with caching |
+| `templates/home.php` | Added data-bz2-supported, BZ2 badge with purple color |
+| `assets/js/fileupload.js` | Conditional bz2 validation, custom error message |
+| `assets/src/js/fileupload.js` | Source version with same changes |
+
+### Test Files Created in 2.21
+
+| File | Purpose |
+|------|---------|
+| `tests/FileHandlerBz2Test.php` | BZ2 file handling tests |
+| `tests/ConfigBz2Test.php` | Config and extension tests |
+| `tests/FrontendBz2Test.php` | Frontend functionality tests |
+| `tests/Bz2IntegrationTest.php` | Integration and edge case tests |
+| `tests/fixtures/test_bz2_import.sql.bz2` | Compressed SQL test fixture |
+
+---
+
 ## [2.20] - 2025-12-27 - SSE Reliability & Session Handling
 
 ### Fixed in 2.20
