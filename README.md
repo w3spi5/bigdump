@@ -1,25 +1,22 @@
-# BigDump 2.23 - Staggered MySQL Dump Importer
+# BigDump 2.20 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.23-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.20-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
-[![PHAR](https://img.shields.io/badge/PHAR-single--file-purple.svg)](https://github.com/w3spi5/bigdump/releases)
 
 <p align="center">
   <img src="docs/logo.png" alt="BigDump Logo" width="400">
 </p>
 
-BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. Originally created by Alexey Ozerov in 2003, this major version 2 is a complete refactoring using object-oriented MVC architecture.
+BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. This major version 2 is a complete refactoring using object-oriented MVC architecture.
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
+See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
 
 ## Features
 
-- **Single-File PHAR**: Download one file, upload to server, done — like Adminer
 - **Staggered Import**: Imports dumps in sessions to bypass timeout limits
-- **Multi-format Support**: `.sql`, `.gz` (gzip), `.bz2` (bzip2), and `.csv` files
-- **CLI Optimizer**: Standalone command-line tool to optimize SQL dumps with INSERT batching
+- **Multi-format Support**: `.sql`, `.gz` (gzip), and `.csv` files
 - **SSE Streaming**: Real-time progress with Server-Sent Events and elapsed timer
 - **SQL Preview**: Preview file contents and queries before importing
 - **Import History**: Track all import operations with statistics
@@ -89,111 +86,6 @@ For dedicated servers with 128MB+ memory, providing +20-30% throughput improveme
 
 **Note:** Aggressive mode automatically falls back to conservative if PHP `memory_limit` is below 128MB.
 
-## CLI SQL Optimizer (v2.22)
-
-BigDump includes a **standalone CLI tool** for optimizing SQL dump files without requiring a database connection. It rewrites dumps with INSERT batching for faster imports.
-
-### Basic Usage
-
-```bash
-php cli.php <input-file> --output <output-file> [options]
-```
-
-### Examples
-
-```bash
-# Basic optimization
-php cli.php dump.sql -o optimized.sql
-
-# With gzip compressed input
-php cli.php dump.sql.gz --output optimized.sql --batch-size=5000
-
-# Aggressive profile with force overwrite
-php cli.php backup.sql.bz2 -o backup_batched.sql --profile=aggressive -f
-```
-
-### CLI Options
-
-| Option | Description |
-|--------|-------------|
-| `-o, --output <file>` | Output file path (required) |
-| `--batch-size=<n>` | INSERT batch size (default: profile-based) |
-| `--profile=<name>` | Performance profile: `conservative` or `aggressive` |
-| `-f, --force` | Overwrite output file if it exists |
-| `-h, --help` | Display help message |
-
-### CLI Profile Defaults
-
-| Profile | Batch Size | Max Batch Bytes |
-|---------|------------|-----------------|
-| conservative | 2,000 | 16MB |
-| aggressive | 5,000 | 32MB |
-
-### What It Does
-
-The CLI optimizer transforms individual INSERT statements into batched multi-value INSERTs:
-
-**Before:**
-```sql
-INSERT INTO users VALUES (1, 'Alice');
-INSERT INTO users VALUES (2, 'Bob');
-INSERT INTO users VALUES (3, 'Charlie');
-```
-
-**After:**
-```sql
-INSERT INTO users VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');
-```
-
-This can provide **10-50x speedup** when importing the optimized file.
-
-### Supported Input Formats
-
-- `.sql` - Plain SQL files
-- `.sql.gz` - Gzip compressed SQL
-- `.sql.bz2` - Bzip2 compressed SQL
-
-## PHAR Distribution (v2.23) — Easiest Install
-
-Download `bigdump.phar` from [Releases](https://github.com/w3spi5/bigdump/releases) and upload to your server. That's it!
-
-### Quick Start
-
-1. **Download** `bigdump.phar` and `bigdump-config.example.php` from releases
-2. **Upload** both files to your server
-3. **Rename** `bigdump-config.example.php` → `bigdump-config.php`
-4. **Edit** `bigdump-config.php` with your database credentials
-5. **Access** `https://yoursite.com/bigdump.phar` in your browser
-
-### PHAR Features
-
-- **Zero installation**: Single file contains everything (PHP + CSS + JS + icons)
-- **Web + CLI**: Same file works in browser and command line
-- **External config**: Edit `bigdump-config.php` next to the PHAR
-- **~478 KB**: Compact, fast to upload
-
-### PHAR CLI Mode
-
-```bash
-# Check version
-php bigdump.phar --version
-
-# Optimize SQL dump
-php bigdump.phar dump.sql -o optimized.sql
-
-# With options
-php bigdump.phar dump.sql.gz -o optimized.sql --profile=aggressive
-```
-
-### Build PHAR Locally
-
-```bash
-php -d phar.readonly=0 build/build-phar.php
-# Output: dist/bigdump.phar
-```
-
----
-
 ## Requirements
 
 - PHP 8.1 or higher
@@ -201,7 +93,7 @@ php -d phar.readonly=0 build/build-phar.php
 - MySQL/MariaDB server
 - Write permissions on the `uploads/` directory
 
-## Installation (Traditional)
+## Installation
 
 1. **Download** the project to your web server:
    ```bash
@@ -334,14 +226,7 @@ Pre-queries disable constraints for speed; post-queries restore them automatical
 bigdump/
 ├── config/
 │   └── config.php
-├── index.php              # Web entry point
-├── cli.php                # CLI optimizer entry point
-├── build/                 # PHAR build scripts
-│   ├── build-phar.php     # Main build script
-│   └── stubs/             # Entry point stubs
-├── dist/                  # Build output (gitignored)
-│   ├── bigdump.phar
-│   └── bigdump-config.example.php
+├── index.php              # Entry point
 ├── assets/
 │   ├── dist/              # Compiled assets (auto-generated)
 │   │   ├── app.min.css
@@ -357,7 +242,6 @@ bigdump/
 │   ├── Controllers/BigDumpController.php
 │   ├── Core/
 │   │   ├── Application.php
-│   │   ├── PharContext.php    # PHAR detection utilities
 │   │   ├── Request.php
 │   │   ├── Response.php
 │   │   ├── Router.php
@@ -370,9 +254,6 @@ bigdump/
 │   └── Services/
 │       ├── AjaxService.php
 │       ├── AutoTunerService.php
-│       ├── CliFileReader.php      # CLI file reading
-│       ├── CliOptimizerService.php # CLI orchestration
-│       ├── CliSqlParser.php       # CLI SQL parsing
 │       ├── ImportService.php
 │       ├── InsertBatcherService.php
 │       └── SseService.php
@@ -381,22 +262,16 @@ bigdump/
 │   ├── error_bootstrap.php
 │   ├── home.php
 │   ├── import.php
-│   ├── layout.php
-│   └── layout_phar.php        # PHAR layout with inlined assets
-├── tests/                 # Test suite
-│   ├── Cli*.php           # CLI tests (7 files)
-│   ├── Phar*.php          # PHAR tests (4 files)
-│   └── *.php              # Other tests
+│   └── layout.php
 ├── uploads/
 ├── scripts/
 │   └── generate-icons.php # SVG sprite generator
 ├── .github/
 │   └── workflows/
-│       ├── build-assets.yml  # CI asset pipeline
-│       └── build-phar.yml    # PHAR build & release
+│       └── build-assets.yml  # CI asset pipeline
 ├── docs/
+│   ├── CHANGELOG.md
 │   └── logo.png
-├── CHANGELOG.md
 ├── LICENSE
 └── README.md
 ```
@@ -444,20 +319,6 @@ php -S localhost:8000
 ```
 If the built-in server works but Apache/nginx doesn't, it's definitely a server buffering issue.
 
-### Upload Errors (HTTP 500 for Large Files)
-
-If uploading large files (>500MB) fails with HTTP 500 error but smaller files work:
-
-| Server | Configuration | Fix |
-|--------|--------------|-----|
-| **Apache + mod_fcgid** | `httpd-fcgid.conf` | Add `FcgidMaxRequestLen 2147483648` |
-| **Laragon (Windows)** | `laragon/etc/apache2/fcgid.conf` | Set `FcgidMaxRequestLen 2147483648` |
-| **nginx** | `nginx.conf` | Set `client_max_body_size 2G;` |
-
-> **Note**: `FcgidMaxRequestLen` limits requests BEFORE PHP starts. Even if `upload_max_filesize=2G` in php.ini, mod_fcgid may reject the request first.
-
-**Alternative for very large files**: Upload via FTP/SCP directly to the `uploads/` directory.
-
 ### Import Errors
 
 - **"Table already exists"**: Use the "Drop & Restart" button to drop tables and restart
@@ -477,8 +338,8 @@ If uploading large files (>500MB) fails with HTTP 500 error but smaller files wo
 
 ## Credits
 
-- **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump) — Created in 2003
-- **MVC Refactoring**: Version 2 by [w3spi5](https://github.com/w3spi5) — 2025
+- **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump)
+- **MVC Refactoring**: Version 2 by [w3spi5](https://github.com/w3spi5)
 
 ---
 
