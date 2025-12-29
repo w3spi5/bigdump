@@ -1,8 +1,8 @@
-# BigDump 2.20 - Staggered MySQL Dump Importer
+# BigDump 2.21 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.20-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.21-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 
 <p align="center">
@@ -95,16 +95,16 @@ For dedicated servers with 128MB+ memory, providing +20-30% throughput improveme
 
 ## Installation
 
-1. **Download** the project to your web server:
-   ```bash
-   git clone https://github.com/w3spi5/bigdump.git
-   ```
+### Option 1: Download ZIP (Recommended for Shared Hosting)
+
+1. **Download** the latest release from GitHub:
+   - Go to [Releases](https://github.com/w3spi5/bigdump/releases)
+   - Download the ZIP file of the latest version
+   - Extract and upload the `bigdump` folder to your web server via FTP or your hosting's File Manager
 
 2. **Configure** the database:
-   ```bash
-   cp config/config.example.php config/config.php
-   ```
-   Then edit `config/config.php` with your database credentials:
+   - Copy `config/config.example.php` to `config/config.php`
+   - Edit `config/config.php` with your database credentials:
    ```php
    return [
        'db_server' => 'localhost',
@@ -115,15 +115,26 @@ For dedicated servers with 128MB+ memory, providing +20-30% throughput improveme
    ];
    ```
 
-3. **Set permissions**:
-   ```bash
-   chmod 755 uploads/
-   ```
+3. **Set permissions** (if needed):
+   - Ensure the `uploads/` directory is writable (755 or 775)
+   - Most hosting control panels allow this via File Manager → Permissions
 
 4. **Access** BigDump via your browser:
    ```
    http://your-site.com/bigdump/
    ```
+
+### Option 2: Git Clone (For Developers with Terminal Access)
+
+```bash
+git clone https://github.com/w3spi5/bigdump.git
+cd bigdump
+cp config/config.example.php config/config.php
+# Edit config/config.php with your credentials
+chmod 755 uploads/
+```
+
+> **Note:** If you have SSH access with `mysql` CLI available, you can import dumps directly with `mysql -u user -p database < dump.sql`. BigDump is specifically designed for environments where this isn't possible (shared hosting with only phpMyAdmin/web access).
 
 ## Configuration
 
