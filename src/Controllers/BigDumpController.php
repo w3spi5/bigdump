@@ -22,7 +22,7 @@ use BigDump\Services\ImportHistoryService;
  * - File upload
  * - File deletion
  * - Executing import sessions
- * - AJAX responses
+ * - SSE streaming responses
  *
  * @package BigDump\Controllers
  * @author  w3spi5
@@ -366,52 +366,6 @@ class BigDumpController
 
         $content = $this->view->render('import');
         $this->response->setContent($content);
-    }
-
-    /**
-     * Action: AJAX response for import.
-     *
-     * @return void
-     */
-    public function ajaxImport(): void
-    {
-        // Read from session (AJAX requires JavaScript, so session is always available)
-        $session = ImportSession::fromSession();
-
-        if (!$session) {
-            $this->response
-                ->asXml()
-                ->setContent('<?xml version="1.0"?><root><error>No active import session</error></root>');
-            return;
-        }
-
-        // Execute the import session
-        $session = $this->importService->executeSession($session);
-        $session->toSession(); // Save progress to session
-
-        // If finished or error, return the complete HTML page
-        if ($session->isFinished() || $session->hasError()) {
-            // Clear session on completion
-            ImportSession::clearSession();
-
-            // Prepare the final view
-            $this->view->assign([
-                'session' => $session,
-                'statistics' => $session->getStatistics(),
-                'testMode' => $this->config->get('test_mode', false),
-                'ajaxEnabled' => false, // No AJAX script for the final page
-                'delay' => 0,
-                'nextParams' => [],
-            ]);
-
-            $content = $this->view->render('import');
-            $this->response->asHtml()->setContent($content);
-            return;
-        }
-
-        // Otherwise, return the XML response
-        $xml = $this->ajaxService->createXmlResponse($session);
-        $this->response->asXml()->setContent($xml);
     }
 
     /**
