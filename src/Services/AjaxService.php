@@ -8,10 +8,10 @@ use BigDump\Config\Config;
 use BigDump\Models\ImportSession;
 
 /**
- * AjaxService Class - Service for AJAX responses.
+ * AjaxService Class - Service for SSE JavaScript generation.
  *
- * This service generates XML and JavaScript responses
- * for the AJAX import mode.
+ * This service generates JavaScript code for the SSE-based
+ * real-time import progress display.
  *
  * @package BigDump\Services
  * @author  w3spi5
@@ -32,135 +32,6 @@ class AjaxService
     public function __construct(Config $config)
     {
         $this->config = $config;
-    }
-
-    /**
-     * Generates an XML response for AJAX.
-     *
-     * @param ImportSession $session Import session
-     * @return string Formatted XML
-     */
-    public function createXmlResponse(ImportSession $session): string
-    {
-        $stats = $session->getStatistics();
-        $params = $session->getNextSessionParams();
-
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-        $xml .= '<root>';
-
-        // Data for next session calculations (pendingQuery stored in PHP session)
-        $xml .= $this->xmlElement('linenumber', (string) $params['start']);
-        $xml .= $this->xmlElement('foffset', (string) $params['foffset']);
-        $xml .= $this->xmlElement('fn', $params['fn']);
-        $xml .= $this->xmlElement('totalqueries', (string) $params['totalqueries']);
-        $xml .= $this->xmlElement('delimiter', $params['delimiter']);
-        $xml .= $this->xmlElement('instring', $params['instring'] ?? '0');
-
-        // Statistics for interface update
-        // Lines
-        $xml .= $this->xmlElement('elem1', (string) $stats['lines_this']);
-        $xml .= $this->xmlElement('elem2', (string) $stats['lines_done']);
-        $xml .= $this->xmlElement('elem3', $this->formatNullable($stats['lines_togo']));
-        $xml .= $this->xmlElement('elem4', $this->formatNullable($stats['lines_total']));
-
-        // Queries
-        $xml .= $this->xmlElement('elem5', (string) $stats['queries_this']);
-        $xml .= $this->xmlElement('elem6', (string) $stats['queries_done']);
-        $xml .= $this->xmlElement('elem7', $this->formatNullable($stats['queries_togo']));
-        $xml .= $this->xmlElement('elem8', $this->formatNullable($stats['queries_total']));
-
-        // Bytes
-        $xml .= $this->xmlElement('elem9', (string) $stats['bytes_this']);
-        $xml .= $this->xmlElement('elem10', (string) $stats['bytes_done']);
-        $xml .= $this->xmlElement('elem11', $this->formatNullable($stats['bytes_togo']));
-        $xml .= $this->xmlElement('elem12', $this->formatNullable($stats['bytes_total']));
-
-        // KB
-        $xml .= $this->xmlElement('elem13', (string) $stats['kb_this']);
-        $xml .= $this->xmlElement('elem14', (string) $stats['kb_done']);
-        $xml .= $this->xmlElement('elem15', $this->formatNullable($stats['kb_togo']));
-        $xml .= $this->xmlElement('elem16', $this->formatNullable($stats['kb_total']));
-
-        // MB
-        $xml .= $this->xmlElement('elem17', (string) $stats['mb_this']);
-        $xml .= $this->xmlElement('elem18', (string) $stats['mb_done']);
-        $xml .= $this->xmlElement('elem19', $this->formatNullable($stats['mb_togo']));
-        $xml .= $this->xmlElement('elem20', $this->formatNullable($stats['mb_total']));
-
-        // Percentages
-        $xml .= $this->xmlElement('elem21', $this->formatNullable($stats['pct_this']));
-        $xml .= $this->xmlElement('elem22', $this->formatNullable($stats['pct_done']));
-        $xml .= $this->xmlElement('elem23', $this->formatNullable($stats['pct_togo']));
-        $xml .= $this->xmlElement('elem24', (string) $stats['pct_total']);
-
-        // Progress bar
-        $xml .= $this->xmlElement('elem_bar', $this->createProgressBar($stats));
-
-        // Status
-        $xml .= $this->xmlElement('finished', $stats['finished'] ? '1' : '0');
-
-        // Possible error
-        if ($session->hasError()) {
-            $xml .= $this->xmlElement('error', $session->getError() ?? '');
-        }
-
-        // AutoTuner metrics
-        $batchSize = $stats['batch_size'] ?? 3000;
-        $memoryPct = $stats['memory_percentage'] ?? 0;
-        $speedLps = $stats['speed_lps'] ?? 0;
-        $adjustment = $stats['auto_tune_adjustment'] ?? '';
-        $estimatesFrozen = $stats['estimates_frozen'] ?? false;
-
-        $xml .= $this->xmlElement('batch_size', (string) $batchSize);
-        $xml .= $this->xmlElement('memory_pct', (string) $memoryPct);
-        $xml .= $this->xmlElement('speed_lps', number_format($speedLps, 0));
-        $xml .= $this->xmlElement('adjustment', $adjustment);
-        $xml .= $this->xmlElement('estimates_frozen', $estimatesFrozen ? '1' : '0');
-
-        $xml .= '</root>';
-
-        return $xml;
-    }
-
-    /**
-     * Creates an XML element.
-     *
-     * @param string $name Element name
-     * @param string $value Value
-     * @return string XML element
-     */
-    private function xmlElement(string $name, string $value): string
-    {
-        $escaped = htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
-        return "<{$name}>{$escaped}</{$name}>";
-    }
-
-    /**
-     * Formats a nullable value.
-     *
-     * @param mixed $value Value
-     * @return string Formatted value
-     */
-    private function formatNullable(mixed $value): string
-    {
-        return $value === null ? '?' : (string) $value;
-    }
-
-    /**
-     * Creates the HTML progress bar.
-     *
-     * @param array<string, mixed> $stats Statistics
-     * @return string Bar HTML
-     */
-    private function createProgressBar(array $stats): string
-    {
-        if ($stats['gzip_mode']) {
-            return '<span style="font-family:monospace;">[Not available for gzipped files]</span>';
-        }
-
-        $pct = $stats['pct_done'] ?? 0;
-
-        return '<div style="height:15px;width:' . $pct . '%;background-color:#000080;margin:0;"></div>';
     }
 
     /**
