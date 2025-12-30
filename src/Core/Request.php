@@ -130,7 +130,7 @@ class Request
         if ($this->has('action')) {
             $action = $this->input('action', '');
             // Validate against known actions to prevent injection
-            $validActions = ['home', 'upload', 'delete', 'import', 'start_import', 'stop_import', 'ajax_import', 'sse_import', 'drop_restart', 'restart_import', 'preview', 'history', 'files_list'];
+            $validActions = ['home', 'upload', 'delete', 'import', 'start_import', 'stop_import', 'sse_import', 'drop_restart', 'restart_import', 'preview', 'history', 'files_list'];
             if (in_array($action, $validActions, true)) {
                 return $action;
             }
@@ -306,7 +306,7 @@ class Request
         $phpSelf = $this->server('PHP_SELF', '/index.php');
         // Remove /index.php suffix to get clean base URL
         $uri = preg_replace('#/index\.php$#', '', $phpSelf);
-        
+
         // If empty (app at root), return empty string - callers will handle query params
         // e.g., getScriptUri() . '?action=import' = '?action=import' (correct)
         return $uri === '' ? '' : $uri;
