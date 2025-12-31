@@ -2,6 +2,106 @@
 
 All notable changes to BigDump are documented in this file.
 
+## [2.22] - 2025-12-31 - CLI SQL Optimizer & JSON Migration
+
+### Added in 2.22
+
+- **CLI SQL Optimizer**: Standalone command-line tool for SQL dump optimization without database connection
+  - New `cli.php` entry point for command-line usage
+  - Rewrites SQL dump files with INSERT batching optimization
+  - Supports `.sql`, `.sql.gz`, and `.sql.bz2` input files
+  - Profile-based batch sizing: conservative (2,000) / aggressive (5,000)
+  - Custom `--batch-size` override option
+  - Progress reporting with time-based updates (every 2 seconds)
+  - Statistics tracking: lines processed, queries written, INSERTs batched, reduction ratio
+  - Automatic cleanup of partial output on error
+
+- **CLI Service Architecture**: New modular CLI services for dump optimization
+  - `CliOptimizerService.php`: Orchestration layer coordinating reader → parser → batcher → writer
+  - `CliFileReader.php`: File reading abstraction supporting plain SQL, gzip, and bzip2
+  - `CliSqlParser.php`: Lightweight SQL parser optimized for CLI streaming
+
+- **CLI Test Suite**: Comprehensive test coverage for CLI functionality
+  - `CliArgumentTest.php`: Argument parsing and validation
+  - `CliFileReaderTest.php`: File reading across formats
+  - `CliSqlParserTest.php`: SQL parsing correctness
+  - `CliOptimizerServiceTest.php`: End-to-end optimization tests
+  - `CliProgressTest.php`: Progress reporting validation
+  - `CliErrorHandlingTest.php`: Error scenarios and cleanup
+  - `CliIntegrationTest.php`: Full integration tests
+
+### Changed in 2.22
+
+- **JSON-Only Responses**: Removed legacy XML response code (closes #29)
+  - All AJAX responses now use JSON format exclusively
+  - Removed ~182 lines of dead XML handling code
+  - Simplified `AjaxService` by removing `createXmlResponse()` and related methods
+  - Cleaned up `BigDumpController` XML response branches
+  - Updated `Request` class to remove XML content-type detection
+
+### Documentation in 2.22
+
+- **README.md**: Updated with CLI optimizer documentation
+  - Usage examples for CLI tool
+  - Profile explanations (conservative vs aggressive)
+  - Exit codes documentation
+
+### CLI Usage Examples
+
+```bash
+# Basic usage
+php cli.php dump.sql -o optimized.sql
+
+# With gzip input
+php cli.php dump.sql.gz --output optimized.sql --batch-size=5000
+
+# Aggressive profile with force overwrite
+php cli.php backup.sql.bz2 -o backup_batched.sql --profile=aggressive -f
+```
+
+### CLI Profile Defaults
+
+| Profile | Batch Size | Max Batch Bytes |
+|---------|------------|-----------------|
+| conservative | 2,000 | 16MB |
+| aggressive | 5,000 | 32MB |
+
+### Files Added in 2.22
+
+| File | Purpose |
+|------|---------|
+| `cli.php` | CLI entry point with argument parsing |
+| `src/Services/CliOptimizerService.php` | Optimization orchestration |
+| `src/Services/CliFileReader.php` | Multi-format file reading |
+| `src/Services/CliSqlParser.php` | Streaming SQL parser |
+| `tests/CliArgumentTest.php` | Argument parsing tests |
+| `tests/CliFileReaderTest.php` | File reader tests |
+| `tests/CliSqlParserTest.php` | SQL parser tests |
+| `tests/CliOptimizerServiceTest.php` | Optimizer service tests |
+| `tests/CliProgressTest.php` | Progress reporting tests |
+| `tests/CliErrorHandlingTest.php` | Error handling tests |
+| `tests/CliIntegrationTest.php` | Integration tests |
+
+### Files Modified in 2.22
+
+| File | Change |
+|------|--------|
+| `src/Services/AjaxService.php` | Removed XML response methods (-135 lines) |
+| `src/Controllers/BigDumpController.php` | Removed XML response handling (-48 lines) |
+| `src/Core/Application.php` | Removed XML route registration |
+| `src/Core/Request.php` | Removed XML content-type detection |
+| `README.md` | Added CLI documentation section |
+
+### Exit Codes (CLI)
+
+| Code | Meaning |
+|------|---------|
+| 0 | Success |
+| 1 | User error (invalid arguments, file not found) |
+| 2 | Runtime error (processing failure) |
+
+---
+
 ## [2.21] - 2025-12-27 - BZ2 Compression Support
 
 ### Added in 2.21
