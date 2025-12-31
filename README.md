@@ -160,16 +160,16 @@ This can provide **10-50x speedup** when importing the optimized file.
 
 ## Installation
 
-1. **Download** the project to your web server:
-   ```bash
-   git clone https://github.com/w3spi5/bigdump.git
-   ```
+### Option 1: Download ZIP (Recommended for Shared Hosting)
+
+1. **Download** the latest release from GitHub:
+   - Go to [Releases](https://github.com/w3spi5/bigdump/releases)
+   - Download the ZIP file of the latest version
+   - Extract and upload the `bigdump` folder to your web server via FTP or your hosting's File Manager
 
 2. **Configure** the database:
-   ```bash
-   cp config/config.example.php config/config.php
-   ```
-   Then edit `config/config.php` with your database credentials:
+   - Copy `config/config.example.php` to `config/config.php`
+   - Edit `config/config.php` with your database credentials:
    ```php
    return [
        'db_server' => 'localhost',
@@ -180,15 +180,26 @@ This can provide **10-50x speedup** when importing the optimized file.
    ];
    ```
 
-3. **Set permissions**:
-   ```bash
-   chmod 755 uploads/
-   ```
+3. **Set permissions** (if needed):
+   - Ensure the `uploads/` directory is writable (755 or 775)
+   - Most hosting control panels allow this via File Manager → Permissions
 
 4. **Access** BigDump via your browser:
    ```
    http://your-site.com/bigdump/
    ```
+
+### Option 2: Git Clone (For Developers with Terminal Access)
+
+```bash
+git clone https://github.com/w3spi5/bigdump.git
+cd bigdump
+cp config/config.example.php config/config.php
+# Edit config/config.php with your credentials
+chmod 755 uploads/
+```
+
+> **Note:** If you have SSH access with `mysql` CLI available, you can import dumps directly with `mysql -u user -p database < dump.sql`. BigDump is specifically designed for environments where this isn't possible (shared hosting with only phpMyAdmin/web access).
 
 ## Configuration
 
