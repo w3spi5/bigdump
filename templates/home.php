@@ -151,11 +151,12 @@ $bz2Supported = function_exists('bzopen');
                                 <span class="text-muted"><?= $compressionType ?> not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <a href="<?= $view->url(['delete' => $file['name']]) ?>"
-                           class="btn btn-red"
-                           onclick="return confirm('Delete <?= $view->escapeJs($file['name']) ?>?')">
-                            Delete
-                        </a>
+                        <form method="post" action="" style="display:inline"
+                              onsubmit="return confirm('Delete <?= $view->escapeJs($file['name']) ?>?')">
+                            <input type="hidden" name="action" value="delete">
+                            <input type="hidden" name="filename" value="<?= $view->e($file['name']) ?>">
+                            <button type="submit" class="btn btn-red">Delete</button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -191,12 +192,13 @@ $bz2Supported = function_exists('bzopen');
         $acceptTypesStr = implode(',', $acceptTypesArray);
         ?>
         <p class="text-muted mb-3">
-            Maximum file size: <strong><?= $view->formatBytes($uploadMaxSize) ?></strong> &bull;
-            Allowed types: <strong><?= $allowedTypesStr ?></strong><br>
+            Maximum file size: <strong><?= $view->formatBytes($uploadMaxSize) ?></strong>
+            <span style="opacity: 0.7">(php.ini: <code class="code">upload_max_filesize</code>, <code class="code">post_max_size</code>)</span>
+            &bull; Allowed types: <strong><?= $allowedTypesStr ?></strong><br>
             For larger files, use FTP to upload directly to <code class="code"><?= $view->e($uploadDir) ?></code>
         </p>
 
-        <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>">
+        <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>" data-concurrent-uploads="<?= $concurrentUploads ?>">
             <!-- Dropzone -->
             <div class="dropzone" id="dropzone">
                 <div class="file-upload__icon">
@@ -219,6 +221,16 @@ $bz2Supported = function_exists('bzopen');
 
             <!-- File List -->
             <div class="mt-4 space-y-2" id="fileList"></div>
+
+            <!-- Global Progress (shown only for multi-file uploads) -->
+            <div class="file-upload__global-progress" id="globalProgress" style="display: none;">
+                <div class="file-upload__global-info">
+                    <span id="globalProgressText">0 / 0 files</span>
+                </div>
+                <div class="file-upload__global-bar">
+                    <div class="file-upload__global-fill" id="globalProgressFill" style="width: 0%;"></div>
+                </div>
+            </div>
 
             <!-- Actions -->
             <div class="mt-4 flex gap-3" id="uploadActions" style="display: none;">
