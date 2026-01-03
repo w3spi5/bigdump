@@ -2,6 +2,116 @@
 
 All notable changes to BigDump are documented in this file.
 
+> **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
+
+## [2.23] - 2025-12-31 - Single-File PHAR Distribution
+
+### Added in 2.23
+
+- **Single-File PHAR Distribution**: Package BigDump as a standalone `.phar` file like Adminer
+  - Upload one file, access via browser — zero installation
+  - Automatic web/CLI mode detection via `php_sapi_name()`
+  - All assets (CSS/JS/SVG) inlined directly into HTML output
+  - External configuration via `bigdump-config.php` next to PHAR
+  - GitHub Actions workflow for automated release builds
+
+- **PHAR Core Components**: New utilities for PHAR-aware operation
+  - `src/Core/PharContext.php`: PHAR detection and path resolution utilities
+  - `build/build-phar.php`: Build script with compression and size reporting
+  - `build/stubs/web-entry.php`: Web mode bootstrap for PHAR
+  - `build/stubs/cli-entry.php`: CLI mode bootstrap for PHAR
+  - `templates/layout_phar.php`: PHAR-specific layout with inlined assets
+
+- **Asset Inlining System**: Adminer-style asset embedding
+  - CSS inlined in `<style>` tags (no external requests)
+  - JavaScript inlined in `<script>` tags
+  - SVG icons embedded directly in HTML
+  - View class extended with `setPharMode()`, `getInlinedCss()`, `getInlinedJs()`, `getInlinedIcons()`
+
+- **PHAR Test Suite**: Comprehensive test coverage (58 tests)
+  - `tests/PharContextTest.php`: Path resolution and detection tests
+  - `tests/PharBuildTest.php`: Build script functionality tests
+  - `tests/PharEntryPointsTest.php`: Web/CLI entry point tests
+  - `tests/ViewAssetInliningTest.php`: Asset inlining tests
+
+### Changed in 2.23
+
+- **Application.php**: Added PHAR mode support and options
+  - New `$isPharMode` property and `isPharMode()` method
+  - Constructor accepts PHAR options array
+  - Passes PHAR mode to View instance
+
+- **View.php**: Extended for PHAR asset inlining
+  - Added asset caching properties
+  - Auto-switches to `layout_phar` template in PHAR mode
+  - New methods for inline asset retrieval
+
+### PHAR Usage
+
+```bash
+# Build PHAR locally
+php -d phar.readonly=0 build/build-phar.php
+
+# Output:
+# BigDump PHAR Builder
+# ====================
+# PHP files:  22 (compressed)
+# Templates:  6 (compressed)
+# Assets:     8 (uncompressed)
+# ✓ PHAR created: dist/bigdump.phar (478 KB)
+
+# Web mode: upload bigdump.phar to server, access via browser
+# Copy bigdump-config.example.php → bigdump-config.php, configure
+
+# CLI mode
+php bigdump.phar --version
+php bigdump.phar dump.sql -o optimized.sql
+php bigdump.phar dump.sql.gz -o optimized.sql --profile=aggressive
+```
+
+### PHAR Contents
+
+| Component | Compression | Purpose |
+|-----------|-------------|---------|
+| `src/**/*.php` | GZ | PHP classes |
+| `templates/*.php` | GZ | View templates |
+| `assets/dist/*` | None | CSS/JS for inlining |
+| `assets/icons.svg` | None | SVG icons for inlining |
+| `cli-entry.php` | GZ | CLI bootstrap |
+| `web-entry.php` | GZ | Web bootstrap |
+
+### Files Added in 2.23
+
+| File | Purpose |
+|------|---------|
+| `src/Core/PharContext.php` | PHAR detection and path utilities |
+| `build/build-phar.php` | PHAR build script |
+| `build/stubs/web-entry.php` | Web mode entry point |
+| `build/stubs/cli-entry.php` | CLI mode entry point |
+| `templates/layout_phar.php` | PHAR layout with inlined assets |
+| `.github/workflows/build-phar.yml` | CI/CD workflow for releases |
+| `tests/PharContextTest.php` | PharContext unit tests |
+| `tests/PharBuildTest.php` | Build script tests |
+| `tests/PharEntryPointsTest.php` | Entry point tests |
+| `tests/ViewAssetInliningTest.php` | Asset inlining tests |
+
+### Files Modified in 2.23
+
+| File | Change |
+|------|--------|
+| `src/Core/Application.php` | Added PHAR mode support |
+| `src/Core/View.php` | Added asset inlining methods |
+| `.gitignore` | Added `dist/` directory |
+
+### Generated Files (at build/release)
+
+| File | Description |
+|------|-------------|
+| `dist/bigdump.phar` | Compiled PHAR archive (~478 KB) |
+| `dist/bigdump-config.example.php` | Example configuration for users |
+
+---
+
 ## [2.22] - 2025-12-31 - CLI SQL Optimizer & JSON Migration
 
 ### Added in 2.22

@@ -1,0 +1,116 @@
+name: Build PHAR
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create a release with the PHAR'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, zlib, phar, bz2
+          ini-values: phar.readonly=0
+          coverage: none
+
+      - name: Validate PHP version
+        run: |
+          php -v
+          php -m | grep -E "(mysqli|zlib|phar)"
+
+      - name: Run PHAR tests
+        run: |
+          echo "=== Running PharContext Tests ==="
+          php tests/PharContextTest.php
+
+      - name: Build PHAR
+        run: |
+          php -d phar.readonly=0 build/build-phar.php
+
+      - name: Verify PHAR
+        run: |
+          echo "=== PHAR Verification ==="
+          php dist/bigdump.phar --version
+          php dist/bigdump.phar --help | head -20
+
+      - name: Report sizes
+        run: |
+          echo "=== Built PHAR Sizes ==="
+          ls -lh dist/
+          echo ""
+          echo "=== Total Size ==="
+          du -ch dist/* | grep total
+
+      - name: Run PHAR build tests
+        run: |
+          echo "=== Running PHAR Build Tests ==="
+          php tests/PharBuildTest.php
+
+      # Upload artifacts for manual builds
+      - name: Upload PHAR artifact
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: bigdump-phar
+          path: |
+            dist/bigdump.phar
+            dist/bigdump-config.example.php
+          retention-days: 7
+
+      # Create release on tag push
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/bigdump.phar
+            dist/bigdump-config.example.php
+          generate_release_notes: true
+          body: |
+            ## BigDump PHAR Release
+
+            Download `bigdump.phar` for a single-file deployment.
+
+            ### Quick Start
+
+            **Web Mode:**
+            1. Upload `bigdump.phar` to your server
+            2. Copy `bigdump-config.example.php` to `bigdump-config.php`
+            3. Edit `bigdump-config.php` with your database credentials
+            4. Access `bigdump.phar` in your browser
+
+            **CLI Mode:**
+            ```bash
+            # Show version
+            php bigdump.phar --version
+
+            # Optimize SQL dump
+            php bigdump.phar dump.sql -o optimized.sql
+
+            # With options
+            php bigdump.phar dump.sql.gz -o output.sql --profile=aggressive
+            ```
+
+            ### Requirements
+            - PHP 8.1+
+            - MySQLi extension (for web mode)
+            - Write access to uploads directory
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

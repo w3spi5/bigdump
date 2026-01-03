@@ -10,7 +10,9 @@ use RuntimeException;
  * View Class - View rendering engine
  *
  * This class handles rendering of PHP templates with support
- * for layout, partials and automatic escaping
+ * for layout, partials and automatic escaping.
+ *
+ * Supports PHAR mode with inlined CSS, JavaScript, and SVG assets.
  *
  * @package BigDump\Core
  * @author  w3spi5
@@ -42,6 +44,30 @@ class View
     private string $sectionContent = '';
 
     /**
+     * Whether running in PHAR mode.
+     * @var bool
+     */
+    private bool $isPharMode = false;
+
+    /**
+     * Cached inlined CSS content.
+     * @var string|null
+     */
+    private ?string $inlinedCss = null;
+
+    /**
+     * Cached inlined JavaScript content.
+     * @var string|null
+     */
+    private ?string $inlinedJs = null;
+
+    /**
+     * Cached inlined SVG icons content.
+     * @var string|null
+     */
+    private ?string $inlinedIcons = null;
+
+    /**
      * Constructor.
      *
      * @param string $viewsPath Path to views directory.
@@ -49,6 +75,34 @@ class View
     public function __construct(string $viewsPath)
     {
         $this->viewsPath = rtrim($viewsPath, '/\\');
+    }
+
+    /**
+     * Sets PHAR mode for asset inlining.
+     *
+     * @param bool $mode True to enable PHAR mode.
+     * @return self
+     */
+    public function setPharMode(bool $mode): self
+    {
+        $this->isPharMode = $mode;
+
+        // Use PHAR layout when in PHAR mode
+        if ($mode && $this->layout === 'layout') {
+            $this->layout = 'layout_phar';
+        }
+
+        return $this;
+    }
+
+    /**
+     * Checks if running in PHAR mode.
+     *
+     * @return bool True if in PHAR mode.
+     */
+    public function isPharMode(): bool
+    {
+        return $this->isPharMode;
     }
 
     /**
@@ -119,6 +173,11 @@ class View
         if ($this->layout !== null) {
             $layoutFile = $this->viewsPath . '/' . $this->layout . '.php';
 
+            // Fall back to regular layout if PHAR layout doesn't exist
+            if (!file_exists($layoutFile) && $this->layout === 'layout_phar') {
+                $layoutFile = $this->viewsPath . '/layout.php';
+            }
+
             if (file_exists($layoutFile)) {
                 $this->sectionContent = $content;
                 $allData['content'] = $content;
@@ -171,6 +230,112 @@ class View
         }
 
         return $this->capture($partialFile, array_merge($this->data, $data));
+    }
+
+    /**
+     * Gets inlined CSS content for PHAR mode.
+     *
+     * @return string CSS content or empty string if not in PHAR mode.
+     */
+    public function getInlinedCss(): string
+    {
+        if (!$this->isPharMode) {
+            return '';
+        }
+
+        if ($this->inlinedCss === null) {
+            $this->loadInlinedAssets();
+        }
+
+        return $this->inlinedCss ?? '';
+    }
+
+    /**
+     * Gets inlined JavaScript content for PHAR mode.
+     *
+     * @return string JavaScript content or empty string if not in PHAR mode.
+     */
+    public function getInlinedJs(): string
+    {
+        if (!$this->isPharMode) {
+            return '';
+        }
+
+        if ($this->inlinedJs === null) {
+            $this->loadInlinedAssets();
+        }
+
+        return $this->inlinedJs ?? '';
+    }
+
+    /**
+     * Gets inlined SVG icons content for PHAR mode.
+     *
+     * @return string SVG content or empty string if not in PHAR mode.
+     */
+    public function getInlinedIcons(): string
+    {
+        if (!$this->isPharMode) {
+            return '';
+        }
+
+        if ($this->inlinedIcons === null) {
+            $this->loadInlinedAssets();
+        }
+
+        return $this->inlinedIcons ?? '';
+    }
+
+    /**
+     * Loads and caches all inlined assets from PHAR.
+     *
+     * @return void
+     */
+    private function loadInlinedAssets(): void
+    {
+        // Determine PHAR root (parent of templates directory)
+        $pharRoot = dirname($this->viewsPath);
+
+        // Load CSS
+        $cssFile = $pharRoot . '/assets/dist/app.min.css';
+        if (file_exists($cssFile)) {
+            $this->inlinedCss = file_get_contents($cssFile);
+        } else {
+            $this->inlinedCss = '';
+        }
+
+        // Load and concatenate all JS files
+        $jsContent = [];
+        $jsOrder = [
+            'bigdump.min.js',
+            'preview.min.js',
+            'history.min.js',
+            'modal.min.js',
+            'filepolling.min.js',
+            'fileupload.min.js',
+        ];
+
+        foreach ($jsOrder as $jsFile) {
+            $jsPath = $pharRoot . '/assets/dist/' . $jsFile;
+            if (file_exists($jsPath)) {
+                $jsContent[] = file_get_contents($jsPath);
+            }
+        }
+
+        $this->inlinedJs = implode("\n", $jsContent);
+
+        // Load SVG icons
+        $iconsFile = $pharRoot . '/assets/icons.svg';
+        if (file_exists($iconsFile)) {
+            $icons = file_get_contents($iconsFile);
+            // Remove XML declaration if present
+            $icons = preg_replace('/<\?xml[^?]*\?>/', '', $icons);
+            // Remove comments
+            $icons = preg_replace('/<!--.*?-->/s', '', $icons);
+            $this->inlinedIcons = trim($icons);
+        } else {
+            $this->inlinedIcons = '';
+        }
     }
 
     /**

@@ -62,13 +62,28 @@ class Application
     private string $basePath;
 
     /**
+     * Whether running in PHAR mode.
+     * @var bool
+     */
+    private bool $isPharMode = false;
+
+    /**
+     * PHAR-specific options.
+     * @var array<string, mixed>
+     */
+    private array $pharOptions = [];
+
+    /**
      * Constructor.
      *
      * @param string $basePath Application root directory.
+     * @param array<string, mixed> $options Optional configuration (for PHAR mode).
      */
-    public function __construct(string $basePath)
+    public function __construct(string $basePath, array $options = [])
     {
         $this->basePath = rtrim($basePath, '/\\');
+        $this->isPharMode = $options['isPharMode'] ?? false;
+        $this->pharOptions = $options;
         $this->initialize();
     }
 
@@ -82,14 +97,25 @@ class Application
         // PHP configuration
         $this->configurePhp();
 
-        // Load configuration
-        $this->config = new Config($this->basePath . '/config/config.php');
+        // Load configuration (PHAR-aware)
+        $configPath = $this->getConfigPath();
+        $this->config = new Config($configPath);
+
+        // Override upload directory for PHAR mode
+        if ($this->isPharMode && isset($this->pharOptions['uploadsPath'])) {
+            $this->config->set('upload_dir', $this->pharOptions['uploadsPath']);
+        }
 
         // Initialize components
         $this->request = new Request();
         $this->response = new Response();
         $this->view = new View($this->basePath . '/templates');
         $this->router = new Router();
+
+        // Configure PHAR mode for View
+        if ($this->isPharMode) {
+            $this->view->setPharMode(true);
+        }
 
         // Configure routes
         $this->setupRoutes();
@@ -100,7 +126,22 @@ class Application
             'scriptUri' => $this->request->getScriptUri(),
             'scriptName' => $this->request->getScriptName(),
             'config' => $this->config,
+            'isPharMode' => $this->isPharMode,
         ]);
+    }
+
+    /**
+     * Gets the configuration file path.
+     *
+     * @return string Config file path.
+     */
+    private function getConfigPath(): string
+    {
+        if ($this->isPharMode && isset($this->pharOptions['configPath'])) {
+            return $this->pharOptions['configPath'];
+        }
+
+        return $this->basePath . '/config/config.php';
     }
 
     /**
@@ -149,7 +190,8 @@ class Application
             ->register('restart_import', $controller, 'restartFromBeginning')
             ->register('preview', $controller, 'preview')
             ->register('history', $controller, 'history')
-            ->register('files_list', $controller, 'filesList');
+            ->register('files_list', $controller, 'filesList')
+            ->register('sse_files', $controller, 'sseFilesList');
     }
 
     /**
@@ -303,5 +345,15 @@ HTML;
     public function getBasePath(): string
     {
         return $this->basePath;
+    }
+
+    /**
+     * Checks if running in PHAR mode.
+     *
+     * @return bool True if in PHAR mode.
+     */
+    public function isPharMode(): bool
+    {
+        return $this->isPharMode;
     }
 }
