@@ -12,7 +12,7 @@
 
 BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. Originally created by Alexey Ozerov in 2003, this major version 2 is a complete refactoring using object-oriented MVC architecture.
 
-See [CHANGELOG.md](docs/CHANGELOG.md) for detailed version history.
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## Features
 
@@ -395,8 +395,8 @@ bigdump/
 │       ├── build-assets.yml  # CI asset pipeline
 │       └── build-phar.yml    # PHAR build & release
 ├── docs/
-│   ├── CHANGELOG.md
 │   └── logo.png
+├── CHANGELOG.md
 ├── LICENSE
 └── README.md
 ```
