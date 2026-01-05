@@ -7,7 +7,7 @@
 [![PHAR](https://img.shields.io/badge/PHAR-single--file-purple.svg)](https://github.com/w3spi5/bigdump/releases)
 
 <p align="center">
-  <img src="docs/logo.png" alt="BigDump Logo" width="400">
+  <img src="assets/img/logo.png" alt="BigDump Logo" width="400">
 </p>
 
 BigDump is a PHP tool for importing large MySQL dumps on web servers with strict execution time limits. Originally created by Alexey Ozerov in 2003, this major version 2 is a complete refactoring using object-oriented MVC architecture.
@@ -350,8 +350,10 @@ bigdump/
 │   │   ├── css/tailwind.css
 │   │   └── js/*.js
 │   ├── icons.svg          # SVG icon sprite
-│   └── img/
-│       └── logo.png
+│   ├── img/
+│   │   └── logo.png
+│   └── docs/
+│       └── demov2.2.png   # Screenshot
 ├── src/
 │   ├── Config/Config.php
 │   ├── Controllers/BigDumpController.php
@@ -394,8 +396,6 @@ bigdump/
 │   └── workflows/
 │       ├── build-assets.yml  # CI asset pipeline
 │       └── build-phar.yml    # PHAR build & release
-├── docs/
-│   └── logo.png
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
@@ -480,10 +480,12 @@ If uploading large files (>500MB) fails with HTTP 500 error but smaller files wo
 - **Original**: Alexey Ozerov (http://www.ozerov.de/bigdump) — Created in 2003
 - **MVC Refactoring**: Version 2 by [w3spi5](https://github.com/w3spi5) — 2025
 
+> 🔗 This fork is officially linked from the [original BigDump page](https://www.ozerov.de/bigdump).
+
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="docs/demov2.2.png" alt="BigDump Screenshot" width="800">
+  <img src="assets/docs/demov2.2.png" alt="BigDump Screenshot" width="800">
 </p>
