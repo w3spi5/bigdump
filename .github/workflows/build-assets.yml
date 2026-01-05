@@ -69,3 +69,4 @@ jobs:
         with:
           commit_message: "build: Auto-compiled assets [skip ci]"
           file_pattern: 'assets/dist/* assets/icons.svg'
+          add_options: '-f'
