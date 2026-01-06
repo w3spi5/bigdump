@@ -4,6 +4,66 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.25] - 2025-01-06 - Performance Audit Import Optimization
+
+### Added in 2.25
+
+- **Auto-Aggressive Mode for Large Files**: Automatic performance profile upgrade
+  - Files >100MB automatically use aggressive profile (configurable via `auto_profile_threshold`)
+  - New `setTemporary()` method in Config for runtime profile overrides
+  - Triggered in ImportService constructor based on file size detection
+  - Memory validation: requires 128MB+ PHP memory_limit
+
+- **Persistent Database Connections**: Reduced reconnection overhead
+  - New `persistent_connections` config option (default: false)
+  - Uses MySQLi `p:` hostname prefix for persistent connections
+  - Connection validation before reuse via `validateConnection()` method
+  - ~16,000 fewer reconnects for 2GB file imports
+  - Documented risks for shared hosting environments
+
+- **Extended INSERT Detection**: Optimized mysqldump extended-insert handling
+  - Detects multi-VALUE INSERT patterns from `mysqldump --extended-insert`
+  - INSERTs with ≥2 `),(` patterns executed directly without re-batching
+  - New `extendedInsertCount` statistic in InsertBatcherService
+  - Prevents wasted work on already-optimized dumps
+
+- **Compression-Aware Session Sizing**: Memory-optimized batch sizes by file type
+  - New compression multipliers: Plain SQL (1.5×), GZIP (1.0×), BZ2 (0.7×)
+  - FileHandler: `getCompressionType()` and `getCurrentCompressionType()` methods
+  - AutoTunerService: `setCompressionType()`, `getCompressionMultiplier()` methods
+  - Prevents memory exhaustion on high-overhead BZ2 decompression
+
+- **Performance Tests**: Comprehensive test coverage for all optimizations
+  - `tests/AutoProfileTest.php`: Auto-aggressive mode tests (7 tests)
+  - `tests/SqlParserOptimizationTest.php`: Quote analysis skip tests (9 tests)
+  - `tests/PersistentConnectionTest.php`: Persistent connection tests (6 tests)
+  - `tests/ExtendedInsertTest.php`: Extended INSERT detection tests (11 tests)
+  - `tests/CompressionAwareTest.php`: Compression-aware sizing tests (14 tests)
+
+### Changed in 2.25
+
+- **Increased Default Batch Sizes**: Better performance out of the box
+  - `min_batch_size`: 3000 → 5000
+  - Conservative `linespersession`: 3000 → 5000
+  - Aggressive `linespersession`: 5000 → 10000
+  - AutoTuner respects new minimums
+
+- **Optimized Quote Analysis**: Skip analyzeQuotes() for non-SQL lines
+  - SqlParser now checks `inString` state before comment/empty line detection
+  - Early return for comments and empty lines when not inside a string literal
+  - Reduced CPU overhead on comment-heavy dumps
+
+### Performance Targets
+
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| 100MB import time | ~60s | ~40s | 33% faster |
+| 500MB import time | ~5min | ~3min | 40% faster |
+| Session count (1GB) | ~33K | ~10K | 70% reduction |
+| Memory peak | Variable | <64MB | Controlled |
+
+---
+
 ## [2.24] - 2025-01-05 - Smart Table Reset & Bug Fixes
 
 ### Added in 2.24

@@ -15,6 +15,10 @@ use RuntimeException;
  * This class encapsulates the MySQLi connection and provides
  * secure methods for query execution
  *
+ * Features (v2.25+):
+ * - Persistent connections support (optional, disabled by default)
+ * - Connection validation before reuse
+ *
  * @package BigDump\Models
  * @author  w3spi5
  */
@@ -51,6 +55,12 @@ class Database
     private bool $testMode = false;
 
     /**
+     * Whether persistent connections are enabled
+     * @var bool
+     */
+    private bool $persistentConnections = false;
+
+    /**
      * Constructor
      *
      * @param Config $config Configuration
@@ -59,10 +69,15 @@ class Database
     {
         $this->config = $config;
         $this->testMode = $config->get('test_mode', false);
+        $this->persistentConnections = (bool) $config->get('persistent_connections', false);
     }
 
     /**
      * Establishes the database connection
+     *
+     * Supports persistent connections (v2.25+) when enabled via config.
+     * Persistent connections reduce reconnection overhead for large imports
+     * but should be used carefully on shared hosting to avoid connection pool exhaustion.
      *
      * @return bool True if connection succeeds
      * @throws RuntimeException If connection fails
@@ -74,7 +89,12 @@ class Database
         }
 
         if ($this->connection !== null) {
-            return true;
+            // Validate existing connection before reuse
+            if ($this->validateConnection()) {
+                return true;
+            }
+            // Connection invalid, close and reconnect
+            $this->close();
         }
 
         $db = $this->config->getDatabase();
@@ -85,9 +105,16 @@ class Database
         // Parse server to extract host, port, socket
         $server = $this->parseServer($db['server']);
 
+        // For persistent connections, prepend 'p:' to hostname
+        // This tells MySQLi to use persistent connection
+        $host = $server['host'];
+        if ($this->persistentConnections) {
+            $host = 'p:' . $host;
+        }
+
         // Establish connection
         $this->connection = @new mysqli(
-            $server['host'],
+            $host,
             $db['username'],
             $db['password'],
             $db['name'],
@@ -120,6 +147,31 @@ class Database
         $this->executePreQueries();
 
         return true;
+    }
+
+    /**
+     * Validates existing connection before reuse
+     *
+     * For persistent connections, the connection might have been closed
+     * by the server due to timeout. This method validates the connection
+     * is still alive and usable.
+     *
+     * @return bool True if connection is valid and usable
+     */
+    private function validateConnection(): bool
+    {
+        if ($this->connection === null) {
+            return false;
+        }
+
+        // Use ping() to check if connection is alive
+        // This will attempt to reconnect if the connection was lost
+        // and mysqli.reconnect is enabled
+        try {
+            return @$this->connection->ping();
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -339,6 +391,9 @@ class Database
     /**
      * Closes the connection
      *
+     * Note: For persistent connections, close() doesn't actually close
+     * the connection - it returns it to the connection pool.
+     *
      * @return void
      */
     public function close(): void
@@ -377,6 +432,16 @@ class Database
     public function isTestMode(): bool
     {
         return $this->testMode;
+    }
+
+    /**
+     * Checks if persistent connections are enabled
+     *
+     * @return bool True if persistent connections enabled
+     */
+    public function isPersistentConnections(): bool
+    {
+        return $this->persistentConnections;
     }
 
     /**

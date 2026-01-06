@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BigDump\Services;
 
 use BigDump\Config\Config;
+use BigDump\Models\FileHandler;
 use BigDump\Services\FileAnalysisResult;
 
 /**
@@ -12,6 +13,12 @@ use BigDump\Services\FileAnalysisResult;
  *
  * Detects available RAM and PHP limits to calculate optimal linespersession.
  * Supports Windows (COM/WMI), Linux (/proc/meminfo), and fallback estimation.
+ *
+ * Features (v2.25+):
+ * - Compression-aware batch sizing: adjusts batch sizes based on compression type
+ * - Plain SQL gets 1.5x multiplier (less memory overhead)
+ * - GZIP uses 1.0x baseline
+ * - BZ2 uses 0.7x multiplier (higher decompression memory overhead)
  *
  * @package BigDump\Services
  * @author  w3spi5
@@ -46,10 +53,27 @@ class AutoTunerService
     private float $memoryCacheTime = 0.0;
     private int $memoryCacheCallCount = 0;
 
+    // Compression-aware tuning (v2.25+)
+    private string $currentCompressionType = FileHandler::COMPRESSION_NONE;
+
     // Cache TTL constants
     private const MEMORY_CACHE_TTL = 1.0;          // 1 second TTL for memory cache
     private const SYSTEM_RESOURCES_TTL = 60.0;    // 60 seconds TTL for system resources
     private const AGGRESSIVE_MIN_RAM = 268435456; // 256MB minimum for aggressive mode
+
+    /**
+     * Compression-aware batch size multipliers (v2.25+)
+     *
+     * Different compression types have different memory characteristics:
+     * - Plain SQL: Can use larger batches (1.5x) - data is what you see
+     * - GZIP: Baseline (1.0x) - good balance of decompression overhead
+     * - BZ2: Smaller batches (0.7x) - higher decompression memory overhead
+     */
+    private const COMPRESSION_MULTIPLIERS = [
+        FileHandler::COMPRESSION_NONE => 1.5,  // Plain SQL: x1.5 (less memory overhead)
+        FileHandler::COMPRESSION_GZIP => 1.0,  // GZIP: x1.0 (baseline)
+        FileHandler::COMPRESSION_BZ2  => 0.7,  // BZ2: x0.7 (higher memory for decompression)
+    ];
 
     /**
      * RAM x File Size batch reference table.
@@ -269,6 +293,61 @@ class AutoTunerService
     }
 
     /**
+     * Set compression type for compression-aware batch sizing (v2.25+)
+     *
+     * @param string $compressionType One of FileHandler::COMPRESSION_* constants
+     * @return void
+     */
+    public function setCompressionType(string $compressionType): void
+    {
+        $this->currentCompressionType = $compressionType;
+    }
+
+    /**
+     * Set compression type from a filename (v2.25+)
+     *
+     * Convenience method that extracts compression type from filename extension.
+     *
+     * @param FileHandler $fileHandler FileHandler instance for detection
+     * @param string $filename Filename to analyze
+     * @return void
+     */
+    public function setCompressionTypeFromFile(FileHandler $fileHandler, string $filename): void
+    {
+        $this->currentCompressionType = $fileHandler->getCompressionType($filename);
+    }
+
+    /**
+     * Get the current compression type
+     *
+     * @return string Current compression type
+     */
+    public function getCompressionType(): string
+    {
+        return $this->currentCompressionType;
+    }
+
+    /**
+     * Get the compression multiplier for current compression type
+     *
+     * @return float Compression multiplier (0.7 - 1.5)
+     */
+    public function getCompressionMultiplier(): float
+    {
+        return self::COMPRESSION_MULTIPLIERS[$this->currentCompressionType] ?? 1.0;
+    }
+
+    /**
+     * Get all compression multipliers (v2.25+)
+     *
+     * @return array<string, float> Compression type to multiplier mapping
+     */
+    public static function getCompressionMultipliers(): array
+    {
+        return self::COMPRESSION_MULTIPLIERS;
+    }
+
+    /**
      * Calculate optimal batch size based on system resources
      */
     public function calculateOptimalBatchSize(): int
@@ -293,6 +372,8 @@ class AutoTunerService
 
     /**
      * File-aware batch calculation using RAM x FileSize matrix.
+     *
+     * v2.25+: Applies compression multiplier for compression-aware sizing.
      */
     private function calculateFileAwareBatchSize(): int
     {
@@ -318,6 +399,10 @@ class AutoTunerService
         // Apply target RAM usage factor (larger files get more aggressive RAM usage)
         $targetUsage = $this->fileAnalysis->targetRamUsage;
         $adjustedBatch = (int) ($baseBatch * ($targetUsage / 0.40)); // 0.40 is baseline
+
+        // v2.25+: Apply compression multiplier
+        $compressionMultiplier = $this->getCompressionMultiplier();
+        $adjustedBatch = (int) ($adjustedBatch * $compressionMultiplier);
 
         // Clamp to configured min/max
         $this->currentBatchSize = max(
@@ -351,6 +436,8 @@ class AutoTunerService
      * This method is profile-aware:
      * - Conservative: 80% safety margin, 1.0x multiplier
      * - Aggressive: 70% safety margin, 1.3x multiplier
+     *
+     * v2.25+: Also applies compression multiplier.
      */
     private function calculateRamOnlyBatchSize(): int
     {
@@ -375,11 +462,15 @@ class AutoTunerService
         // Apply profile multiplier (1.0x conservative, 1.3x aggressive)
         $calculatedLines = (int) ($calculatedLines * $this->profileMultiplier);
 
+        // v2.25+: Apply compression multiplier
+        $compressionMultiplier = $this->getCompressionMultiplier();
+        $calculatedLines = (int) ($calculatedLines * $compressionMultiplier);
+
         // Lookup profile based on available RAM
         $profileBatch = $this->getProfileBatchSize($availableRam);
 
-        // Apply multiplier to profile batch as well
-        $profileBatch = (int) ($profileBatch * $this->profileMultiplier);
+        // Apply multipliers to profile batch as well
+        $profileBatch = (int) ($profileBatch * $this->profileMultiplier * $compressionMultiplier);
 
         // Take minimum of calculated and profile
         $optimal = min($calculatedLines, $profileBatch);
@@ -512,6 +603,7 @@ class AutoTunerService
      * Get metrics for UI display.
      *
      * Includes performance profile information for debugging and display.
+     * v2.25+: Includes compression type and multiplier.
      */
     public function getMetrics(int $currentLines = 0): array
     {
@@ -550,6 +642,9 @@ class AutoTunerService
             'profile_downgraded' => $this->profileDowngraded,
             'profile_multiplier' => $this->profileMultiplier,
             'safety_margin' => $this->safetyMargin,
+            // Compression-aware metrics (v2.25+)
+            'compression_type' => $this->currentCompressionType,
+            'compression_multiplier' => $this->getCompressionMultiplier(),
         ];
     }
 
@@ -647,6 +742,8 @@ class AutoTunerService
      * - RAM <30% + stable speed → increase 1.5x (max +100k)
      * - RAM >70% → decrease 0.7x (min 50k)
      * - Speed drop >30% → decrease 0.8x (query complexity changed)
+     *
+     * v2.25+: Considers compression type when adjusting max batch.
      */
     public function adaptBatchSize(float $currentSpeed, int $memoryPct): array
     {
@@ -681,13 +778,17 @@ class AutoTunerService
         $action = 'stable';
         $reason = 'optimal';
 
+        // v2.25+: Apply compression multiplier to max batch size
+        $compressionMultiplier = $this->getCompressionMultiplier();
+        $adjustedMaxBatch = (int) ($this->maxBatchSize * $compressionMultiplier);
+
         // RULE 1: Low memory + stable speed → INCREASE aggressively
         // Speed variance check: variance < 10% of mean squared indicates stability
         if ($avgMemory < 30 && $speedVariance < 0.1 * $avgSpeed * $avgSpeed) {
             $factor = 1.5;
             $maxIncrease = 100000;
             $newBatch = (int) min($oldBatch * $factor, $oldBatch + $maxIncrease);
-            $newBatch = min($newBatch, $this->maxBatchSize);
+            $newBatch = min($newBatch, $adjustedMaxBatch);
             $action = 'increase';
             $reason = 'ram_underutilized';
         }
@@ -728,6 +829,7 @@ class AutoTunerService
             'new_batch' => $newBatch,
             'avg_speed' => $avgSpeed,
             'avg_memory' => $avgMemory,
+            'compression_multiplier' => $compressionMultiplier,
         ];
     }
 

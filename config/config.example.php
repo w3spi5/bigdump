@@ -44,6 +44,31 @@ return [
      */
     'db_connection_charset' => 'utf8mb4',
 
+    /**
+     * Persistent database connections (v2.25+).
+     *
+     * When enabled, uses MySQLi persistent connections to reduce connection
+     * overhead. For large imports with many sessions, this can significantly
+     * reduce total import time by eliminating ~16,000 reconnections for a 2GB file.
+     *
+     * WARNING: Use with caution on shared hosting!
+     * - Persistent connections stay open and are reused across requests
+     * - May exhaust the host's connection pool limit
+     * - Can cause "too many connections" errors if pool is full
+     *
+     * Recommended for:
+     * - VPS/dedicated servers with controlled connection limits
+     * - Large imports where you control the server environment
+     *
+     * NOT recommended for:
+     * - Shared hosting environments
+     * - Servers with low max_connections limit
+     * - Multi-tenant environments
+     *
+     * Default: false (safe for all environments)
+     */
+    'persistent_connections' => false,
+
     // =========================================================================
     // PERFORMANCE PROFILE (v2.19+)
     // =========================================================================
@@ -312,7 +337,7 @@ return [
     /**
      * Allowed file extensions.
      */
-    'allowed_extensions' => ['sql', 'gz', 'csv'],
+    'allowed_extensions' => ['sql', 'gz', 'bz2', 'csv'],
 
     /**
      * Maximum memory size for a query (in bytes).
