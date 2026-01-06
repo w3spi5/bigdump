@@ -9,7 +9,7 @@ on:
       create_release:
         description: 'Create a release with the PHAR'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 jobs:
