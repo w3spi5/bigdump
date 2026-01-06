@@ -4,6 +4,7 @@
 agent-os/
 .claude/
 .serena/
+logs/
 
 # Custom
 config/config.php

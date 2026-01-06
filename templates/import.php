@@ -342,7 +342,7 @@
 
 <div class="text-center mt-3">
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Back to File List</a>
-    <a href="/" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -387,7 +387,7 @@
     <span class="text-muted">or</span>
     <?php endif; ?>
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Start Over (resume)</a>
-    <a href="../" class="btn btn-cyan">Back to Home</a>
+    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-cyan">Back to Home</a>
     <?php if (!$tableAlreadyExists): ?>
     <span class="text-muted">(DROP old tables before restarting)</span>
     <?php endif; ?>

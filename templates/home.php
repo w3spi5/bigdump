@@ -49,6 +49,12 @@ $bz2Supported = function_exists('bzopen');
     <?php else: ?>
         <div class="alert alert-error"><?= $view->e($deleteResult['message']) ?></div>
     <?php endif; ?>
+    <script>
+    // Clean ?delete= from URL after action processed
+    if (window.history && window.history.replaceState && location.search.includes('delete=')) {
+        history.replaceState(null, '', location.pathname);
+    }
+    </script>
 <?php endif; ?>
 
 <?php if (!$dbConfigured): ?>
@@ -198,7 +204,7 @@ $bz2Supported = function_exists('bzopen');
             For larger files, use FTP to upload directly to <code class="code"><?= $view->e($uploadDir) ?></code>
         </p>
 
-        <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>" data-concurrent-uploads="<?= $concurrentUploads ?>">
+        <div class="file-upload" id="fileUpload" data-max-file-size="<?= $uploadMaxSize ?>" data-upload-url="<?= $view->e($scriptUri) ?>" data-concurrent-uploads="<?= $concurrentUploads ?? 3 ?>">
             <!-- Dropzone -->
             <div class="dropzone" id="dropzone">
                 <div class="file-upload__icon">

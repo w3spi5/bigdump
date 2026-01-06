@@ -24,6 +24,12 @@ class Config
     private array $values = [];
 
     /**
+     * Temporary runtime overrides
+     * @var array<string, mixed>
+     */
+    private array $temporaryOverrides = [];
+
+    /**
      * Effective performance profile after validation
      * @var string
      */
@@ -51,12 +57,14 @@ class Config
             'insert_batch_size' => 2000,
             'max_batch_bytes' => 16777216,    // 16MB
             'commit_frequency' => 1,
+            'linespersession' => 5000,        // v2.25: increased from 3000
         ],
         'aggressive' => [
             'file_buffer_size' => 131072,     // 128KB
             'insert_batch_size' => 5000,
             'max_batch_bytes' => 33554432,    // 32MB
             'commit_frequency' => 3,
+            'linespersession' => 10000,       // v2.25: increased from 5000
         ],
     ];
 
@@ -86,14 +94,18 @@ class Config
         // Import configuration
         'filename' => '',
         'ajax' => true,
-        'linespersession' => 3000,
-        'auto_tuning' => true,        // Enable automatic batch size optimization
-        'min_batch_size' => 3000,     // Minimum batch size (safety floor)
-        'max_batch_size' => 50000,    // Maximum batch size (ceiling)
+        'linespersession' => 5000,        // v2.25: increased from 3000
+        'auto_tuning' => true,            // Enable automatic batch size optimization
+        'min_batch_size' => 5000,         // v2.25: increased from 3000
+        'max_batch_size' => 50000,        // Maximum batch size (ceiling)
         'delaypersession' => 0,
 
         // Performance profile (v2.19+)
         'performance_profile' => 'conservative', // 'conservative' or 'aggressive'
+
+        // Auto-aggressive mode for large files (v2.25+)
+        // Files larger than this threshold automatically use aggressive profile
+        'auto_profile_threshold' => 104857600, // 100MB
 
         // Profile-dependent options (defaults are conservative values)
         // These are overridden based on effective profile during validation
@@ -221,6 +233,8 @@ class Config
             // Performance profile options (v2.19+)
             'performance_profile', 'file_buffer_size', 'insert_batch_size',
             'max_batch_bytes', 'commit_frequency',
+            // Auto-aggressive mode (v2.25+)
+            'auto_profile_threshold',
         ];
 
         // Get defined variables after including the file
@@ -262,7 +276,7 @@ class Config
 
         // Check numeric values
         if ($this->values['linespersession'] < 1) {
-            $this->values['linespersession'] = 3000;
+            $this->values['linespersession'] = 5000;
         }
 
         if ($this->values['max_query_lines'] < 1) {
@@ -431,12 +445,19 @@ class Config
     /**
      * Retrieves a configuration value
      *
+     * Checks temporary overrides first, then falls back to stored values.
+     *
      * @param string $key Configuration key
      * @param mixed $default Default value if not found
      * @return mixed Configuration value
      */
     public function get(string $key, mixed $default = null): mixed
     {
+        // Check temporary overrides first
+        if (array_key_exists($key, $this->temporaryOverrides)) {
+            return $this->temporaryOverrides[$key];
+        }
+
         return $this->values[$key] ?? $default;
     }
 
@@ -454,6 +475,112 @@ class Config
     }
 
     /**
+     * Sets a temporary configuration override
+     *
+     * Temporary overrides take precedence over regular values but are not persisted.
+     * Useful for runtime adjustments like auto-aggressive mode for large files.
+     *
+     * When setting 'performance_profile' temporarily, this also re-applies
+     * profile defaults to ensure all profile-dependent settings are updated.
+     *
+     * @param string $key Configuration key
+     * @param mixed $value Value
+     * @return self
+     */
+    public function setTemporary(string $key, mixed $value): self
+    {
+        $this->temporaryOverrides[$key] = $value;
+
+        // If changing performance_profile, update effective profile and re-apply defaults
+        if ($key === 'performance_profile') {
+            $this->reapplyProfileForTemporaryOverride($value);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Re-applies profile settings when temporary override changes performance_profile
+     *
+     * @param string $profile The new profile value
+     * @return void
+     */
+    private function reapplyProfileForTemporaryOverride(string $profile): void
+    {
+        // Validate the profile
+        if (!in_array($profile, ['conservative', 'aggressive'], true)) {
+            return;
+        }
+
+        // Check memory requirements for aggressive mode
+        if ($profile === 'aggressive') {
+            $memoryLimit = $this->getPhpMemoryLimitBytes();
+            if ($memoryLimit !== -1 && $memoryLimit < self::AGGRESSIVE_MIN_MEMORY) {
+                // Cannot use aggressive, keep conservative
+                error_log(
+                    "BigDump: Auto-aggressive mode requested but memory_limit is insufficient. " .
+                    "Keeping conservative mode."
+                );
+                unset($this->temporaryOverrides['performance_profile']);
+                return;
+            }
+        }
+
+        // Update effective profile
+        $this->effectiveProfile = $profile;
+
+        // Apply profile defaults as temporary overrides for profile-dependent options
+        // Only override if user hasn't explicitly set them
+        $profileDefaults = self::$profileDefaults[$profile];
+        foreach ($profileDefaults as $key => $profileValue) {
+            // Skip if user has explicitly set this value (different from base default)
+            if ($this->values[$key] !== self::$defaults[$key]) {
+                continue;
+            }
+            // Skip if already overridden temporarily
+            if (array_key_exists($key, $this->temporaryOverrides) && $key !== 'performance_profile') {
+                continue;
+            }
+            // Apply profile default as temporary override
+            $this->temporaryOverrides[$key] = $profileValue;
+        }
+    }
+
+    /**
+     * Clears a temporary configuration override
+     *
+     * @param string $key Configuration key to clear
+     * @return self
+     */
+    public function clearTemporary(string $key): self
+    {
+        unset($this->temporaryOverrides[$key]);
+        return $this;
+    }
+
+    /**
+     * Clears all temporary configuration overrides
+     *
+     * @return self
+     */
+    public function clearAllTemporary(): self
+    {
+        $this->temporaryOverrides = [];
+        return $this;
+    }
+
+    /**
+     * Checks if a temporary override exists for a key
+     *
+     * @param string $key Configuration key
+     * @return bool True if temporary override exists
+     */
+    public function hasTemporary(string $key): bool
+    {
+        return array_key_exists($key, $this->temporaryOverrides);
+    }
+
+    /**
      * Checks if a configuration key exists
      *
      * @param string $key Configuration key
@@ -461,7 +588,8 @@ class Config
      */
     public function has(string $key): bool
     {
-        return array_key_exists($key, $this->values);
+        return array_key_exists($key, $this->temporaryOverrides)
+            || array_key_exists($key, $this->values);
     }
 
     /**
@@ -471,7 +599,7 @@ class Config
      */
     public function all(): array
     {
-        return $this->values;
+        return array_merge($this->values, $this->temporaryOverrides);
     }
 
     /**

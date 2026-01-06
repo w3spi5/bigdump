@@ -91,6 +91,12 @@ class ImportService
     private int $batchesSinceCommit = 0;
 
     /**
+     * Whether auto-aggressive mode was activated for this import.
+     * @var bool
+     */
+    private bool $autoAggressiveActivated = false;
+
+    /**
      * Get AutoTuner metrics for UI display.
      *
      * @param int $currentLines Current line count for speed calculation
@@ -98,7 +104,9 @@ class ImportService
      */
     public function getAutoTunerMetrics(int $currentLines = 0): array
     {
-        return $this->autoTuner->getMetrics($currentLines);
+        $metrics = $this->autoTuner->getMetrics($currentLines);
+        $metrics['auto_aggressive_activated'] = $this->autoAggressiveActivated;
+        return $metrics;
     }
 
     /**
@@ -112,7 +120,7 @@ class ImportService
         $this->database = new Database($config);
         $this->fileHandler = new FileHandler($config);
         $this->sqlParser = new SqlParser($config);
-        $this->linesPerSession = $config->get('linespersession', 3000);
+        $this->linesPerSession = $config->get('linespersession', 5000);
 
         // Initialize AutoTuner
         $this->autoTuner = new AutoTunerService($config);
@@ -139,6 +147,89 @@ class ImportService
     }
 
     /**
+     * Check file size and automatically upgrade to aggressive profile if needed.
+     *
+     * This implements the auto-aggressive mode feature (v2.25+):
+     * - Detects if file size exceeds auto_profile_threshold (default 100MB)
+     * - Automatically upgrades to aggressive profile for faster imports
+     * - Only activates if memory_limit allows aggressive mode
+     *
+     * @param string $filename Filename in uploads directory
+     * @return bool True if auto-aggressive mode was activated
+     */
+    public function checkAutoAggressiveMode(string $filename): bool
+    {
+        // Get the full file path
+        $filepath = $this->fileHandler->getFullPath($filename);
+
+        if (!file_exists($filepath)) {
+            return false;
+        }
+
+        // Get file size
+        $fileSize = filesize($filepath);
+        if ($fileSize === false) {
+            return false;
+        }
+
+        // Get the auto-aggressive threshold (default 100MB)
+        $threshold = (int) $this->config->get('auto_profile_threshold', 104857600);
+
+        // Check if file exceeds threshold and current profile is conservative
+        if ($fileSize > $threshold && $this->config->getEffectiveProfile() === 'conservative') {
+            // Attempt to upgrade to aggressive profile
+            $this->config->setTemporary('performance_profile', 'aggressive');
+
+            // Check if upgrade was successful (memory requirements met)
+            if ($this->config->getEffectiveProfile() === 'aggressive') {
+                $this->autoAggressiveActivated = true;
+
+                // Reinitialize components with new profile settings
+                $this->reinitializeWithNewProfile();
+
+                // Log the activation
+                $fileSizeMB = round($fileSize / 1024 / 1024, 1);
+                $thresholdMB = round($threshold / 1024 / 1024, 1);
+                error_log(
+                    "BigDump: Auto-aggressive mode activated for {$fileSizeMB}MB file " .
+                    "(threshold: {$thresholdMB}MB)"
+                );
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Reinitialize components after profile change.
+     *
+     * Called when auto-aggressive mode is activated to update
+     * INSERT batcher, COMMIT frequency, and other profile-dependent settings.
+     *
+     * @return void
+     */
+    private function reinitializeWithNewProfile(): void
+    {
+        // Update INSERT batcher with new profile settings
+        $insertBatchSize = (int) $this->config->get('insert_batch_size', 2000);
+        $maxBatchBytes = (int) $this->config->get('max_batch_bytes', 16777216);
+        $this->insertBatcher = new InsertBatcherService($insertBatchSize, $maxBatchBytes);
+
+        // Update COMMIT frequency
+        $this->commitFrequency = (int) $this->config->get('commit_frequency', 1);
+
+        // Update lines per session
+        $this->linesPerSession = (int) $this->config->get('linespersession', 5000);
+
+        // Recalculate optimal batch size with AutoTuner
+        if ($this->autoTuner->isEnabled()) {
+            $this->linesPerSession = $this->autoTuner->calculateOptimalBatchSize();
+        }
+    }
+
+    /**
      * Analyze file and initialize file-aware auto-tuning.
      * Call this when starting a fresh import (offset = 0).
      *
@@ -147,6 +238,9 @@ class ImportService
      */
     public function analyzeFile(string $filename): ?FileAnalysisResult
     {
+        // Check for auto-aggressive mode first
+        $this->checkAutoAggressiveMode($filename);
+
         if (!$this->autoTuner->isEnabled() || !$this->autoTuner->isFileAwareTuningEnabled()) {
             return null;
         }
@@ -667,5 +761,15 @@ class ImportService
     public function getInsertBatcherStatistics(): array
     {
         return $this->insertBatcher->getStatistics();
+    }
+
+    /**
+     * Check if auto-aggressive mode was activated.
+     *
+     * @return bool True if auto-aggressive mode is active
+     */
+    public function isAutoAggressiveActivated(): bool
+    {
+        return $this->autoAggressiveActivated;
     }
 }

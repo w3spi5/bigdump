@@ -1,8 +1,8 @@
-# BigDump 2.23 - Staggered MySQL Dump Importer
+# BigDump 2.24 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.23-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.24-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 [![PHAR](https://img.shields.io/badge/PHAR-single--file-purple.svg)](https://github.com/w3spi5/bigdump/releases)
 
@@ -153,7 +153,7 @@ This can provide **10-50x speedup** when importing the optimized file.
 - `.sql.gz` - Gzip compressed SQL
 - `.sql.bz2` - Bzip2 compressed SQL
 
-## PHAR Distribution (v2.23) — Easiest Install
+## PHAR Distribution (v2.24) — Easiest Install
 
 Download `bigdump.phar` from [Releases](https://github.com/w3spi5/bigdump/releases) and upload to your server. That's it!
 
