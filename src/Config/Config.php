@@ -91,6 +91,12 @@ class Config
         'db_password' => '',
         'db_connection_charset' => 'utf8mb4',
 
+        // Persistent database connections (v2.25+)
+        // Reduces connection overhead for large imports with many sessions.
+        // WARNING: Use with caution on shared hosting - may exhaust connection pool.
+        // Recommended only for VPS/dedicated servers with controlled connection limits.
+        'persistent_connections' => false,
+
         // Import configuration
         'filename' => '',
         'ajax' => true,
@@ -235,6 +241,8 @@ class Config
             'max_batch_bytes', 'commit_frequency',
             // Auto-aggressive mode (v2.25+)
             'auto_profile_threshold',
+            // Persistent connections (v2.25+)
+            'persistent_connections',
         ];
 
         // Get defined variables after including the file
