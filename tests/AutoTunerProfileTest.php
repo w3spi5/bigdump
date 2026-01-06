@@ -19,6 +19,8 @@
 declare(strict_types=1);
 
 require_once dirname(__DIR__) . '/src/Config/Config.php';
+require_once dirname(__DIR__) . '/src/Models/FileHandler.php';
+require_once dirname(__DIR__) . '/src/Services/FileAnalysisService.php';
 require_once dirname(__DIR__) . '/src/Services/AutoTunerService.php';
 
 use BigDump\Config\Config;

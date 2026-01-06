@@ -24,6 +24,10 @@ namespace BigDump\Services;
  * - Adaptive batch sizing based on average row size
  * - Extended batch efficiency metrics
  *
+ * Features (v2.25+):
+ * - Extended INSERT detection: Multi-VALUE INSERTs from mysqldump --extended-insert
+ *   are detected and executed directly without re-batching (optimization)
+ *
  * @package BigDump\Services
  * @author  w3spi5
  */
@@ -55,6 +59,7 @@ class InsertBatcherService
     private int $batchedCount = 0;
     private int $executedCount = 0;
     private int $totalBytesProcessed = 0;
+    private int $extendedInsertCount = 0;
 
     // Adaptive sizing: row size tracking
     private int $rowSizeSampleCount = 0;
@@ -64,6 +69,19 @@ class InsertBatcherService
      * Number of rows to sample for average row size calculation
      */
     private const ROW_SIZE_SAMPLE_LIMIT = 100;
+
+    /**
+     * Minimum number of `),(` patterns to consider as "extended INSERT"
+     * If a single INSERT has >= this many `),(` patterns, execute directly.
+     *
+     * Since N value sets have (N-1) `),(` separators:
+     * - 1 value set = 0 `),(` patterns (single INSERT, batch it)
+     * - 2 value sets = 1 `),(` pattern (extended INSERT, execute directly)
+     * - 3 value sets = 2 `),(` patterns (extended INSERT, execute directly)
+     *
+     * Threshold of 1 means any INSERT with 2+ value sets is extended.
+     */
+    private const EXTENDED_INSERT_THRESHOLD = 1;
 
     /**
      * Constructor.
@@ -96,9 +114,20 @@ class InsertBatcherService
         $parsed = $this->parseSimpleInsert($trimmedQuery);
 
         if ($parsed === null) {
-            // Not a simple INSERT - flush current batch and return this query
+            // Not a simple INSERT OR already an extended INSERT - flush current batch and return this query
             $result = $this->flush();
             $result['queries'][] = $query;
+            return $result;
+        }
+
+        // Check if this is an extended INSERT (already has multiple VALUES)
+        // This is signaled by parseSimpleInsert returning 'is_extended' => true
+        if ($parsed['is_extended']) {
+            // Extended INSERT detected - execute directly without batching
+            // Flush any pending batch first, then add this query
+            $result = $this->flush();
+            $result['queries'][] = $query;
+            $this->extendedInsertCount++;
             return $result;
         }
 
@@ -137,7 +166,10 @@ class InsertBatcherService
      * Matches: INSERT IGNORE INTO table VALUES (...)
      * Does NOT match: INSERT ... ON DUPLICATE KEY, INSERT ... SELECT, etc.
      *
-     * @return array{table: string, prefix: string, values: string}|null
+     * v2.25+: Detects extended INSERTs (multi-VALUE) and returns 'is_extended' => true
+     * to signal that the query should be executed directly without batching.
+     *
+     * @return array{table: string, prefix: string, values: string, is_extended: bool}|null
      */
     private function parseSimpleInsert(string $query): ?array
     {
@@ -206,10 +238,18 @@ class InsertBatcherService
             return null;
         }
 
+        // v2.25+: Detect extended INSERT pattern (multi-VALUE statements)
+        // If the query already contains multiple value sets like (1,'a'),(2,'b'),(3,'c')
+        // then it's already optimized by mysqldump --extended-insert
+        // We detect this by counting occurrences of '),(' pattern
+        $multiValueCount = substr_count($values, '),(');
+        $isExtended = $multiValueCount >= self::EXTENDED_INSERT_THRESHOLD;
+
         return [
             'table' => strtolower($table),
             'prefix' => $prefix,
             'values' => $values,
+            'is_extended' => $isExtended,
         ];
     }
 
@@ -357,7 +397,8 @@ class InsertBatcherService
      *     avg_rows_per_batch: float,
      *     batch_efficiency: float,
      *     avg_row_size: int,
-     *     effective_batch_size: int
+     *     effective_batch_size: int,
+     *     extended_insert_count: int
      * }
      */
     public function getStatistics(): array
@@ -397,6 +438,9 @@ class InsertBatcherService
             'batch_efficiency' => round($batchEfficiency, 3),
             'avg_row_size' => $this->getAverageRowSize(),
             'effective_batch_size' => $this->getEffectiveBatchSize(),
+
+            // Extended INSERT detection (v2.25+)
+            'extended_insert_count' => $this->extendedInsertCount,
         ];
     }
 
@@ -434,5 +478,15 @@ class InsertBatcherService
     public function getBatchSize(): int
     {
         return $this->batchSize;
+    }
+
+    /**
+     * Get count of extended INSERTs that were executed directly.
+     *
+     * @return int Number of extended INSERTs detected
+     */
+    public function getExtendedInsertCount(): int
+    {
+        return $this->extendedInsertCount;
     }
 }

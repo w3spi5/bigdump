@@ -23,12 +23,20 @@ use RuntimeException;
  * - BZ2 compression support with seek workaround (v2.20+)
  * - Proper BOM handling for UTF-8, UTF-16, UTF-32
  * - Configurable buffer size based on performance profile (v2.19+)
+ * - Compression type detection for auto-tuning (v2.25+)
  *
  * @package BigDump\Models
  * @author  w3spi5
  */
 class FileHandler
 {
+    /**
+     * Compression type constants
+     */
+    public const COMPRESSION_NONE = 'none';
+    public const COMPRESSION_GZIP = 'gzip';
+    public const COMPRESSION_BZ2 = 'bz2';
+
     /**
      * Configuration
      * @var Config
@@ -338,6 +346,43 @@ class FileHandler
             'csv' => 'CSV',
             default => 'Unknown',
         };
+    }
+
+    /**
+     * Gets compression type from file extension
+     *
+     * v2.25+: Used by AutoTunerService for compression-aware batch sizing.
+     *
+     * @param string $filename Filename to check
+     * @return string One of: COMPRESSION_NONE, COMPRESSION_GZIP, COMPRESSION_BZ2
+     */
+    public function getCompressionType(string $filename): string
+    {
+        $extension = $this->getExtension($filename);
+
+        return match ($extension) {
+            'gz', 'gzip' => self::COMPRESSION_GZIP,
+            'bz2' => self::COMPRESSION_BZ2,
+            default => self::COMPRESSION_NONE,
+        };
+    }
+
+    /**
+     * Gets compression type of currently open file
+     *
+     * @return string One of: COMPRESSION_NONE, COMPRESSION_GZIP, COMPRESSION_BZ2
+     */
+    public function getCurrentCompressionType(): string
+    {
+        if ($this->gzipMode) {
+            return self::COMPRESSION_GZIP;
+        }
+
+        if ($this->bz2Mode) {
+            return self::COMPRESSION_BZ2;
+        }
+
+        return self::COMPRESSION_NONE;
     }
 
     /**
