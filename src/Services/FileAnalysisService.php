@@ -194,6 +194,108 @@ class FileAnalysisService
             return false;
         }
     }
+
+    /**
+     * Find all CREATE TABLE statements in a SQL file.
+     *
+     * Scans the file (up to maxScanBytes) and extracts table names.
+     * Supports .sql, .gz, and .bz2 files.
+     *
+     * @param string $filepath Full path to SQL file
+     * @param int $maxScanBytes Maximum bytes to scan (default 50MB)
+     * @return array List of unique table names found
+     */
+    public function findCreateTables(string $filepath, int $maxScanBytes = 52428800): array
+    {
+        if (!file_exists($filepath) || !is_readable($filepath)) {
+            return [];
+        }
+
+        $lowerPath = strtolower($filepath);
+        $isGzip = str_ends_with($lowerPath, '.gz');
+        $isBzip2 = str_ends_with($lowerPath, '.bz2');
+
+        try {
+            $content = '';
+
+            if ($isGzip && function_exists('gzopen')) {
+                $handle = @gzopen($filepath, 'rb');
+                if ($handle === false) {
+                    return [];
+                }
+                $content = @gzread($handle, $maxScanBytes);
+                gzclose($handle);
+            } elseif ($isBzip2 && function_exists('bzopen')) {
+                $handle = @bzopen($filepath, 'r');
+                if ($handle === false) {
+                    return [];
+                }
+                while (!feof($handle) && strlen($content) < $maxScanBytes) {
+                    $chunk = @bzread($handle, 8192);
+                    if ($chunk === false) {
+                        break;
+                    }
+                    $content .= $chunk;
+                }
+                bzclose($handle);
+            } else {
+                $content = @file_get_contents($filepath, false, null, 0, $maxScanBytes);
+            }
+
+            if ($content === false || $content === '') {
+                return [];
+            }
+
+            // Pattern: CREATE TABLE (IF NOT EXISTS)? [`'"]?tablename[`'"]? (
+            $pattern = '/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?[`"\']?([a-zA-Z_][a-zA-Z0-9_]*)[`"\']?\s*\(/i';
+
+            if (preg_match_all($pattern, $content, $matches)) {
+                return array_values(array_unique($matches[1]));
+            }
+
+            return [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Drop all tables that would be created by a SQL file.
+     *
+     * Scans the file for CREATE TABLE statements, validates table names,
+     * and executes DROP TABLE IF EXISTS for each one.
+     *
+     * @param string $filepath Full path to SQL file
+     * @param \BigDump\Models\Database $database Database connection
+     * @return array ['dropped' => [...], 'errors' => [...]]
+     */
+    public function dropTablesForFile(string $filepath, \BigDump\Models\Database $database): array
+    {
+        $result = ['dropped' => [], 'errors' => []];
+        $tables = $this->findCreateTables($filepath);
+
+        if (empty($tables)) {
+            return $result;
+        }
+
+        foreach ($tables as $tableName) {
+            // Security: validate table name format
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $tableName)) {
+                $result['errors'][] = "Invalid table name skipped: {$tableName}";
+                continue;
+            }
+
+            try {
+                $sql = "DROP TABLE IF EXISTS `{$tableName}`";
+                $database->execute($sql);
+                $result['dropped'][] = $tableName;
+            } catch (\Throwable $e) {
+                $result['errors'][] = "Failed to drop {$tableName}: " . $e->getMessage();
+            }
+        }
+
+        return $result;
+    }
 }
 
 /**

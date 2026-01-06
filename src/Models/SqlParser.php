@@ -20,6 +20,7 @@ use BigDump\Config\Config;
  * - Proper handling of \\\\ (double backslash) before quotes
  * - DELIMITER detection only outside strings
  * - Protection against infinite memory accumulation
+ * - Optimized: skips analyzeQuotes for comments/empty lines when not in string
  *
  * @package BigDump\Models
  * @author  w3spi5
@@ -141,6 +142,9 @@ class SqlParser
     /**
      * Parses a line and returns complete query if available
      *
+     * OPTIMIZED (v2.25): When NOT inside a string, checks for comments/empty
+     * lines BEFORE calling analyzeQuotes, saving CPU cycles on comment-heavy dumps.
+     *
      * @param string $line Line to parse
      * @return array{query: string|null, error: string|null, delimiter_changed: bool} Parsing result
      */
@@ -155,21 +159,26 @@ class SqlParser
         // Normalize line endings
         $line = str_replace(["\r\n", "\r"], "\n", $line);
 
-        // Detect DELIMITER commands (only if not in a string)
-        if (!$this->inString && $this->isDelimiterCommand($line)) {
-            $newDelimiter = $this->extractDelimiter($line);
+        // OPTIMIZATION: When NOT in a string, perform early-exit checks
+        // before the more expensive analyzeQuotes call
+        if (!$this->inString) {
+            // Detect DELIMITER commands (only if not in a string)
+            if ($this->isDelimiterCommand($line)) {
+                $newDelimiter = $this->extractDelimiter($line);
 
-            if ($newDelimiter !== null) {
-                $this->delimiter = $newDelimiter;
-                $result['delimiter_changed'] = true;
+                if ($newDelimiter !== null) {
+                    $this->delimiter = $newDelimiter;
+                    $result['delimiter_changed'] = true;
+                }
+
+                return $result;
             }
 
-            return $result;
-        }
-
-        // Ignore comments and empty lines (only if not in a string)
-        if (!$this->inString && $this->isCommentOrEmpty($line)) {
-            return $result;
+            // OPTIMIZATION (v2.25): Skip analyzeQuotes for comments and empty lines
+            // when NOT inside a string. This saves significant CPU on comment-heavy dumps.
+            if ($this->isCommentOrEmpty($line)) {
+                return $result;
+            }
         }
 
         // Check memory limit

@@ -24,6 +24,56 @@
         [data-theme="light"] .icon-moon, :root:not([data-theme]) .icon-moon { display: inline; }
         [data-theme="dark"] .icon-moon { display: none; }
         [data-theme="dark"] .icon-sun { display: inline; }
+
+        /* Header gradient - Light mode (pastel) */
+        [data-theme="light"] .header-gradient, :root:not([data-theme]) .header-gradient {
+            background: linear-gradient(to right, #fcd34d, #fdba74, #fbbf24);
+        }
+        [data-theme="light"] .header-gradient .header-subtitle, :root:not([data-theme]) .header-gradient .header-subtitle {
+            color: #78350f;
+        }
+        [data-theme="light"] .header-gradient .header-title, :root:not([data-theme]) .header-gradient .header-title {
+            color: #451a03;
+        }
+        [data-theme="light"] .header-gradient .header-logo, :root:not([data-theme]) .header-gradient .header-logo {
+            color: #d97706;
+        }
+        [data-theme="light"] .header-gradient .header-badge, :root:not([data-theme]) .header-gradient .header-badge {
+            background: rgba(120, 53, 15, 0.2);
+            border: 1px solid rgba(120, 53, 15, 0.3);
+            color: #78350f;
+        }
+
+        /* Header gradient - Dark mode (muted pastel) */
+        [data-theme="dark"] .header-gradient {
+            background: linear-gradient(to right, #d97706, #ea580c, #c2410c);
+        }
+        [data-theme="dark"] .header-gradient .header-subtitle {
+            color: #fef3c7;
+        }
+        [data-theme="dark"] .header-gradient .header-title {
+            color: #fffbeb;
+        }
+        [data-theme="dark"] .header-gradient .header-logo {
+            color: #f59e0b;
+        }
+        [data-theme="dark"] .header-gradient .header-badge {
+            background: rgba(120, 53, 15, 0.4);
+            border: 1px solid rgba(254, 243, 199, 0.3);
+            color: #fef3c7;
+        }
+
+        /* Dark mode toggle button */
+        [data-theme="light"] .header-gradient .dark-toggle, :root:not([data-theme]) .header-gradient .dark-toggle {
+            background: rgba(120, 53, 15, 0.2);
+            border-color: rgba(120, 53, 15, 0.4);
+            color: #78350f;
+        }
+        [data-theme="dark"] .header-gradient .dark-toggle {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+            color: #ffffff;
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
@@ -34,19 +84,19 @@
 
     <div class="min-h-screen flex flex-col">
         <!-- Sticky Header -->
-        <header class="bg-gradient-to-r from-cyan-600 to-rose-900 text-white py-4 sticky top-0 z-50 shadow-lg">
+        <header class="header-gradient py-4 sticky top-0 z-50 shadow-lg">
             <div class="container-70 px-8 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <!-- Text-based header for PHAR mode (no external images) -->
-                    <div class="w-10 h-10 rounded-lg shadow-md bg-white/20 flex items-center justify-center font-bold text-xl">BD</div>
+                <a href="<?= $view->e($scriptUri) ?>" class="flex items-center gap-3 no-underline hover:opacity-90 transition-opacity">
+                    <!-- Text-based logo for PHAR mode (no external images) -->
+                    <div class="header-logo w-10 h-10 rounded-lg shadow-md bg-white/90 flex items-center justify-center font-bold text-xl">BD</div>
                     <div class="flex items-center">
-                        <h1><a href="./" class="text-2xl font-semibold text-white no-underline hover:text-white">BigDump v<?= $view->e($version) ?></a></h1>
-                        <span class="text-sm opacity-80 ml-4">Staggered MySQL Dump Importer</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs bg-white/20 rounded">PHAR</span>
+                        <h1 class="header-title text-2xl font-semibold">BigDump v<?= $view->e($version) ?></h1>
+                        <span class="header-subtitle text-sm ml-4">Staggered MySQL Dump Importer</span>
+                        <span class="header-badge ml-2 px-2 py-0.5 text-xs rounded">PHAR</span>
                     </div>
-                </div>
+                </a>
                 <div>
-                    <button id="darkModeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode" class="bg-white/15 border-2 border-white/30 text-white text-xl px-3 py-2 rounded-lg cursor-pointer hover:bg-white/25 hover:scale-105 transition-all flex items-center justify-center min-w-[44px] h-10">
+                    <button id="darkModeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode" class="dark-toggle border-2 text-xl px-3 py-2 rounded-lg cursor-pointer hover:scale-105 transition-all flex items-center justify-center min-w-[44px] h-10">
                         <svg class="icon icon-sun w-5 h-5 fill-current"><use href="#sun"></use></svg>
                         <svg class="icon icon-moon w-5 h-5 fill-current"><use href="#moon"></use></svg>
                     </button>

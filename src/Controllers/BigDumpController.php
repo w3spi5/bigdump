@@ -245,6 +245,27 @@ class BigDumpController
             return;
         }
 
+        // === SMART TABLE RESET ===
+        // Pre-scan the SQL file and DROP any tables that will be created
+        // This prevents "Table already exists" errors on re-import
+        $filepath = $fileHandler->getUploadDir() . '/' . $filename;
+        $analysisService = new \BigDump\Services\FileAnalysisService();
+
+        try {
+            $dropResult = $analysisService->dropTablesForFile(
+                $filepath,
+                $this->importService->getDatabase()
+            );
+
+            if (!empty($dropResult['dropped'])) {
+                error_log("BigDump: Smart Table Reset dropped " . count($dropResult['dropped']) . " tables: " . implode(', ', $dropResult['dropped']));
+            }
+        } catch (\Throwable $e) {
+            // Don't fail the import if Smart Table Reset fails
+            error_log("BigDump: Smart Table Reset failed (continuing anyway): " . $e->getMessage());
+        }
+        // === END SMART TABLE RESET ===
+
         // Clear any previous session and create new one
         ImportSession::clearSession();
         $session = ImportSession::fromRequest(
@@ -501,6 +522,10 @@ class BigDumpController
                 'stats' => $stats,
                 'hasCreateTable' => $hasCreateTable,
             ]);
+
+            // Clear session on error to prevent stale/corrupted session state
+            // Without this, "Back to Home" → "Import" sees invalid session and fails silently
+            $this->clearSessionDirect($sessionFile);
         } else {
             // Log successful import to history
             $this->historyService->addEntry(
