@@ -56,17 +56,34 @@ return [
      *   - Safe for shared hosting environments
      *   - 64KB file buffer, 2000 INSERT batch size, 16MB max batch bytes
      *   - COMMIT after every batch
+     *   - 5000 lines per session (v2.25+)
      *
      * 'aggressive':
      *   - Targets 128MB PHP memory_limit (REQUIRED: 128MB+ memory_limit)
      *   - +20-30% throughput improvement on INSERT-heavy dumps
      *   - 128KB file buffer, 5000 INSERT batch size, 32MB max batch bytes
      *   - COMMIT every 3 batches
+     *   - 10000 lines per session (v2.25+)
      *
      * WARNING: If memory_limit < 128MB, aggressive mode automatically falls
      * back to conservative to prevent memory exhaustion. Check logs for warnings.
      */
     'performance_profile' => 'conservative',
+
+    /**
+     * Auto-aggressive mode threshold (v2.25+).
+     *
+     * Files larger than this threshold automatically use aggressive profile,
+     * even if conservative is configured. This provides optimal performance
+     * for large imports without requiring manual configuration changes.
+     *
+     * Set to 0 to disable auto-aggressive mode.
+     * Default: 104857600 (100MB)
+     *
+     * Requirements:
+     *   - PHP memory_limit >= 128MB (otherwise auto-upgrade is skipped)
+     */
+    'auto_profile_threshold' => 104857600, // 100MB
 
     /**
      * File read buffer size (in bytes).
@@ -141,6 +158,11 @@ return [
 
     /**
      * Number of lines to process per session (base value).
+     *
+     * v2.25+ defaults (profile-dependent):
+     *   - Conservative: 5000 (increased from 3000)
+     *   - Aggressive: 10000 (increased from 5000)
+     *
      * With auto-tuning enabled (default), this is dynamically adjusted
      * based on available RAM (NVMe-optimized profiles):
      *   < 512 MB  ->  10,000 lines
@@ -150,7 +172,7 @@ return [
      *   < 8 GB    -> 150,000 lines
      *   > 8 GB    -> 200,000 lines
      */
-    'linespersession' => 3000,
+    'linespersession' => 5000,
 
     /**
      * Force a specific batch size (bypasses auto-tuning).
@@ -310,6 +332,7 @@ return [
 
     /**
      * Minimum batch size for auto-tuner.
+     * v2.25: Increased from 3000 to 5000 for better performance.
      */
     'min_batch_size' => 5000,
 

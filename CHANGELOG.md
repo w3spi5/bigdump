@@ -4,6 +4,41 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.24] - 2025-01-05 - Smart Table Reset & Bug Fixes
+
+### Added in 2.24
+
+- **Smart Table Reset**: Automatic DROP of tables before import
+  - Pre-scans SQL file for CREATE TABLE statements (supports .sql, .gz, .bz2)
+  - Automatically drops existing tables before import to prevent "Table already exists" errors
+  - New methods in `FileAnalysisService`: `findCreateTables()`, `dropTablesForFile()`
+  - Security: Table name validation with regex, backtick quoting
+  - Graceful failure: import continues even if Smart Reset fails
+
+- **Smart Table Reset Tests**: New test file `tests/SmartTableResetTest.php`
+  - 7 tests covering table extraction, gzip support, deduplication, security validation
+
+### Fixed in 2.24
+
+- **Session cleanup after SSE error**: Session now properly cleared after import errors
+  - Previously, failed imports left stale session data causing silent failures on retry
+  - Added `clearSessionDirect()` call after error event in `sseImport()`
+
+- **Navigation links**: All "Back to Home" links now use `$scriptUri`
+  - Fixed `href="../"` in `error.php` (line 88)
+  - Fixed `href="/"` in `import.php` (line 345) - was going to server root!
+  - Fixed `href="./"` in `layout.php` and `layout_phar.php` (header logo)
+  - All navigation now works correctly regardless of installation path
+
+### Changed in 2.24
+
+- **Header styling**: Theme-aware pastel gradients for light and dark modes
+  - Light mode: soft yellow/orange gradient (`#fcd34d → #fdba74 → #fbbf24`)
+  - Dark mode: muted amber/orange gradient (`#d97706 → #ea580c → #c2410c`)
+  - CSS class-based theming (`.header-gradient`, `.header-title`, `.header-subtitle`)
+
+---
+
 ## [2.23] - 2025-12-31 - Single-File PHAR Distribution
 
 ### Added in 2.23
