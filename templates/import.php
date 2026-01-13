@@ -371,6 +371,7 @@
 
     <?php if (isset($ajaxScript)): ?>
         <script src="assets/js/favicon-animator.js"></script>
+        <script src="assets/js/celebration.js"></script>
         <?= $ajaxScript ?>
     <?php elseif (isset($redirectScript)): ?>
         <?= $redirectScript ?>

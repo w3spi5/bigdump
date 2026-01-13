@@ -853,6 +853,57 @@
 }
 
 /* ========================================
+   PROGRESS BAR COMPLETION ANIMATION
+   ======================================== */
+
+.progress-bar-complete {
+    background: linear-gradient(90deg, #22c55e, #16a34a, #4ade80, #22c55e) !important;
+    background-size: 300% 100% !important;
+    animation: progress-complete-glow 2s ease-in-out infinite !important;
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.6),
+                0 0 40px rgba(34, 197, 94, 0.4),
+                inset 0 0 10px rgba(255, 255, 255, 0.2) !important;
+}
+
+@keyframes progress-complete-glow {
+    0%, 100% {
+        background-position: 0% 50%;
+        box-shadow: 0 0 20px rgba(34, 197, 94, 0.6),
+                    0 0 40px rgba(34, 197, 94, 0.4),
+                    inset 0 0 10px rgba(255, 255, 255, 0.2);
+    }
+    50% {
+        background-position: 100% 50%;
+        box-shadow: 0 0 30px rgba(34, 197, 94, 0.8),
+                    0 0 60px rgba(34, 197, 94, 0.5),
+                    inset 0 0 15px rgba(255, 255, 255, 0.3);
+    }
+}
+
+/* Dark mode adjustment for completion glow */
+.dark .progress-bar-complete {
+    box-shadow: 0 0 25px rgba(74, 222, 128, 0.7),
+                0 0 50px rgba(74, 222, 128, 0.5),
+                inset 0 0 10px rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Success message fade-in animation */
+.animate-fade-in {
+    animation: fade-in-up 0.5s ease-out forwards;
+}
+
+@keyframes fade-in-up {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========================================
    FILE UPLOAD ENHANCEMENTS
    ======================================== */
 
