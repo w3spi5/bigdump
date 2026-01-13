@@ -49,6 +49,11 @@ All notable changes to BigDump are documented in this file.
   - Pulsing box-shadow animation
   - Dark mode optimized glow intensity
 
+- **CI Workflow**: Fixed build-assets workflow for protected branches
+  - Auto-commit now only runs on `develop` branch
+  - PR to `main` triggers build verification only
+  - Prevents conflict with branch protection rules
+
 ---
 
 ## [2.26] - 2025-01-13 - Clean URLs & Bug Fixes
