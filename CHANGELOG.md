@@ -4,6 +4,53 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.27] - 2025-01-13 - Celebration UI & Import Completion
+
+### Added in 2.27
+
+- **Celebration Effects on Import Completion**: Visual feedback for successful imports
+  - Canvas-based fireworks with particle trails, glow effects, and color gradients
+  - 3D rotating confetti with realistic physics (air resistance, terminal velocity)
+  - Confetti cannons firing from screen sides at intervals
+  - Fireworks display for 20 seconds, confetti falls indefinitely
+  - Performance optimized with `requestAnimationFrame`
+
+- **Animated Favicon**: Visual indicator during active import
+  - Canvas-generated bouncing arrow animation
+  - Starts on SSE connection, stops on completion/error
+  - Restores original favicon when stopped
+
+- **Skeleton Loaders**: Better loading state UX
+  - Horizontal shimmer animation for unknown statistics
+  - Replaces static "?" placeholders during import start
+  - Smooth gradient animation with dark mode support
+
+### Fixed in 2.27
+
+- **99.5% Progress Bug**: Import no longer stuck at 99.5%
+  - Forces 100% display when `data.finished` is true
+  - Updates all percentage displays (progress bar, stat boxes, table)
+  - Adds green glow animation class on completion
+
+- **SSE Completion Redirect**: Success message now displays in-page
+  - No longer redirects to error page after session cleanup
+  - Shows "Import terminé !" with statistics grid
+  - French localization for success screen labels
+
+### Changed in 2.27
+
+- **Success Screen Styling**: Enhanced dark mode support
+  - New `.stat-card-success` class with gradient backgrounds
+  - Glowing borders and hover effects in dark mode
+  - French labels: "Requêtes", "Lignes", "Traité", "Durée"
+
+- **Progress Bar Completion**: Animated green glow effect
+  - `.progress-bar-complete` class with shimmer gradient
+  - Pulsing box-shadow animation
+  - Dark mode optimized glow intensity
+
+---
+
 ## [2.26] - 2025-01-13 - Clean URLs & Bug Fixes
 
 ### Added in 2.26
