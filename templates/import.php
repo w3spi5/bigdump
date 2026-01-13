@@ -342,7 +342,7 @@
 
 <div class="text-center mt-3">
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Back to File List</a>
-    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
+    <a href="/" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -356,14 +356,14 @@
     <noscript>
         <div class="alert alert-warning text-center">
             JavaScript is disabled. Click the link below to continue manually.<br><br>
-            <a href="<?= $view->e($scriptUri) ?>?action=start_import" class="btn btn-blue">
+            <a href="<?= $view->e($scriptUri) ?>/import/start" class="btn btn-blue">
                 Continue Import
             </a>
         </div>
     </noscript>
 
     <div class="text-center mt-3">
-        <a href="<?= $view->e($scriptUri) ?>?action=stop_import" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
+        <a href="<?= $view->e($scriptUri) ?>/import/stop" class="btn btn-gray" onclick="return confirm('Are you sure you want to stop the import? Progress will be lost.');">
             STOP Import
         </a>
         <span class="text-muted" style="margin-left: 15px;">or wait for automatic continuation</span>
@@ -379,7 +379,7 @@
 
 <div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">
     <?php if ($tableAlreadyExists): ?>
-    <a href="<?= $view->e($scriptUri) ?>?action=drop_restart&table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
+    <a href="<?= $view->e($scriptUri) ?>/import/drop-restart?table=<?= urlencode($tableAlreadyExists) ?>&fn=<?= urlencode($session->getFilename()) ?>"
        class="btn btn-amber"
        onclick="return confirm('This will DROP TABLE `<?= $view->e($tableAlreadyExists) ?>` and restart the import. Continue?');">
         Drop "<?= $view->e($tableAlreadyExists) ?>" &amp; Restart Import
@@ -387,7 +387,7 @@
     <span class="text-muted">or</span>
     <?php endif; ?>
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Start Over (resume)</a>
-    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-cyan">Back to Home</a>
+    <a href="/" class="btn btn-cyan">Back to Home</a>
     <?php if (!$tableAlreadyExists): ?>
     <span class="text-muted">(DROP old tables before restarting)</span>
     <?php endif; ?>

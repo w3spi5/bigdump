@@ -17,6 +17,8 @@ SetEnvIf Request_URI "action=sse_import" no-gzip=1
 SetEnvIf Request_URI "import/sse" no-gzip=1
 
 RewriteRule ^import/drop-restart$ index.php?action=drop_restart [L,QSA]
+RewriteRule ^import/restart$ index.php?action=restart_import [L,QSA]
 RewriteRule ^preview$ index.php?action=preview [L,QSA]
 RewriteRule ^files/list$ index.php?action=files_list [L,QSA]
+RewriteRule ^sse/files$ index.php?action=sse_files [L,QSA]
 RewriteRule ^history$ index.php?action=history [L,QSA]

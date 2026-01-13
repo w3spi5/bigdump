@@ -129,12 +129,12 @@ class Config
         'csv_add_slashes' => true,
 
         // SQL comment markers
+        // Note: SQL standard "--" comments (with or without space) are handled
+        // automatically by SqlParser. Only add additional markers here.
         // Note: /*! (MySQL conditional comments) are NOT treated as comments
         // because they contain valid SQL code that MySQL executes
-        // DELIMITER is also not a comment - it's a client command
         'comment_markers' => [
             '#',
-            '-- ',
         ],
 
         // SQL pre-queries - Performance optimizations enabled by default
