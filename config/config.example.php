@@ -257,12 +257,15 @@ return [
     /**
      * SQL comment markers.
      * Lines starting with these strings will be ignored.
+     *
+     * Note: SQL standard "--" comments (with or without trailing space)
+     * are handled automatically by the parser. You don't need to add them here.
+     *
+     * WARNING: Do NOT add '/*!' here - MySQL conditional comments contain
+     * valid SQL code that must be executed (charset settings, etc.).
      */
     'comment_markers' => [
         '#',
-        '-- ',
-        'DELIMITER',
-        '/*!',
         // Uncomment if needed:
         // '---',           // For some proprietary dumps
         // 'CREATE DATABASE', // To ignore CREATE DATABASE

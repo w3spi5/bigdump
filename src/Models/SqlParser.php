@@ -258,6 +258,11 @@ class SqlParser
     /**
      * Checks if a line is a comment or empty
      *
+     * SQL standard comment handling:
+     * - "--" alone or "-- text" are comments (with or without space after --)
+     * - "#" starts a MySQL comment
+     * - Additional markers can be configured
+     *
      * @param string $line Line to check
      * @return bool True if comment or empty
      */
@@ -267,6 +272,13 @@ class SqlParser
 
         if ($trimmed === '') {
             return true;
+        }
+
+        // SQL standard: -- followed by space OR end of line is a comment
+        // This handles phpMyAdmin's separator lines like "--\n" and "-- comment\n"
+        if (str_starts_with($trimmed, '--')) {
+            // Either just "--" or "-- something" (with space)
+            return strlen($trimmed) === 2 || $trimmed[2] === ' ';
         }
 
         foreach ($this->commentMarkers as $marker) {
