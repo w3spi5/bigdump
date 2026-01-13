@@ -191,21 +191,21 @@ class AjaxService
                     '</div>' +
                 '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Queries</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Requêtes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + linesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Lines</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Lignes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + bytesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Processed</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Traité</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + elapsedTime + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Duration</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Durée</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
