@@ -164,25 +164,32 @@ class AjaxService
      * @param {object} stats Statistics object
      */
     function displaySuccessInPage(stats) {
+        // Start celebration effects (fireworks + confetti)
+        if (window.BigDump && window.BigDump.celebration) {
+            window.BigDump.celebration.start();
+        }
+
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
         var elapsed = document.getElementById('elapsedTime');
         var elapsedTime = elapsed ? elapsed.textContent : '00:00:00';
 
-        // Create success HTML with Tailwind classes
-        var successHtml = '<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-6" id="sse-success-alert" role="alert">' +
-            '<div class="flex items-start gap-4">' +
-                '<div class="flex-shrink-0">' +
-                    '<svg class="w-8 h-8 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
-                        '<path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>' +
-                    '</svg>' +
+        // Delay success message slightly to let celebration start first
+        setTimeout(function() {
+            // Create success HTML with Tailwind classes
+            var successHtml = '<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-6 animate-fade-in" id="sse-success-alert" role="alert">' +
+                '<div class="flex items-start gap-4">' +
+                    '<div class="flex-shrink-0">' +
+                        '<svg class="w-8 h-8 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                    '</div>' +
+                    '<div class="flex-1">' +
+                        '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">Import terminé !</h2>' +
+                        '<div class="text-sm text-green-700 dark:text-green-300 mt-1">Le fichier <strong>' + escapeHtml(filename) + '</strong> a été importé avec succès.</div>' +
+                    '</div>' +
                 '</div>' +
-                '<div class="flex-1">' +
-                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">Import Complete!</h2>' +
-                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.</div>' +
-                '</div>' +
-            '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
                 '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
                     '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
@@ -204,15 +211,16 @@ class AjaxService
         '</div>' +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
-                'Back to Home</a>' +
+                'Retour à l\\'accueil</a>' +
         '</div>';
 
-        // Find main content area and replace content
-        var mainContent = document.querySelector('main');
-        if (mainContent) {
-            // Clear all content and show success message
-            mainContent.innerHTML = successHtml;
-        }
+            // Find main content area and replace content
+            var mainContent = document.querySelector('main');
+            if (mainContent) {
+                // Clear all content and show success message
+                mainContent.innerHTML = successHtml;
+            }
+        }, 500); // 500ms delay for celebration to start
     }
 
     /**
@@ -379,6 +387,35 @@ class AjaxService
     function updateProgress(data) {
         var stats = data.stats;
         var session = data.session;
+
+        // Fix 99.5% bug: Force 100% display when import is finished
+        // The offset/fileSize calculation can plateau at 99.5% due to rounding
+        if (data.finished) {
+            var progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.classList.add('progress-bar-complete');
+            }
+            // Force all percentage displays to show 100%
+            var statBoxes = document.querySelectorAll('.stat-box .stat-value');
+            if (statBoxes[3]) {
+                statBoxes[3].textContent = '100.0%';
+            }
+            var pctDisplay = document.querySelector('#elapsedTimer + div');
+            if (pctDisplay) {
+                pctDisplay.textContent = '100.00% Complete';
+            }
+            // Update table percentage row to show 100%
+            var table = document.querySelector('table tbody');
+            if (table) {
+                var rows = table.getElementsByTagName('tr');
+                if (rows[5]) { // Row 6 = Percentage
+                    var cells = rows[5].getElementsByTagName('td');
+                    if (cells[2]) cells[2].textContent = '100.00'; // pct_done column
+                }
+            }
+            return; // Don't process further updates when finished
+        }
 
         // Update line number display (using textContent for XSS safety)
         if (session && session.start !== undefined) {
