@@ -370,6 +370,7 @@
     </div>
 
     <?php if (isset($ajaxScript)): ?>
+        <script src="assets/js/favicon-animator.js"></script>
         <?= $ajaxScript ?>
     <?php elseif (isset($redirectScript)): ?>
         <?= $redirectScript ?>
