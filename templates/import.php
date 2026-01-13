@@ -207,36 +207,36 @@
                     </td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['lines_this']) ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['lines_done']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '?' ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '?' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['lines_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_togo']) : '<span class="skeleton"></span>' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['lines_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['lines_total']) : '<span class="skeleton"></span>' ?></td>
                 </tr>
                 <tr class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong>Queries</strong></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['queries_this']) ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['queries_done']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '?' ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '?' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['queries_togo'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_togo']) : '<span class="skeleton"></span>' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100<?= $calcClass ?>"><?= $statistics['queries_total'] !== null ? ($statistics['finished'] ? '' : '~') . number_format($statistics['queries_total']) : '<span class="skeleton"></span>' ?></td>
                 </tr>
                 <tr class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong>Bytes</strong></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['bytes_this']) ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= number_format($statistics['bytes_done']) ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['bytes_togo'] !== null ? number_format($statistics['bytes_togo']) : '?' ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['bytes_total'] !== null ? number_format($statistics['bytes_total']) : '?' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['bytes_togo'] !== null ? number_format($statistics['bytes_togo']) : '<span class="skeleton"></span>' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['bytes_total'] !== null ? number_format($statistics['bytes_total']) : '<span class="skeleton"></span>' ?></td>
                 </tr>
                 <tr class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong>KB</strong></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_this'] ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_done'] ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_togo'] ?? '?' ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_total'] ?? '?' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_togo'] ?? '<span class="skeleton"></span>' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['kb_total'] ?? '<span class="skeleton"></span>' ?></td>
                 </tr>
                 <tr class="even:bg-gray-50 dark:even:bg-gray-800/50">
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><strong>MB</strong></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_this'] ?></td>
                     <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_done'] ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_togo'] ?? '?' ?></td>
-                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_total'] ?? '?' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_togo'] ?? '<span class="skeleton"></span>' ?></td>
+                    <td class="px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100"><?= $statistics['mb_total'] ?? '<span class="skeleton"></span>' ?></td>
                 </tr>
                 <?php if (!$statistics['gzip_mode']): ?>
                 <tr class="even:bg-gray-50 dark:even:bg-gray-800/50">

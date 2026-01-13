@@ -818,6 +818,41 @@
 }
 
 /* ========================================
+   SKELETON LOADER
+   ======================================== */
+
+.skeleton {
+    display: inline-block;
+    height: 1em;
+    min-width: 3em;
+    background: linear-gradient(
+        90deg,
+        rgba(156, 163, 175, 0.3) 25%,
+        rgba(156, 163, 175, 0.5) 50%,
+        rgba(156, 163, 175, 0.3) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 1.5s ease-in-out infinite;
+    border-radius: 0.25rem;
+    vertical-align: middle;
+}
+
+[data-theme="dark"] .skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(75, 85, 99, 0.4) 25%,
+        rgba(75, 85, 99, 0.7) 50%,
+        rgba(75, 85, 99, 0.4) 75%
+    );
+    background-size: 200% 100%;
+}
+
+@keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ========================================
    FILE UPLOAD ENHANCEMENTS
    ======================================== */
 
