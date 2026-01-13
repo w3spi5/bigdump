@@ -661,6 +661,10 @@ class AjaxService
             }
             // Start elapsed timer
             startElapsedTimer();
+            // Start favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.start();
+            }
         });
 
         // Handle progress events (real-time updates)
@@ -697,6 +701,10 @@ class AjaxService
             console.log('SSE: Import complete');
             smoothing.stop();
             stopElapsedTimer();
+            // Stop favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.stop();
+            }
             intentionalClose = true;
             source.close();
             try {
@@ -736,6 +744,10 @@ class AjaxService
 
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     // Display error in page with hasCreateTable info
                     // Combine stats and hasCreateTable into stats object for displayErrorInPage
                     var errorStats = data.stats || {};
@@ -744,6 +756,10 @@ class AjaxService
                 } catch (err) {
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     displayErrorInPage('Import error occurred', null);
                 }
                 intentionalClose = true;
