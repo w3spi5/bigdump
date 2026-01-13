@@ -80,7 +80,7 @@ class AjaxService
             var tableName = alreadyExistsMatch[1];
             if (hasCreateTable) {
                 // Table exists AND CREATE TABLE in file → show Drop & Restart button
-                actionButtons = '<a href="' + scriptUri + '?action=drop_restart&table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
+                actionButtons = '<a href="' + scriptUri + '/import/drop-restart?table=' + encodeURIComponent(tableName) + '&fn=' + encodeURIComponent(filename) + '" ' +
                     'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-amber-500 hover:bg-amber-600 text-white" ' +
                     'onclick="return confirm(\'This will DROP TABLE `' + escapeHtml(tableName) + '` and restart the import. Continue?\');">' +
                     'Drop "' + escapeHtml(tableName) + '" &amp; Restart Import</a>' +
@@ -95,7 +95,7 @@ class AjaxService
             var tableName = doesntExistMatch[1];
             if (hasCreateTable) {
                 // Table doesn't exist BUT CREATE TABLE in file → show Restart from Beginning button
-                actionButtons = '<a href="' + scriptUri + '?action=restart_import&fn=' + encodeURIComponent(filename) + '" ' +
+                actionButtons = '<a href="' + scriptUri + '/import/restart?fn=' + encodeURIComponent(filename) + '" ' +
                     'class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-green-500 hover:bg-green-600 text-white">' +
                     'Restart from Beginning</a>' +
                     '<span class="text-gray-500 dark:text-gray-400 mx-2">or</span>';
@@ -135,8 +135,8 @@ class AjaxService
         helpText +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             actionButtons +
-            '<a href="' + scriptUri + '?action=home" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</a>' +
-            '<a href="?action=home" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
+            '<a href="' + scriptUri + '" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</a>' +
+            '<a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
         '</div>';
 
         // Find main content area and insert error at the beginning
@@ -557,8 +557,8 @@ class AjaxService
         }
     };
 
-    // SSE URL - use action parameter
-    var sseUrl = scriptUri + '?action=sse_import';
+    // SSE URL - use clean URL path
+    var sseUrl = scriptUri + '/import/sse';
 
     // Create and setup EventSource connection
     function createConnection() {

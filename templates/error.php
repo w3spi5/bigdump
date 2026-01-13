@@ -85,7 +85,7 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 <?php endif; ?>
 
 <div class="text-center mt-3">
-    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-cyan">
+    <a href="/" class="btn btn-cyan">
         Back to Home
     </a>
 </div>
