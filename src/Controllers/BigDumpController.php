@@ -285,7 +285,7 @@ class BigDumpController
 
         // Redirect to import page using query parameter
         $scriptUri = $this->request->getScriptUri();
-        $this->response->redirect($scriptUri . '?action=import');
+        $this->response->redirect($scriptUri . '/import');
     }
 
     /**
@@ -705,7 +705,7 @@ class BigDumpController
 
         // Redirect to import page using query parameter
         $scriptUri = $this->request->getScriptUri();
-        $this->response->redirect($scriptUri . '?action=import');
+        $this->response->redirect($scriptUri . '/import');
     }
 
     /**
@@ -753,7 +753,7 @@ class BigDumpController
 
         // Redirect to import
         $scriptUri = $this->request->getScriptUri();
-        $this->response->redirect($scriptUri . '?action=import');
+        $this->response->redirect($scriptUri . '/import');
     }
 
     /**

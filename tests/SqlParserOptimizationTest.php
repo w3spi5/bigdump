@@ -438,5 +438,92 @@ $runner->test('Double quotes string with comment-like content', function () use 
     }
 });
 
+// ----------------------------------------------------------------------------
+// Test 13: SQL comment lines without space after -- are filtered (v2.26 fix)
+// ----------------------------------------------------------------------------
+$runner->test('SQL comment lines without space after -- are filtered', function () use ($runner) {
+    $configFile = createTestConfig();
+
+    try {
+        $config = new Config($configFile);
+        $parser = new SqlParser($config);
+
+        // phpMyAdmin style separators (-- without trailing space)
+        $result1 = $parser->parseLine("--\n");
+        $runner->assertNull($result1['query'], "Line with just -- should be filtered");
+
+        $result2 = $parser->parseLine("-- Index pour la table\n");
+        $runner->assertNull($result2['query'], "Line with -- and space should be filtered");
+
+        $result3 = $parser->parseLine("--\n");
+        $runner->assertNull($result3['query'], "Another -- line should be filtered");
+
+        // The actual DDL statement
+        $result4 = $parser->parseLine("ALTER TABLE `test` ADD PRIMARY KEY (`id`);\n");
+        $runner->assertNotNull($result4['query'], "ALTER TABLE should return a query");
+        $runner->assertTrue(
+            str_starts_with(trim($result4['query']), 'ALTER TABLE'),
+            "Query should start with ALTER TABLE, not --"
+        );
+        $runner->assertFalse(
+            str_contains($result4['query'], '--'),
+            "Query should not contain comment markers"
+        );
+    } finally {
+        cleanupTestConfig($configFile);
+    }
+});
+
+// ----------------------------------------------------------------------------
+// Test 14: Multi-line ALTER TABLE with phpMyAdmin comments parses correctly
+// ----------------------------------------------------------------------------
+$runner->test('Multi-line ALTER TABLE with phpMyAdmin comments parses correctly', function () use ($runner) {
+    $configFile = createTestConfig();
+
+    try {
+        $config = new Config($configFile);
+        $parser = new SqlParser($config);
+
+        // Simulate phpMyAdmin dump format
+        $lines = [
+            "--\n",
+            "-- Index pour les tables déchargées\n",
+            "--\n",
+            "\n",
+            "--\n",
+            "-- Index pour la table `wespy_diffusion`\n",
+            "--\n",
+            "ALTER TABLE `wespy_diffusion`\n",
+            "  ADD PRIMARY KEY (`id_diffusion`),\n",
+            "  ADD KEY `titre_id` (`titre_id`),\n",
+            "  ADD KEY `station_id` (`station_id`);\n",
+        ];
+
+        $query = null;
+        foreach ($lines as $line) {
+            $result = $parser->parseLine($line);
+            if ($result['query'] !== null) {
+                $query = $result['query'];
+            }
+        }
+
+        $runner->assertNotNull($query, "Should have parsed ALTER TABLE query");
+        $runner->assertTrue(
+            str_starts_with(trim($query), 'ALTER TABLE'),
+            "Query should start with ALTER TABLE"
+        );
+        $runner->assertTrue(
+            str_contains($query, 'ADD PRIMARY KEY'),
+            "Query should contain ADD PRIMARY KEY"
+        );
+        $runner->assertTrue(
+            str_contains($query, 'ADD KEY `titre_id`'),
+            "Query should contain ADD KEY titre_id"
+        );
+    } finally {
+        cleanupTestConfig($configFile);
+    }
+});
+
 // Output test results
 exit($runner->summary());

@@ -4,6 +4,34 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.26] - 2025-01-13 - Clean URLs & Bug Fixes
+
+### Added in 2.26
+
+- **Clean URL Routing**: SEO-friendly URLs throughout the application
+  - `/import` instead of `?action=import`
+  - `/preview`, `/history`, `/files/list` for AJAX endpoints
+  - `/import/start`, `/import/stop`, `/import/sse` for import actions
+  - Backward compatible: old `?action=` URLs still work
+
+### Fixed in 2.26
+
+- **SQL Comment Parsing**: Fixed `--` comment handling in SqlParser
+  - `--` alone or `-- text` (with space) now correctly treated as comments
+  - `--column` patterns (without space) preserved as valid SQL identifiers
+  - Prevents false positives that could skip valid SQL statements
+
+- **Preview Button Alignment**: Fixed vertical alignment of preview icon button
+  - Added `vertical-align: middle` to `.btn-icon` class
+  - Icon buttons now align correctly with text buttons in file list
+
+### Changed in 2.26
+
+- **URL Generation**: All templates, controllers and JavaScript updated for clean URLs
+- **Error Page**: "Back to Home" now correctly redirects to `/` instead of current page
+
+---
+
 ## [2.25] - 2025-01-06 - Performance Audit Import Optimization
 
 ### Added in 2.25
