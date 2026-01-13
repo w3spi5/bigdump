@@ -158,6 +158,75 @@ class AjaxService
     }
 
     /**
+     * Displays an import success message directly in the page.
+     * Creates a styled success container matching the error display pattern.
+     *
+     * @param {object} stats Statistics object
+     */
+    function displaySuccessInPage(stats) {
+        var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
+        var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
+        var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
+        var elapsed = document.getElementById('elapsedTime');
+        var elapsedTime = elapsed ? elapsed.textContent : '00:00:00';
+
+        // Create success HTML with Tailwind classes
+        var successHtml = '<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-6" id="sse-success-alert" role="alert">' +
+            '<div class="flex items-start gap-4">' +
+                '<div class="flex-shrink-0">' +
+                    '<svg class="w-8 h-8 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                        '<path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm13.36-1.814a.75.75 0 10-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 00-1.06 1.06l2.25 2.25a.75.75 0 001.14-.094l3.75-5.25z" clip-rule="evenodd"/>' +
+                    '</svg>' +
+                '</div>' +
+                '<div class="flex-1">' +
+                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">Import Complete!</h2>' +
+                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.</div>' +
+                '</div>' +
+            '</div>' +
+            '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400">Queries</div>' +
+                '</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400">Lines</div>' +
+                '</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400">Processed</div>' +
+                '</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400">Duration</div>' +
+                '</div>' +
+            '</div>' +
+        '</div>' +
+        '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
+            '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
+                'Back to Home</a>' +
+        '</div>';
+
+        // Find main content area and replace content
+        var mainContent = document.querySelector('main');
+        if (mainContent) {
+            // Clear all content and show success message
+            mainContent.innerHTML = successHtml;
+        }
+    }
+
+    /**
+     * Formats bytes into human-readable format
+     */
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        var k = 1024;
+        var sizes = ['B', 'KB', 'MB', 'GB'];
+        var i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    /**
      * Escapes HTML to prevent XSS
      */
     function escapeHtml(text) {
@@ -630,7 +699,13 @@ class AjaxService
             stopElapsedTimer();
             intentionalClose = true;
             source.close();
-            location.reload();
+            try {
+                var data = JSON.parse(e.data);
+                displaySuccessInPage(data.stats);
+            } catch (err) {
+                // Fallback: show basic success without stats
+                displaySuccessInPage(null);
+            }
         });
 
         // Handle error events from server (import errors)
