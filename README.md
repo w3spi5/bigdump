@@ -489,3 +489,20 @@ If uploading large files (>500MB) fails with HTTP 500 error but smaller files wo
 <p align="center">
   <img src="assets/docs/demov2.2.png" alt="BigDump Screenshot" width="800">
 </p>
+
+---
+
+## Acknowledgments
+
+This project is maintained by [w3spi5](https://github.com/w3spi5) with AI-assisted development using Claude. 
+
+AI assists with:
+- Code implementation and help to refactoring
+- Documentation drafting
+- Test coverage
+
+Human-driven:
+- Refactoring
+- Architecture decisions
+- Feature prioritization
+- Code review and quality control
