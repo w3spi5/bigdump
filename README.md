@@ -1,8 +1,8 @@
-# BigDump 2.26 - Staggered MySQL Dump Importer
+# BigDump 2.28 - Staggered MySQL Dump Importer
 
 [![PHP Version](https://img.shields.io/badge/php-8.1+-yellow.svg)](https://php.net/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Package Version](https://img.shields.io/badge/version-2.26-blue.svg)](https://php.net/)
+[![Package Version](https://img.shields.io/badge/version-2.28-blue.svg)](https://php.net/)
 [![Build Assets](https://img.shields.io/badge/build-GitHub_Actions-2088FF.svg)](https://github.com/w3spi5/bigdump/actions)
 [![PHAR](https://img.shields.io/badge/PHAR-single--file-purple.svg)](https://github.com/w3spi5/bigdump/releases)
 
@@ -88,6 +88,43 @@ For dedicated servers with 128MB+ memory, providing +20-30% throughput improveme
 | Memory limit | <64MB | <128MB |
 
 **Note:** Aggressive mode automatically falls back to conservative if PHP `memory_limit` is below 128MB.
+
+## Continue On Error Mode (v2.28)
+
+BigDump 2.27 introduces a **continue on error** option that allows imports to complete even when some SQL statements fail. This is useful for:
+
+- Large imports where some statements may fail (duplicate keys, missing tables)
+- Recovering as much data as possible from partially corrupted dumps
+- Imports where you expect certain errors (e.g., re-importing existing data)
+
+### Enable Continue On Error
+
+```php
+'continue_on_error' => true,  // Default: false (stop on first error)
+```
+
+### How It Works
+
+When enabled:
+1. SQL errors are **collected as warnings** instead of stopping the import
+2. Import continues processing remaining statements
+3. After completion, a **success message with warning section** is displayed
+4. Warning section shows line numbers and error messages (collapsible)
+5. Maximum **100 warnings** stored to prevent memory issues
+
+### Example Output
+
+```
+✅ Import completed successfully!
+   Queries: 15,432 | Lines: 89,234 | Duration: 2m 34s
+
+⚠️ 3 warning(s) during import [Show details]
+   - Line 45,231: Duplicate entry '123' for key 'PRIMARY'
+   - Line 67,892: Table 'temp_backup' doesn't exist
+   - Line 78,001: Data truncated for column 'description'
+```
+
+**Important:** Default is `false` (stop on first error) for safety. Only enable when you understand the implications of ignoring SQL errors.
 
 ## CLI SQL Optimizer (v2.22)
 

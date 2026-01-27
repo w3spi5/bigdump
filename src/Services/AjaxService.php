@@ -160,15 +160,72 @@ class AjaxService
     /**
      * Displays an import success message directly in the page.
      * Creates a styled success container matching the error display pattern.
+     * Optionally displays warnings in an orange section below the success message.
      *
      * @param {object} stats Statistics object
+     * @param {array} warnings Array of warning objects (optional)
+     * @param {number} warningsCount Total warnings count (may exceed warnings.length)
+     * @param {boolean} warningsLimitReached Whether max warnings limit was reached
+     * @param {number} maxWarnings Maximum warnings limit
      */
-    function displaySuccessInPage(stats) {
+    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings) {
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
         var elapsed = document.getElementById('elapsedTime');
         var elapsedTime = elapsed ? elapsed.textContent : '00:00:00';
+
+        // Determine if we have warnings to display
+        var hasWarnings = warnings && warnings.length > 0;
+        var displayWarningsCount = warningsCount || (warnings ? warnings.length : 0);
+
+        // Build warnings section HTML if needed
+        var warningsHtml = '';
+        if (hasWarnings) {
+            var warningItems = warnings.map(function(w) {
+                return '<li class="py-2 border-b border-amber-200 dark:border-amber-700 last:border-0">' +
+                    '<span class="font-mono text-xs bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded mr-2">Line ' + w.line + '</span>' +
+                    '<span class="text-amber-800 dark:text-amber-200 text-sm">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
+                    '</li>';
+            }).join('');
+
+            var limitNotice = '';
+            if (warningsLimitReached) {
+                limitNotice = '<div class="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">' +
+                    '⚠️ Warning limit reached (' + maxWarnings + '). Additional errors may have occurred but were not recorded.' +
+                    '</div>';
+            }
+
+            warningsHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 mb-6" id="sse-warnings-alert">' +
+                '<div class="flex items-start gap-4">' +
+                    '<div class="flex-shrink-0">' +
+                        '<svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                    '</div>' +
+                    '<div class="flex-1">' +
+                        '<h3 class="text-lg font-semibold text-amber-800 dark:text-amber-200">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
+                        '<div class="text-sm text-amber-700 dark:text-amber-300 mt-1">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
+                    '</div>' +
+                '</div>' +
+                '<details class="mt-4">' +
+                    '<summary class="cursor-pointer flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200">' +
+                        '<svg class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                        '<span>Show Warning Details</span>' +
+                    '</summary>' +
+                    '<ul class="mt-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 max-h-64 overflow-y-auto">' + warningItems + '</ul>' +
+                    limitNotice +
+                '</details>' +
+            '</div>';
+        }
+
+        // Adjust success message based on warnings presence
+        var successTitle = hasWarnings ? 'Import Complete (with Warnings)' : 'Import Complete!';
+        var successSubtitle = hasWarnings
+            ? 'File <strong>' + escapeHtml(filename) + '</strong> has been imported with ' + displayWarningsCount + ' warning' + (displayWarningsCount !== 1 ? 's' : '') + '.'
+            : 'File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.';
 
         // Create success HTML with Tailwind classes
         var successHtml = '<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-6" id="sse-success-alert" role="alert">' +
@@ -179,8 +236,8 @@ class AjaxService
                     '</svg>' +
                 '</div>' +
                 '<div class="flex-1">' +
-                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">Import Complete!</h2>' +
-                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.</div>' +
+                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">' + successTitle + '</h2>' +
+                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">' + successSubtitle + '</div>' +
                 '</div>' +
             '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
@@ -202,6 +259,7 @@ class AjaxService
                 '</div>' +
             '</div>' +
         '</div>' +
+        warningsHtml +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
                 'Back to Home</a>' +
@@ -701,10 +759,17 @@ class AjaxService
             source.close();
             try {
                 var data = JSON.parse(e.data);
-                displaySuccessInPage(data.stats);
+                // Pass warnings data if available
+                displaySuccessInPage(
+                    data.stats,
+                    data.warnings || [],
+                    data.warningsCount || 0,
+                    data.warningsLimitReached || false,
+                    data.maxWarnings || 100
+                );
             } catch (err) {
                 // Fallback: show basic success without stats
-                displaySuccessInPage(null);
+                displaySuccessInPage(null, [], 0, false, 100);
             }
         });
 
