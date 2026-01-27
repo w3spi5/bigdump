@@ -45,6 +45,7 @@ class ImportHistoryService
      * @param bool $success Whether import was successful
      * @param string|null $error Error message if failed
      * @param float $duration Duration in seconds
+     * @param int $warningsCount Number of warnings collected (continue_on_error mode)
      * @return void
      */
     public function addEntry(
@@ -54,7 +55,8 @@ class ImportHistoryService
         int $bytesProcessed,
         bool $success,
         ?string $error = null,
-        float $duration = 0.0
+        float $duration = 0.0,
+        int $warningsCount = 0
     ): void {
         $history = $this->loadHistory();
 
@@ -71,6 +73,7 @@ class ImportHistoryService
             'error' => $error,
             'duration' => round($duration, 2),
             'duration_formatted' => $this->formatDuration($duration),
+            'warnings_count' => $warningsCount,
         ];
 
         // Add to beginning (most recent first)

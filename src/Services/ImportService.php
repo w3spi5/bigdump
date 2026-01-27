@@ -609,10 +609,13 @@ class ImportService
     /**
      * Executes a SQL query directly (bypasses batching).
      *
+     * If continue_on_error is enabled in config, SQL errors are collected
+     * as warnings and execution continues. Otherwise, a RuntimeException is thrown.
+     *
      * @param ImportSession $session Import session
      * @param string $query SQL query
      * @return void
-     * @throws RuntimeException In case of SQL error
+     * @throws RuntimeException In case of SQL error (when continue_on_error is disabled)
      */
     private function executeQueryDirect(ImportSession $session, string $query): void
     {
@@ -629,6 +632,19 @@ class ImportService
                 ? substr($query, 0, 500) . '...'
                 : $query;
 
+            // Check if continue_on_error is enabled
+            if ($this->config->get('continue_on_error', false)) {
+                // Collect as warning, continue execution
+                $warningMessage = "SQL Error at line {$lineNum}: {$error}\nQuery: {$displayQuery}";
+                $session->addWarning($warningMessage, $lineNum);
+
+                // Log the warning for debugging
+                error_log("BigDump: continue_on_error - Line {$lineNum}: {$error}");
+
+                return; // Continue to next query
+            }
+
+            // Original behavior: throw exception
             throw new RuntimeException(
                 "SQL Error at line {$lineNum}:\n" .
                 "Query: {$displayQuery}\n" .

@@ -45,6 +45,23 @@ return [
     'db_connection_charset' => 'utf8mb4',
 
     /**
+     * Continue import despite SQL errors (v2.28+).
+     *
+     * When enabled, SQL errors are collected as warnings instead of
+     * stopping the import. Useful for large imports where some statements
+     * may fail (e.g., duplicate keys, missing tables) but you want to
+     * import as much data as possible.
+     *
+     * After import, a success message is shown with a warning section
+     * listing all errors that occurred.
+     *
+     * Maximum 100 warnings are collected to prevent memory issues.
+     *
+     * Default: false (stop on first error - safest behavior)
+     */
+    'continue_on_error' => false,
+
+    /**
      * Persistent database connections (v2.25+).
      *
      * When enabled, uses MySQLi persistent connections to reduce connection

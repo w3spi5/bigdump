@@ -4,55 +4,90 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
-## [2.27] - 2025-01-13 - Celebration UI & Import Completion
+## [2.28] - 2026-01-28 - Continue On Error Mode
+
+### Added in 2.28
+
+- **Continue On Error Mode**: Option to continue import despite SQL errors
+  - New `continue_on_error` config option (default: false for safety)
+  - SQL errors collected as warnings instead of stopping the import
+  - Warnings displayed in collapsible orange section after successful import
+  - Maximum 100 warnings stored (bounded buffer to prevent memory issues)
+  - Warning format includes line number and SQL error message
+  - Useful for large imports where some statements may fail (e.g., duplicate keys, missing tables)
+  - Import history tracks warnings count
+
+### Changed in 2.28
+
+- **ImportSession**: Added warnings system
+  - New `$warnings` array property with `MAX_WARNINGS` constant (100)
+  - Methods: `addWarning()`, `getWarnings()`, `hasWarnings()`, `getWarningsCount()`, `isWarningsLimitReached()`
+  - Warnings persisted across SSE sessions
+  - Statistics include `warnings_count`
+
+- **ImportService**: Modified error handling in `executeQueryDirect()`
+  - Checks `continue_on_error` config before throwing exception
+  - Logs warnings with `error_log()` for server-side tracking
+
+- **SSE Complete Event**: Extended payload
+  - Includes `warnings`, `warningsCount`, `warningsLimitReached`, `maxWarnings` when applicable
+  - Success message shows with orange warning section if warnings exist
+
+- **AjaxService**: Enhanced `displaySuccessInPage()` JavaScript
+  - Accepts warnings parameters
+  - Renders collapsible amber/orange warning section with Tailwind styling
+  - Shows individual warnings grouped by line number
+  - Animations still trigger even with warnings
+
+### Config Example
+
+```php
+/**
+ * Continue import despite SQL errors (v2.28+).
+ * When enabled, SQL errors are collected as warnings instead of
+ * stopping the import. Useful for large imports where some statements
+ * may fail (e.g., duplicate keys, missing tables).
+ * Default: false (stop on first error - safest behavior)
+ */
+'continue_on_error' => false,
+```
+
+### Files Modified in 2.28
+
+| File | Change |
+|------|--------|
+| `config/config.example.php` | Added `continue_on_error` option |
+| `dist/bigdump-config.example.php` | Added `continue_on_error` option |
+| `src/Models/ImportSession.php` | Added warnings system (array, methods, MAX_WARNINGS) |
+| `src/Services/ImportService.php` | Modified `executeQueryDirect()` for continue_on_error |
+| `src/Controllers/BigDumpController.php` | Extended SSE complete event with warnings |
+| `src/Services/AjaxService.php` | Enhanced `displaySuccessInPage()` with warnings UI |
+| `src/Services/ImportHistoryService.php` | Added `warningsCount` parameter to `addEntry()` |
+
+---
+
+## [2.27] - 2025-01-13 - Celebration Effects & Visual Enhancements
 
 ### Added in 2.27
 
-- **Celebration Effects on Import Completion**: Visual feedback for successful imports
-  - Canvas-based fireworks with particle trails, glow effects, and color gradients
-  - 3D rotating confetti with realistic physics (air resistance, terminal velocity)
-  - Confetti cannons firing from screen sides at intervals
-  - Fireworks display for 20 seconds, confetti falls indefinitely
-  - Performance optimized with `requestAnimationFrame`
+- **Celebration Effects**: Success triggers visual celebrations
+  - Fireworks: 20 seconds of colorful particle explosions with trails and glow
+  - Confetti: Infinite falling 3D confetti with realistic physics
+  - Side confetti cannons bursting every 2 seconds
 
-- **Animated Favicon**: Visual indicator during active import
-  - Canvas-generated bouncing arrow animation
-  - Starts on SSE connection, stops on completion/error
-  - Restores original favicon when stopped
+- **Visual Enhancements**:
+  - Animated favicon with bouncing arrow during import
+  - Skeleton loaders with shimmer animation for loading states
+  - Progress bar glow: Green pulsing effect on completion
+  - Improved dark mode contrast for success statistics
 
-- **Skeleton Loaders**: Better loading state UX
-  - Horizontal shimmer animation for unknown statistics
-  - Replaces static "?" placeholders during import start
-  - Smooth gradient animation with dark mode support
+- **French Localization**: Translated labels ("Import terminé!")
 
 ### Fixed in 2.27
 
-- **99.5% Progress Bug**: Import no longer stuck at 99.5%
-  - Forces 100% display when `data.finished` is true
-  - Updates all percentage displays (progress bar, stat boxes, table)
-  - Adds green glow animation class on completion
-
-- **SSE Completion Redirect**: Success message now displays in-page
-  - No longer redirects to error page after session cleanup
-  - Shows "Import terminé !" with statistics grid
-  - French localization for success screen labels
-
-### Changed in 2.27
-
-- **Success Screen Styling**: Enhanced dark mode support
-  - New `.stat-card-success` class with gradient backgrounds
-  - Glowing borders and hover effects in dark mode
-  - French labels: "Requêtes", "Lignes", "Traité", "Durée"
-
-- **Progress Bar Completion**: Animated green glow effect
-  - `.progress-bar-complete` class with shimmer gradient
-  - Pulsing box-shadow animation
-  - Dark mode optimized glow intensity
-
-- **CI Workflow**: Fixed build-assets workflow for protected branches
-  - Auto-commit now only runs on `develop` branch
-  - PR to `main` triggers build verification only
-  - Prevents conflict with branch protection rules
+- **Progress Bar Completion**: Progress bar now correctly reaches 100%
+- **SSE Redirect Issue**: Success now displays in-page instead of redirecting to error page
+- **CI/CD Workflow**: Compatibility fixed for protected branches
 
 ---
 
