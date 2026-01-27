@@ -169,6 +169,11 @@ class AjaxService
      * @param {number} maxWarnings Maximum warnings limit
      */
     function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings) {
+        // Start celebration effects (fireworks + confetti)
+        if (window.BigDump && window.BigDump.celebration) {
+            window.BigDump.celebration.start();
+        }
+
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
@@ -239,38 +244,38 @@ class AjaxService
                     '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">' + successTitle + '</h2>' +
                     '<div class="text-sm text-green-700 dark:text-green-300 mt-1">' + successSubtitle + '</div>' +
                 '</div>' +
-            '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Queries</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Requêtes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + linesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Lines</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Lignes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + bytesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Processed</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Traité</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + elapsedTime + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Duration</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Durée</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
         warningsHtml +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
-                'Back to Home</a>' +
+                'Retour à l\\'accueil</a>' +
         '</div>';
 
-        // Find main content area and replace content
-        var mainContent = document.querySelector('main');
-        if (mainContent) {
-            // Clear all content and show success message
-            mainContent.innerHTML = successHtml;
-        }
+            // Find main content area and replace content
+            var mainContent = document.querySelector('main');
+            if (mainContent) {
+                // Clear all content and show success message
+                mainContent.innerHTML = successHtml;
+            }
+        }, 500); // 500ms delay for celebration to start
     }
 
     /**
@@ -437,6 +442,35 @@ class AjaxService
     function updateProgress(data) {
         var stats = data.stats;
         var session = data.session;
+
+        // Fix 99.5% bug: Force 100% display when import is finished
+        // The offset/fileSize calculation can plateau at 99.5% due to rounding
+        if (data.finished) {
+            var progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.classList.add('progress-bar-complete');
+            }
+            // Force all percentage displays to show 100%
+            var statBoxes = document.querySelectorAll('.stat-box .stat-value');
+            if (statBoxes[3]) {
+                statBoxes[3].textContent = '100.0%';
+            }
+            var pctDisplay = document.querySelector('#elapsedTimer + div');
+            if (pctDisplay) {
+                pctDisplay.textContent = '100.00% Complete';
+            }
+            // Update table percentage row to show 100%
+            var table = document.querySelector('table tbody');
+            if (table) {
+                var rows = table.getElementsByTagName('tr');
+                if (rows[5]) { // Row 6 = Percentage
+                    var cells = rows[5].getElementsByTagName('td');
+                    if (cells[2]) cells[2].textContent = '100.00'; // pct_done column
+                }
+            }
+            return; // Don't process further updates when finished
+        }
 
         // Update line number display (using textContent for XSS safety)
         if (session && session.start !== undefined) {
@@ -719,6 +753,10 @@ class AjaxService
             }
             // Start elapsed timer
             startElapsedTimer();
+            // Start favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.start();
+            }
         });
 
         // Handle progress events (real-time updates)
@@ -755,6 +793,10 @@ class AjaxService
             console.log('SSE: Import complete');
             smoothing.stop();
             stopElapsedTimer();
+            // Stop favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.stop();
+            }
             intentionalClose = true;
             source.close();
             try {
@@ -801,6 +843,10 @@ class AjaxService
 
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     // Display error in page with hasCreateTable info
                     // Combine stats and hasCreateTable into stats object for displayErrorInPage
                     var errorStats = data.stats || {};
@@ -809,6 +855,10 @@ class AjaxService
                 } catch (err) {
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     displayErrorInPage('Import error occurred', null);
                 }
                 intentionalClose = true;
