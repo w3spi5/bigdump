@@ -2,14 +2,14 @@ name: Build Assets
 
 on:
   push:
-    branches: [main, develop]
+    branches: [develop]
     paths:
       - 'assets/src/**'
       - 'templates/**'
       - 'tailwind.config.js'
       - 'scripts/generate-icons.php'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'assets/src/**'
       - 'templates/**'
