@@ -161,14 +161,19 @@ class AjaxService
      * Displays an import success message directly in the page.
      * Creates a styled success container matching the error display pattern.
      * Optionally displays warnings in an orange section below the success message.
+     * Optionally displays warnings in an orange section below the success message.
      *
      * @param {object} stats Statistics object
      * @param {array} warnings Array of warning objects (optional)
      * @param {number} warningsCount Total warnings count (may exceed warnings.length)
      * @param {boolean} warningsLimitReached Whether max warnings limit was reached
      * @param {number} maxWarnings Maximum warnings limit
+     * @param {array} warnings Array of warning objects (optional)
+     * @param {number} warningsCount Total warnings count (may exceed warnings.length)
+     * @param {boolean} warningsLimitReached Whether max warnings limit was reached
+     * @param {number} maxWarnings Maximum warnings limit
      */
-    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings) {
+    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings, warnings, warningsCount, warningsLimitReached, maxWarnings) {
         // Start celebration effects (fireworks + confetti)
         if (window.BigDump && window.BigDump.celebration) {
             window.BigDump.celebration.start();
@@ -244,6 +249,7 @@ class AjaxService
                     '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">' + successTitle + '</h2>' +
                     '<div class="text-sm text-green-700 dark:text-green-300 mt-1">' + successSubtitle + '</div>' +
                 '</div>' +
+            '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
                 '<div class="stat-card-success">' +
                     '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + queriesDone + '</div>' +
