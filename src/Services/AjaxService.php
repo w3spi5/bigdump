@@ -917,10 +917,12 @@ class AjaxService
         if (source) source.close();
     });
 
-    // Handle Stop Import button - close SSE before navigation
+    // Handle Stop Import button - close SSE and show stopped message
     document.addEventListener('click', function(e) {
-        var stopLink = e.target.closest('a[href*="stop_import"]');
+        var stopLink = e.target.closest('a[href*="import/stop"]');
         if (stopLink) {
+            e.preventDefault();
+
             // Close SSE connection immediately
             intentionalClose = true;
             stopElapsedTimer();
@@ -930,11 +932,37 @@ class AjaxService
                 source = null;
                 console.log('SSE: Closed by user (Stop Import)');
             }
-            // Small delay to ensure connection is closed before navigation
-            e.preventDefault();
-            setTimeout(function() {
-                window.location.href = stopLink.href;
-            }, 100);
+
+            // Stop progress bar animation
+            var progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.animation = 'none';
+                progressBar.style.backgroundImage = 'none';
+            }
+
+            // Get elapsed time for display
+            var elapsedEl = document.getElementById('elapsedTime');
+            var elapsedTime = elapsedEl ? elapsedEl.textContent : '00:00:00';
+
+            // Show stopped message in page
+            var stoppedHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 rounded-xl p-8 mb-6 text-center">' +
+                '<div class="text-6xl mb-4">⏹️</div>' +
+                '<h2 class="text-2xl font-bold text-amber-800 dark:text-amber-200 mb-3">Import Stopped</h2>' +
+                '<p class="text-amber-700 dark:text-amber-300 mb-2">The import was manually stopped after <strong>' + elapsedTime + '</strong>.</p>' +
+                '<p class="text-amber-600 dark:text-amber-400 text-sm mb-6">Progress has been saved. You can resume later by selecting the same file.</p>' +
+                '<a href="/" class="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-colors cursor-pointer no-underline bg-red-600 hover:bg-red-700 text-white shadow-lg">' +
+                    '🏠 Return to Home' +
+                '</a>' +
+            '</div>';
+
+            // Replace main content
+            var mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.innerHTML = stoppedHtml;
+            }
+
+            // Also call the server to clear session (fire and forget)
+            fetch(stopLink.href, { method: 'GET' }).catch(function() {});
         }
     });
 })();

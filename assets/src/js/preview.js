@@ -93,7 +93,7 @@
                 document.getElementById('previewModalSubtitle').textContent = data.fileSizeFormatted + (data.isGzip ? ' (GZip compressed)' : '');
                 document.getElementById('previewFileSize').textContent = data.fileSizeFormatted;
                 document.getElementById('previewFileType').textContent = data.isGzip ? 'GZip' : 'SQL';
-                document.getElementById('previewTotalLines').textContent = data.totalLines.toLocaleString();
+                document.getElementById('previewLinesCount').textContent = data.linesPreview;
                 document.getElementById('previewQueriesCount').textContent = data.queriesPreview;
                 document.getElementById('tabQueriesCount').textContent = data.queriesPreview;
 
