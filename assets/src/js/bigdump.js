@@ -35,14 +35,18 @@
     }
 
     /**
-     * Disable a button with loading state to prevent double-click
+     * Disable a button and swap its icon to a spinner
      * @param {HTMLElement} button - The button element
-     * @param {string} loadingText - Text to show while loading
      */
-    function disableButtonWithLoading(button, loadingText) {
+    function disableButtonWithSpinner(button) {
         button.disabled = true;
         button.classList.add('opacity-50', 'cursor-not-allowed');
-        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>' + loadingText;
+        // Find the swappable icon and change it to spinner
+        var iconSwap = button.querySelector('.btn-icon-swap');
+        if (iconSwap) {
+            iconSwap.innerHTML = '<use href="assets/icons2.svg#spinner"></use>';
+            iconSwap.classList.add('animate-spin');
+        }
     }
 
     /**
@@ -50,27 +54,16 @@
      * Prevents double-click by disabling buttons after first click
      */
     function initButtonDisable() {
-        // Handle import forms (forms with 'fn' input but no 'action' input)
+        // Handle forms with swappable icons (new style)
         document.querySelectorAll('form').forEach(function(form) {
-            var fnInput = form.querySelector('input[name="fn"]');
-            var actionInput = form.querySelector('input[name="action"]');
             var submitBtn = form.querySelector('button[type="submit"]');
-
             if (!submitBtn) return;
 
-            // Import forms: have 'fn' but no 'action=delete'
-            if (fnInput && (!actionInput || actionInput.value !== 'delete')) {
+            // Only add handler if button has swappable icon
+            var iconSwap = submitBtn.querySelector('.btn-icon-swap');
+            if (iconSwap) {
                 form.addEventListener('submit', function() {
-                    disableButtonWithLoading(submitBtn, 'Importing...');
-                });
-            }
-
-            // Delete forms: have 'action=delete'
-            if (actionInput && actionInput.value === 'delete') {
-                form.addEventListener('submit', function(e) {
-                    // The confirm is already handled by onsubmit in HTML
-                    // If we reach here, user confirmed, so disable button
-                    disableButtonWithLoading(submitBtn, 'Deleting...');
+                    disableButtonWithSpinner(submitBtn);
                 });
             }
         });

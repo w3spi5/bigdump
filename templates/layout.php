@@ -75,8 +75,8 @@
                 </a>
                 <div>
                     <button id="darkModeToggle" type="button" title="Toggle dark mode" aria-label="Toggle dark mode" class="dark-toggle border-2 text-xl px-3 py-2 rounded-lg cursor-pointer hover:scale-105 transition-all flex items-center justify-center min-w-[44px] h-10">
-                        <svg class="icon icon-sun w-5 h-5 fill-current"><use href="assets/icons.svg#sun"></use></svg>
-                        <svg class="icon icon-moon w-5 h-5 fill-current"><use href="assets/icons.svg#moon"></use></svg>
+                        <svg class="icon icon-sun w-5 h-5 fill-current"><use href="assets/icons2.svg#sun"></use></svg>
+                        <svg class="icon icon-moon w-5 h-5 fill-current"><use href="assets/icons2.svg#moon"></use></svg>
                     </button>
                 </div>
             </div>

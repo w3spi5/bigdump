@@ -59,14 +59,11 @@
                         // Status icon
                         var tdStatus = document.createElement('td');
                         tdStatus.className = 'px-4 py-3 border-b border-gray-200 dark:border-gray-700 text-center';
-                        var iconName = entry.success ? 'circle-check' : 'circle-xmark';
-                        var iconColor = entry.success ? 'text-green-500' : 'text-red-500';
-                        var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svg.setAttribute('class', 'icon w-5 h-5 fill-current inline-block ' + iconColor);
-                        var use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-                        use.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons.svg#' + iconName);
-                        svg.appendChild(use);
-                        tdStatus.appendChild(svg);
+                        var icon = document.createElement('i');
+                        icon.className = entry.success
+                            ? 'fa-solid fa-circle-check text-green-500'
+                            : 'fa-solid fa-circle-xmark text-red-500';
+                        tdStatus.appendChild(icon);
 
                         // Filename
                         var tdFile = document.createElement('td');
