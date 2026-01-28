@@ -313,6 +313,8 @@ class View
             'modal.min.js',
             'filepolling.min.js',
             'fileupload.min.js',
+            'celebration.min.js',
+            'favicon-animator.min.js',
         ];
 
         foreach ($jsOrder as $jsFile) {

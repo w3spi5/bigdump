@@ -259,7 +259,7 @@ class FileHandler
     /**
      * Lists available dump files
      *
-     * @return array<int, array{name: string, size: int, date: string, type: string, path: string}> List of files
+     * @return array<int, array{name: string, size: int, date: string, timestamp: int, type: string, path: string}> List of files sorted by date (newest first)
      */
     public function listFiles(): array
     {
@@ -297,10 +297,12 @@ class FileHandler
                 continue;
             }
 
+            $mtime = filemtime($filepath) ?: 0;
             $files[] = [
                 'name' => $filename,
                 'size' => filesize($filepath) ?: 0,
-                'date' => date('Y-m-d H:i:s', filemtime($filepath) ?: 0),
+                'date' => date('Y-m-d H:i:s', $mtime),
+                'timestamp' => $mtime,
                 'type' => $this->getFileType($extension),
                 'path' => $filepath,
             ];
@@ -308,8 +310,8 @@ class FileHandler
 
         closedir($handle);
 
-        // Sort by name
-        usort($files, fn($a, $b) => strcasecmp($a['name'], $b['name']));
+        // Sort by modification date (newest first)
+        usort($files, fn($a, $b) => $b['timestamp'] <=> $a['timestamp']);
 
         return $files;
     }
