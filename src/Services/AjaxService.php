@@ -892,8 +892,7 @@ class AjaxService
             var stoppedHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 rounded-xl p-8 mb-6 text-center">' +
                 '<div class="text-6xl mb-4">⏹️</div>' +
                 '<h2 class="text-2xl font-bold text-amber-800 dark:text-amber-200 mb-3">Import Stopped</h2>' +
-                '<p class="text-amber-700 dark:text-amber-300 mb-2">The import was manually stopped after <strong>' + elapsedTime + '</strong>.</p>' +
-                '<p class="text-amber-600 dark:text-amber-400 text-sm mb-6">Progress has been saved. You can resume later by selecting the same file.</p>' +
+                '<p class="text-amber-700 dark:text-amber-300 mb-6">The import was manually stopped after <strong>' + elapsedTime + '</strong>.</p>' +
                 '<a href="/" class="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-colors cursor-pointer no-underline bg-red-600 hover:bg-red-700 text-white shadow-lg">' +
                     '🏠 Return to Home' +
                 '</a>' +
