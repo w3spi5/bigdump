@@ -203,6 +203,13 @@
                 importBtn.type = 'submit';
                 importBtn.className = 'btn btn-green';
                 importBtn.textContent = 'Import';
+                // Disable button on click to prevent double submission
+                form.onsubmit = function() {
+                    importBtn.disabled = true;
+                    importBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    importBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Importing...';
+                    return true; // Allow form submission
+                };
                 form.appendChild(importBtn);
                 td5.appendChild(form);
                 td5.appendChild(document.createTextNode(' '));
@@ -219,7 +226,19 @@
             deleteLink.href = '?delete=' + encodeURIComponent(file.name);
             deleteLink.className = 'btn btn-red';
             deleteLink.textContent = 'Delete';
-            deleteLink.onclick = function() { return confirm('Delete ' + file.name + '?'); };
+            deleteLink.onclick = function(e) {
+                if (deleteLink.classList.contains('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (!confirm('Delete ' + file.name + '?')) {
+                    return false;
+                }
+                // Disable button on click to prevent double action
+                deleteLink.classList.add('disabled', 'opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                deleteLink.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>Deleting...';
+                return true;
+            };
             td5.appendChild(deleteLink);
         }
 

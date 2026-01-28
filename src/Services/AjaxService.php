@@ -135,8 +135,11 @@ class AjaxService
         helpText +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             actionButtons +
-            '<a href="' + scriptUri + '" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</a>' +
-            '<a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
+            '<form method="post" action="' + scriptUri + '" style="display:inline">' +
+                '<input type="hidden" name="fn" value="' + escapeHtml(filename) + '">' +
+                '<button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</button>' +
+            '</form>' +
+            '<a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to home</a>' +
         '</div>';
 
         // Find main content area and insert error at the beginning
@@ -241,28 +244,28 @@ class AjaxService
                 '</div>' +
             '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Queries</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Queries</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + linesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Lines</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Lines</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + bytesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Processed</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Processed</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + elapsedTime + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Duration</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Duration</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
         warningsHtml +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
-            '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
-                'Back to Home</a>' +
+            '<a href="/" class="px-8 py-4 rounded-md font-medium text-base transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
+                'Back to home</a>' +
         '</div>';
 
         // Find main content area and replace content
@@ -301,6 +304,7 @@ class AjaxService
 
     // Elapsed timer variables
     var elapsedTimerInterval = null;
+    var timerStarted = false; // Prevent timer reset on SSE reconnect
 
     /**
      * Formats elapsed seconds into HH:MM:SS format.
@@ -325,10 +329,14 @@ class AjaxService
 
     /**
      * Starts the elapsed timer (call once when import begins).
+     * Will not reset if already started (prevents reset on SSE reconnect).
      */
     function startElapsedTimer() {
-        // Reset start time
-        startTime = Date.now();
+        // Only reset start time on first call (not on SSE reconnect)
+        if (!timerStarted) {
+            startTime = Date.now();
+            timerStarted = true;
+        }
         // Clear any existing interval
         if (elapsedTimerInterval) {
             clearInterval(elapsedTimerInterval);
@@ -346,6 +354,8 @@ class AjaxService
             clearInterval(elapsedTimerInterval);
             elapsedTimerInterval = null;
         }
+        // Reset flag so next import can start fresh
+        timerStarted = false;
     }
 
     /**

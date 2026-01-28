@@ -35,6 +35,48 @@
     }
 
     /**
+     * Disable a button with loading state to prevent double-click
+     * @param {HTMLElement} button - The button element
+     * @param {string} loadingText - Text to show while loading
+     */
+    function disableButtonWithLoading(button, loadingText) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+        button.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i>' + loadingText;
+    }
+
+    /**
+     * Initialize button disable behavior for import and delete forms
+     * Prevents double-click by disabling buttons after first click
+     */
+    function initButtonDisable() {
+        // Handle import forms (forms with 'fn' input but no 'action' input)
+        document.querySelectorAll('form').forEach(function(form) {
+            var fnInput = form.querySelector('input[name="fn"]');
+            var actionInput = form.querySelector('input[name="action"]');
+            var submitBtn = form.querySelector('button[type="submit"]');
+
+            if (!submitBtn) return;
+
+            // Import forms: have 'fn' but no 'action=delete'
+            if (fnInput && (!actionInput || actionInput.value !== 'delete')) {
+                form.addEventListener('submit', function() {
+                    disableButtonWithLoading(submitBtn, 'Importing...');
+                });
+            }
+
+            // Delete forms: have 'action=delete'
+            if (actionInput && actionInput.value === 'delete') {
+                form.addEventListener('submit', function(e) {
+                    // The confirm is already handled by onsubmit in HTML
+                    // If we reach here, user confirmed, so disable button
+                    disableButtonWithLoading(submitBtn, 'Deleting...');
+                });
+            }
+        });
+    }
+
+    /**
      * Initialize dark mode toggle
      */
     function initDarkModeToggle() {
@@ -56,6 +98,7 @@
     function init() {
         initLoadingOverlay();
         initDarkModeToggle();
+        initButtonDisable();
     }
 
     // Initialize when DOM is ready

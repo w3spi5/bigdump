@@ -105,7 +105,7 @@ $bz2Supported = function_exists('bzopen');
                 <tr>
                     <th>Filename</th>
                     <th>Size</th>
-                    <th>Date</th>
+                    <th>Date Added</th>
                     <th>Type</th>
                     <th class="text-center">Actions</th>
                 </tr>

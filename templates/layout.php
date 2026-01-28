@@ -99,5 +99,7 @@
     <script src="assets/dist/modal.min.js"></script>
     <script src="assets/dist/filepolling.min.js"></script>
     <script src="assets/dist/fileupload.min.js"></script>
+    <script src="assets/dist/celebration.min.js"></script>
+    <script src="assets/dist/favicon-animator.min.js"></script>
 </body>
 </html>

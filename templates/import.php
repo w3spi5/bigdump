@@ -342,7 +342,7 @@
 
 <div class="text-center mt-3">
     <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Back to File List</a>
-    <a href="/" class="btn btn-cyan" style="margin-left: 10px;">Back to Home</a>
+    <a href="/" class="btn btn-cyan" style="margin-left: 10px;">Back to home</a>
 </div>
 
 <?php elseif (!$session->hasError()): ?>
@@ -386,8 +386,11 @@
     </a>
     <span class="text-muted">or</span>
     <?php endif; ?>
-    <a href="<?= $view->e($scriptUri) ?>" class="btn btn-blue">Start Over (resume)</a>
-    <a href="/" class="btn btn-cyan">Back to Home</a>
+    <form method="post" action="<?= $view->e($scriptUri) ?>" style="display:inline">
+        <input type="hidden" name="fn" value="<?= $view->e($session->getFilename()) ?>">
+        <button type="submit" class="btn btn-blue">Resume Import</button>
+    </form>
+    <a href="/" class="btn btn-cyan">Back to home</a>
     <?php if (!$tableAlreadyExists): ?>
     <span class="text-muted">(DROP old tables before restarting)</span>
     <?php endif; ?>
