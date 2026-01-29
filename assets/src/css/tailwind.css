@@ -1006,6 +1006,120 @@ details.error-details summary:focus-visible {
 }
 
 /* ========================================
+   WARNING DETAILS (SSE Import Warnings)
+   ======================================== */
+
+.warning-box {
+    background-color: #fffbeb;
+    border: 1px solid #fcd34d;
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+[data-theme="dark"] .warning-box {
+    background-color: rgba(245, 158, 11, 0.15);
+    border-color: #92400e;
+}
+
+.warning-icon {
+    color: #f59e0b;
+}
+[data-theme="dark"] .warning-icon {
+    color: #fbbf24;
+}
+
+.warning-details-list {
+    background-color: #fef3c7;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    max-height: 16rem;
+    overflow-y: auto;
+}
+[data-theme="dark"] .warning-details-list {
+    background-color: rgba(245, 158, 11, 0.2);
+}
+
+.warning-details-item {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #fcd34d;
+}
+.warning-details-item:last-child {
+    border-bottom: none;
+}
+[data-theme="dark"] .warning-details-item {
+    border-color: #92400e;
+}
+
+.warning-line-badge {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    background-color: #fde68a;
+    color: #92400e;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+}
+[data-theme="dark"] .warning-line-badge {
+    background-color: #92400e;
+    color: #fef3c7;
+}
+
+.warning-message {
+    font-size: 0.875rem;
+    color: #92400e;
+}
+[data-theme="dark"] .warning-message {
+    color: #fef3c7;
+}
+
+.warning-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #92400e;
+}
+[data-theme="dark"] .warning-title {
+    color: #fde68a;
+}
+
+.warning-subtitle {
+    font-size: 0.875rem;
+    color: #b45309;
+    margin-top: 0.25rem;
+}
+[data-theme="dark"] .warning-subtitle {
+    color: #fcd34d;
+}
+
+.warning-summary {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #b45309;
+}
+.warning-summary:hover {
+    color: #92400e;
+}
+[data-theme="dark"] .warning-summary {
+    color: #fcd34d;
+}
+[data-theme="dark"] .warning-summary:hover {
+    color: #fde68a;
+}
+
+.warning-limit-notice {
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #d97706;
+}
+[data-theme="dark"] .warning-limit-notice {
+    color: #fbbf24;
+}
+
+/* ========================================
    UTILITY CLASSES
    ======================================== */
 

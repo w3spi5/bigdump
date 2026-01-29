@@ -186,39 +186,39 @@ class AjaxService
         var warningsHtml = '';
         if (hasWarnings) {
             var warningItems = warnings.map(function(w) {
-                return '<li class="py-2 border-b border-amber-200 dark:border-amber-700 last:border-0">' +
-                    '<span class="font-mono text-xs bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded mr-2">Line ' + w.line + '</span>' +
-                    '<span class="text-amber-800 dark:text-amber-200 text-sm">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
+                return '<li class="warning-details-item">' +
+                    '<span class="warning-line-badge">Line ' + w.line + '</span>' +
+                    '<span class="warning-message">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
                     '</li>';
             }).join('');
 
             var limitNotice = '';
             if (warningsLimitReached) {
-                limitNotice = '<div class="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">' +
+                limitNotice = '<div class="warning-limit-notice">' +
                     '⚠️ Warning limit reached (' + maxWarnings + '). Additional errors may have occurred but were not recorded.' +
                     '</div>';
             }
 
-            warningsHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 mb-6" id="sse-warnings-alert">' +
+            warningsHtml = '<div class="warning-box" id="sse-warnings-alert">' +
                 '<div class="flex items-start gap-4">' +
                     '<div class="flex-shrink-0">' +
-                        '<svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                        '<svg class="w-8 h-8 warning-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
                             '<path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>' +
                         '</svg>' +
                     '</div>' +
                     '<div class="flex-1">' +
-                        '<h3 class="text-lg font-semibold text-amber-800 dark:text-amber-200">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
-                        '<div class="text-sm text-amber-700 dark:text-amber-300 mt-1">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
+                        '<h3 class="warning-title">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
+                        '<div class="warning-subtitle">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
                     '</div>' +
                 '</div>' +
                 '<details class="mt-4">' +
-                    '<summary class="cursor-pointer flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200">' +
+                    '<summary class="warning-summary">' +
                         '<svg class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
                             '<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>' +
                         '</svg>' +
                         '<span>Show Warning Details</span>' +
                     '</summary>' +
-                    '<ul class="mt-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 max-h-64 overflow-y-auto">' + warningItems + '</ul>' +
+                    '<ul class="warning-details-list mt-3">' + warningItems + '</ul>' +
                     limitNotice +
                 '</details>' +
             '</div>';
