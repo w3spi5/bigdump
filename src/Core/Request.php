@@ -297,15 +297,15 @@ class Request
     }
 
     /**
-     * Gets the script URI (base path without index.php).
+     * Gets the script URI (base path without index.php or .phar entry point).
      *
      * @return string Script URI (e.g., '/bigdump' instead of '/bigdump/index.php').
      */
     public function getScriptUri(): string
     {
         $phpSelf = $this->server('PHP_SELF', '/index.php');
-        // Remove /index.php suffix to get clean base URL
-        $uri = preg_replace('#/index\.php$#', '', $phpSelf);
+        // Remove /index.php or /anything.phar suffix to get clean base URL
+        $uri = preg_replace('#/(index\.php|[^/]+\.phar)$#', '', $phpSelf);
 
         // If empty (app at root), return empty string - callers will handle query params
         // e.g., getScriptUri() . '?action=import' = '?action=import' (correct)
