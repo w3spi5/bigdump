@@ -160,14 +160,11 @@ $bz2Supported = function_exists('bzopen');
                                 <span class="text-muted"><?= $compressionType ?> not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <form method="post" action="" style="display:inline; vertical-align:middle"
-                              onsubmit="if(!confirm('Delete <?= $view->escapeJs($file['name']) ?>?')) return false; this.querySelector('button').disabled=true; this.querySelector('button').classList.add('opacity-50','cursor-not-allowed'); this.querySelector('.btn-icon-swap').innerHTML='<use href=&quot;assets/icons2.svg#spinner&quot;></use>'; this.querySelector('.btn-icon-swap').classList.add('animate-spin');">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="filename" value="<?= $view->e($file['name']) ?>">
-                            <button type="submit" class="btn btn-icon btn-red" title="Delete file">
-                                <svg class="icon w-4 h-4 fill-current btn-icon-swap"><use href="assets/icons2.svg#trash"></use></svg>
-                            </button>
-                        </form>
+                        <a href="?delete=<?= urlencode($file['name']) ?>"
+                           onclick="if(!confirm('Delete <?= $view->escapeJs($file['name']) ?>?')) return false; this.classList.add('opacity-50','cursor-not-allowed','pointer-events-none'); this.querySelector('.btn-icon-swap').innerHTML='<use href=&quot;assets/icons2.svg#spinner&quot;></use>'; this.querySelector('.btn-icon-swap').classList.add('animate-spin');"
+                           class="btn btn-icon btn-red" title="Delete file" style="display:inline; vertical-align:middle">
+                            <svg class="icon w-4 h-4 fill-current btn-icon-swap"><use href="assets/icons2.svg#trash"></use></svg>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
