@@ -163,14 +163,8 @@ class AjaxService
     /**
      * Displays an import success message directly in the page.
      * Creates a styled success container matching the error display pattern.
-     * Optionally displays warnings in an orange section below the success message.
-     * Optionally displays warnings in an orange section below the success message.
      *
      * @param {object} stats Statistics object
-     * @param {array} warnings Array of warning objects (optional)
-     * @param {number} warningsCount Total warnings count (may exceed warnings.length)
-     * @param {boolean} warningsLimitReached Whether max warnings limit was reached
-     * @param {number} maxWarnings Maximum warnings limit
      * @param {array} warnings Array of warning objects (optional)
      * @param {number} warningsCount Total warnings count (may exceed warnings.length)
      * @param {boolean} warningsLimitReached Whether max warnings limit was reached
@@ -181,7 +175,6 @@ class AjaxService
         if (window.BigDump && window.BigDump.celebration) {
             window.BigDump.celebration.start();
         }
-
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
