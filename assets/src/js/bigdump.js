@@ -35,6 +35,41 @@
     }
 
     /**
+     * Disable a button and swap its icon to a spinner
+     * @param {HTMLElement} button - The button element
+     */
+    function disableButtonWithSpinner(button) {
+        button.disabled = true;
+        button.classList.add('opacity-50', 'cursor-not-allowed');
+        // Find the swappable icon and change it to spinner
+        var iconSwap = button.querySelector('.btn-icon-swap');
+        if (iconSwap) {
+            iconSwap.innerHTML = '<use href="assets/icons2.svg#spinner"></use>';
+            iconSwap.classList.add('animate-spin');
+        }
+    }
+
+    /**
+     * Initialize button disable behavior for import and delete forms
+     * Prevents double-click by disabling buttons after first click
+     */
+    function initButtonDisable() {
+        // Handle forms with swappable icons (new style)
+        document.querySelectorAll('form').forEach(function(form) {
+            var submitBtn = form.querySelector('button[type="submit"]');
+            if (!submitBtn) return;
+
+            // Only add handler if button has swappable icon
+            var iconSwap = submitBtn.querySelector('.btn-icon-swap');
+            if (iconSwap) {
+                form.addEventListener('submit', function() {
+                    disableButtonWithSpinner(submitBtn);
+                });
+            }
+        });
+    }
+
+    /**
      * Initialize dark mode toggle
      */
     function initDarkModeToggle() {
@@ -56,6 +91,7 @@
     function init() {
         initLoadingOverlay();
         initDarkModeToggle();
+        initButtonDisable();
     }
 
     // Initialize when DOM is ready

@@ -135,8 +135,11 @@ class AjaxService
         helpText +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             actionButtons +
-            '<a href="' + scriptUri + '" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</a>' +
-            '<a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to Home</a>' +
+            '<form method="post" action="' + scriptUri + '" style="display:inline">' +
+                '<input type="hidden" name="fn" value="' + escapeHtml(filename) + '">' +
+                '<button type="submit" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">Resume</button>' +
+            '</form>' +
+            '<a href="/" class="px-4 py-2 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-cyan-500 hover:bg-cyan-600 text-white">Back to home</a>' +
         '</div>';
 
         // Find main content area and insert error at the beginning
@@ -160,7 +163,6 @@ class AjaxService
     /**
      * Displays an import success message directly in the page.
      * Creates a styled success container matching the error display pattern.
-     * Optionally displays warnings in an orange section below the success message.
      *
      * @param {object} stats Statistics object
      * @param {array} warnings Array of warning objects (optional)
@@ -168,12 +170,11 @@ class AjaxService
      * @param {boolean} warningsLimitReached Whether max warnings limit was reached
      * @param {number} maxWarnings Maximum warnings limit
      */
-    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings) {
+    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings, warnings, warningsCount, warningsLimitReached, maxWarnings) {
         // Start celebration effects (fireworks + confetti)
         if (window.BigDump && window.BigDump.celebration) {
             window.BigDump.celebration.start();
         }
-
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
@@ -188,39 +189,39 @@ class AjaxService
         var warningsHtml = '';
         if (hasWarnings) {
             var warningItems = warnings.map(function(w) {
-                return '<li class="py-2 border-b border-amber-200 dark:border-amber-700 last:border-0">' +
-                    '<span class="font-mono text-xs bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded mr-2">Line ' + w.line + '</span>' +
-                    '<span class="text-amber-800 dark:text-amber-200 text-sm">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
+                return '<li class="warning-details-item">' +
+                    '<span class="warning-line-badge">Line ' + w.line + '</span>' +
+                    '<span class="warning-message">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
                     '</li>';
             }).join('');
 
             var limitNotice = '';
             if (warningsLimitReached) {
-                limitNotice = '<div class="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">' +
+                limitNotice = '<div class="warning-limit-notice">' +
                     '⚠️ Warning limit reached (' + maxWarnings + '). Additional errors may have occurred but were not recorded.' +
                     '</div>';
             }
 
-            warningsHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 mb-6" id="sse-warnings-alert">' +
+            warningsHtml = '<div class="warning-box" id="sse-warnings-alert">' +
                 '<div class="flex items-start gap-4">' +
                     '<div class="flex-shrink-0">' +
-                        '<svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                        '<svg class="w-8 h-8 warning-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
                             '<path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>' +
                         '</svg>' +
                     '</div>' +
                     '<div class="flex-1">' +
-                        '<h3 class="text-lg font-semibold text-amber-800 dark:text-amber-200">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
-                        '<div class="text-sm text-amber-700 dark:text-amber-300 mt-1">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
+                        '<h3 class="warning-title">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
+                        '<div class="warning-subtitle">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
                     '</div>' +
                 '</div>' +
                 '<details class="mt-4">' +
-                    '<summary class="cursor-pointer flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200">' +
+                    '<summary class="warning-summary">' +
                         '<svg class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
                             '<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>' +
                         '</svg>' +
                         '<span>Show Warning Details</span>' +
                     '</summary>' +
-                    '<ul class="mt-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 max-h-64 overflow-y-auto">' + warningItems + '</ul>' +
+                    '<ul class="warning-details-list mt-3">' + warningItems + '</ul>' +
                     limitNotice +
                 '</details>' +
             '</div>';
@@ -244,29 +245,30 @@ class AjaxService
                     '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">' + successTitle + '</h2>' +
                     '<div class="text-sm text-green-700 dark:text-green-300 mt-1">' + successSubtitle + '</div>' +
                 '</div>' +
+            '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
-                '<div class="stat-card-success">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + queriesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Requêtes</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Queries</div>' +
                 '</div>' +
-                '<div class="stat-card-success">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + linesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Lignes</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Lines</div>' +
                 '</div>' +
-                '<div class="stat-card-success">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + bytesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Traité</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Processed</div>' +
                 '</div>' +
-                '<div class="stat-card-success">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + elapsedTime + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Durée</div>' +
+                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg px-3 py-4">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-500">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-100">Duration</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
         warningsHtml +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
-            '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
-                'Retour à l\\'accueil</a>' +
+            '<a href="/" class="px-8 py-4 rounded-md font-medium text-base transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
+                'Back to home</a>' +
         '</div>';
 
             // Find main content area and replace content
@@ -306,6 +308,7 @@ class AjaxService
 
     // Elapsed timer variables
     var elapsedTimerInterval = null;
+    var timerStarted = false; // Prevent timer reset on SSE reconnect
 
     /**
      * Formats elapsed seconds into HH:MM:SS format.
@@ -330,10 +333,14 @@ class AjaxService
 
     /**
      * Starts the elapsed timer (call once when import begins).
+     * Will not reset if already started (prevents reset on SSE reconnect).
      */
     function startElapsedTimer() {
-        // Reset start time
-        startTime = Date.now();
+        // Only reset start time on first call (not on SSE reconnect)
+        if (!timerStarted) {
+            startTime = Date.now();
+            timerStarted = true;
+        }
         // Clear any existing interval
         if (elapsedTimerInterval) {
             clearInterval(elapsedTimerInterval);
@@ -351,6 +358,8 @@ class AjaxService
             clearInterval(elapsedTimerInterval);
             elapsedTimerInterval = null;
         }
+        // Reset flag so next import can start fresh
+        timerStarted = false;
     }
 
     /**
@@ -901,10 +910,12 @@ class AjaxService
         if (source) source.close();
     });
 
-    // Handle Stop Import button - close SSE before navigation
+    // Handle Stop Import button - close SSE and show stopped message
     document.addEventListener('click', function(e) {
-        var stopLink = e.target.closest('a[href*="stop_import"]');
+        var stopLink = e.target.closest('a[href*="import/stop"]');
         if (stopLink) {
+            e.preventDefault();
+
             // Close SSE connection immediately
             intentionalClose = true;
             stopElapsedTimer();
@@ -914,11 +925,36 @@ class AjaxService
                 source = null;
                 console.log('SSE: Closed by user (Stop Import)');
             }
-            // Small delay to ensure connection is closed before navigation
-            e.preventDefault();
-            setTimeout(function() {
-                window.location.href = stopLink.href;
-            }, 100);
+
+            // Stop progress bar animation
+            var progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.animation = 'none';
+                progressBar.style.backgroundImage = 'none';
+            }
+
+            // Get elapsed time for display
+            var elapsedEl = document.getElementById('elapsedTime');
+            var elapsedTime = elapsedEl ? elapsedEl.textContent : '00:00:00';
+
+            // Show stopped message in page
+            var stoppedHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-500 rounded-xl p-8 mb-6 text-center">' +
+                '<div class="text-6xl mb-4">⏹️</div>' +
+                '<h2 class="text-2xl font-bold text-amber-800 dark:text-amber-200 mb-3">Import Stopped</h2>' +
+                '<p class="text-amber-700 dark:text-amber-300 mb-6">The import was manually stopped after <strong>' + elapsedTime + '</strong>.</p>' +
+                '<a href="/" class="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-colors cursor-pointer no-underline bg-red-600 hover:bg-red-700 text-white shadow-lg">' +
+                    '🏠 Return to Home' +
+                '</a>' +
+            '</div>';
+
+            // Replace main content
+            var mainContent = document.querySelector('main');
+            if (mainContent) {
+                mainContent.innerHTML = stoppedHtml;
+            }
+
+            // Also call the server to clear session (fire and forget)
+            fetch(stopLink.href, { method: 'GET' }).catch(function() {});
         }
     });
 })();

@@ -37,7 +37,7 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 
         <h4 class="font-semibold text-blue-800 dark:text-blue-200 mt-4 mb-2">How to fix it:</h4>
         <ol class="list-decimal list-inside space-y-1 ml-2">
-            <li>Click <strong>"Back to Home"</strong> below</li>
+            <li>Click <strong>"Back to home"</strong> below</li>
             <li>Select your SQL dump file from the file list</li>
             <li>Click <strong>"Start Import"</strong> to begin</li>
             <li>Wait for the import to complete without refreshing the page</li>
@@ -70,7 +70,7 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 
         <h4 class="font-semibold text-blue-800 dark:text-blue-200 mt-4 mb-2">How to fix it:</h4>
         <ol class="list-decimal list-inside space-y-1 ml-2">
-            <li>Click <strong>"Back to Home"</strong> below</li>
+            <li>Click <strong>"Back to home"</strong> below</li>
             <li>Check the file list to see available files</li>
             <li>Upload your SQL dump file again if needed</li>
             <li>Make sure the file has <code class="code">.sql</code>, <code class="code">.gz</code>, or <code class="code">.csv</code> extension</li>
@@ -86,6 +86,6 @@ $isFileNotFound = stripos($errorMessage, 'File not found') !== false;
 
 <div class="text-center mt-3">
     <a href="/" class="btn btn-cyan">
-        Back to Home
+        Back to home
     </a>
 </div>

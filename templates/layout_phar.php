@@ -86,7 +86,7 @@
         <!-- Sticky Header -->
         <header class="header-gradient py-4 sticky top-0 z-50 shadow-lg">
             <div class="container-70 px-8 flex justify-between items-center">
-                <a href="<?= $view->e($scriptUri) ?>" class="flex items-center gap-3 no-underline hover:opacity-90 transition-opacity">
+                <a href="<?= $view->e($scriptName) ?>" class="flex items-center gap-3 no-underline hover:opacity-90 transition-opacity">
                     <!-- Text-based logo for PHAR mode (no external images) -->
                     <div class="header-logo w-10 h-10 rounded-lg shadow-md bg-white/90 flex items-center justify-center font-bold text-xl">BD</div>
                     <div class="flex items-center">

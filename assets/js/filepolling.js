@@ -126,8 +126,11 @@
         if (isUploading) {
             var uploadSpan = document.createElement('span');
             uploadSpan.className = 'ml-2 text-amber-600 dark:text-amber-400 text-xs';
-            var spinner = document.createElement('i');
-            spinner.className = 'fa-solid fa-spinner fa-spin';
+            var spinner = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            spinner.setAttribute('class', 'icon w-4 h-4 fill-current inline-block animate-spin');
+            var spinnerUse = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            spinnerUse.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#spinner');
+            spinner.appendChild(spinnerUse);
             uploadSpan.appendChild(spinner);
             uploadSpan.appendChild(document.createTextNode(' Uploading...'));
             td1.appendChild(uploadSpan);
@@ -177,8 +180,11 @@
                 previewBtn.className = 'btn btn-icon btn-purple';
                 previewBtn.title = 'Preview SQL content';
                 previewBtn.onclick = function() { window.previewFile(file.name); };
-                var eyeIcon = document.createElement('i');
-                eyeIcon.className = 'fa-solid fa-eye';
+                var eyeIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                eyeIcon.setAttribute('class', 'icon w-4 h-4 fill-current');
+                var useEl = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+                useEl.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#eye');
+                eyeIcon.appendChild(useEl);
                 previewBtn.appendChild(eyeIcon);
                 td5.appendChild(previewBtn);
                 td5.appendChild(document.createTextNode(' '));
@@ -187,7 +193,7 @@
                 var form = document.createElement('form');
                 form.method = 'post';
                 form.action = '';
-                form.style.display = 'inline';
+                form.style.cssText = 'display:inline; vertical-align:middle';
                 var hiddenInput = document.createElement('input');
                 hiddenInput.type = 'hidden';
                 hiddenInput.name = 'fn';
@@ -196,7 +202,23 @@
                 var importBtn = document.createElement('button');
                 importBtn.type = 'submit';
                 importBtn.className = 'btn btn-green';
-                importBtn.textContent = 'Import';
+                // Add database icon before text
+                var dbIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                dbIcon.setAttribute('class', 'icon w-4 h-4 fill-current mr-1');
+                var dbUse = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+                dbUse.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#download');
+                dbIcon.appendChild(dbUse);
+                importBtn.appendChild(dbIcon);
+                importBtn.appendChild(document.createTextNode('Import'));
+                // Disable button on click and swap icon to spinner
+                form.onsubmit = function() {
+                    importBtn.disabled = true;
+                    importBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    // Swap icon to spinner
+                    dbIcon.classList.add('animate-spin');
+                    dbUse.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#spinner');
+                    return true; // Allow form submission
+                };
                 form.appendChild(importBtn);
                 td5.appendChild(form);
                 td5.appendChild(document.createTextNode(' '));
@@ -211,9 +233,28 @@
             // Delete button
             var deleteLink = document.createElement('a');
             deleteLink.href = '?delete=' + encodeURIComponent(file.name);
-            deleteLink.className = 'btn btn-red';
-            deleteLink.textContent = 'Delete';
-            deleteLink.onclick = function() { return confirm('Delete ' + file.name + '?'); };
+            deleteLink.className = 'btn btn-icon btn-red';
+            deleteLink.title = 'Delete file';
+            var trashIcon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            trashIcon.setAttribute('class', 'icon w-4 h-4 fill-current');
+            var trashUse = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            trashUse.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#trash');
+            trashIcon.appendChild(trashUse);
+            deleteLink.appendChild(trashIcon);
+            deleteLink.onclick = function(e) {
+                if (deleteLink.classList.contains('disabled')) {
+                    e.preventDefault();
+                    return false;
+                }
+                if (!confirm('Delete ' + file.name + '?')) {
+                    return false;
+                }
+                // Disable button and swap icon to spinner
+                deleteLink.classList.add('disabled', 'opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                trashIcon.classList.add('animate-spin');
+                trashUse.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'assets/icons2.svg#spinner');
+                return true;
+            };
             td5.appendChild(deleteLink);
         }
 

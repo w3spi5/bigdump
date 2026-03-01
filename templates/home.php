@@ -88,7 +88,7 @@ $bz2Supported = function_exists('bzopen');
     <div class="flex justify-between items-center mb-3">
         <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">Available Dump Files</h3>
         <button onclick="showHistory()" class="btn btn-sm btn-indigo">
-            <svg class="icon w-4 h-4 mr-1 fill-current"><use href="assets/icons.svg#clock-rotate-left"></use></svg> History
+            <svg class="icon w-4 h-4 mr-1 fill-current"><use href="<?= $view->iconRef('clock-rotate-left') ?>"></use></svg> History
         </button>
     </div>
 
@@ -105,7 +105,7 @@ $bz2Supported = function_exists('bzopen');
                 <tr>
                     <th>Filename</th>
                     <th>Size</th>
-                    <th>Date</th>
+                    <th>Date Added</th>
                     <th>Type</th>
                     <th class="text-center">Actions</th>
                 </tr>
@@ -147,22 +147,24 @@ $bz2Supported = function_exists('bzopen');
                                         onclick="previewFile('<?= $view->escapeJs($file['name']) ?>')"
                                         class="btn btn-icon btn-purple"
                                         title="Preview SQL content">
-                                    <svg class="icon w-4 h-4 fill-current"><use href="assets/icons.svg#eye"></use></svg>
+                                    <svg class="icon w-4 h-4 fill-current"><use href="<?= $view->iconRef('eye') ?>"></use></svg>
                                 </button>
-                                <form method="post" action="" style="display:inline">
+                                <form method="post" action="" style="display:inline; vertical-align:middle"
+                                      onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').classList.add('opacity-50','cursor-not-allowed'); this.querySelector('.btn-icon-swap').innerHTML='<use href=&quot;<?= $view->iconRef('spinner') ?>&quot;></use>'; this.querySelector('.btn-icon-swap').classList.add('animate-spin');">
                                     <input type="hidden" name="fn" value="<?= $view->e($file['name']) ?>">
-                                    <button type="submit" class="btn btn-green">Import</button>
+                                    <button type="submit" class="btn btn-green">
+                                        <svg class="icon w-4 h-4 fill-current mr-1 btn-icon-swap"><use href="<?= $view->iconRef('download') ?>"></use></svg>Import
+                                    </button>
                                 </form>
                             <?php else: ?>
                                 <span class="text-muted"><?= $compressionType ?> not supported</span>
                             <?php endif; ?>
                         <?php endif; ?>
-                        <form method="post" action="" style="display:inline"
-                              onsubmit="return confirm('Delete <?= $view->escapeJs($file['name']) ?>?')">
-                            <input type="hidden" name="action" value="delete">
-                            <input type="hidden" name="filename" value="<?= $view->e($file['name']) ?>">
-                            <button type="submit" class="btn btn-red">Delete</button>
-                        </form>
+                        <a href="?delete=<?= urlencode($file['name']) ?>"
+                           onclick="if(!confirm('Delete <?= $view->escapeJs($file['name']) ?>?')) return false; this.classList.add('opacity-50','cursor-not-allowed','pointer-events-none'); this.querySelector('.btn-icon-swap').innerHTML='<use href=&quot;<?= $view->iconRef('spinner') ?>&quot;></use>'; this.querySelector('.btn-icon-swap').classList.add('animate-spin');"
+                           class="btn btn-icon btn-red" title="Delete file" style="display:inline; vertical-align:middle">
+                            <svg class="icon w-4 h-4 fill-current btn-icon-swap"><use href="<?= $view->iconRef('trash') ?>"></use></svg>
+                        </a>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -277,7 +279,7 @@ $bz2Supported = function_exists('bzopen');
                 <p class="modal-subtitle" id="previewModalSubtitle">Loading...</p>
             </div>
             <button onclick="closePreviewModal()" class="modal-close" aria-label="Close preview modal">
-                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="assets/icons.svg#xmark"></use></svg>
+                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="<?= $view->iconRef('xmark') ?>"></use></svg>
             </button>
         </div>
 
@@ -294,7 +296,7 @@ $bz2Supported = function_exists('bzopen');
             <!-- Error State -->
             <div id="previewError" class="hidden flex-1 flex items-center justify-center">
                 <div class="text-center text-red-500">
-                    <svg class="icon w-10 h-10 mx-auto mb-3 fill-current"><use href="assets/icons.svg#circle-exclamation"></use></svg>
+                    <svg class="icon w-10 h-10 mx-auto mb-3 fill-current"><use href="<?= $view->iconRef('circle-exclamation') ?>"></use></svg>
                     <div id="previewErrorMessage">Error loading preview</div>
                 </div>
             </div>
@@ -324,10 +326,10 @@ $bz2Supported = function_exists('bzopen');
                 <!-- Tabs -->
                 <div class="flex border-b border-gray-200 dark:border-gray-700 mb-4">
                     <button onclick="switchPreviewTab('raw')" class="preview-tab px-4 py-2 text-sm font-medium border-b-2 transition-colors" id="tabRaw" data-active="true">
-                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#code"></use></svg>Raw Content
+                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="<?= $view->iconRef('code') ?>"></use></svg>Raw Content
                     </button>
                     <button onclick="switchPreviewTab('queries')" class="preview-tab px-4 py-2 text-sm font-medium border-b-2 transition-colors" id="tabQueries" data-active="false">
-                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#database"></use></svg>Queries (<span id="tabQueriesCount">0</span>)
+                        <svg class="icon w-4 h-4 mr-2 fill-current"><use href="<?= $view->iconRef('download') ?>"></use></svg>Queries (<span id="tabQueriesCount">0</span>)
                     </button>
                 </div>
 
@@ -347,7 +349,7 @@ $bz2Supported = function_exists('bzopen');
             <form method="post" action="" id="previewImportForm" style="display:inline">
                 <input type="hidden" name="fn" id="previewImportFilename" value="">
                 <button type="submit" class="btn btn-green">
-                    <svg class="icon w-4 h-4 mr-2 fill-current"><use href="assets/icons.svg#play"></use></svg>Start Import
+                    <svg class="icon w-4 h-4 mr-2 fill-current"><use href="<?= $view->iconRef('play') ?>"></use></svg>Start Import
                 </button>
             </form>
         </div>
@@ -366,12 +368,12 @@ $bz2Supported = function_exists('bzopen');
         <div class="modal-header">
             <div>
                 <h3 class="modal-title" id="historyModalTitle">
-                    <svg class="icon w-5 h-5 mr-2 fill-indigo-500" aria-hidden="true"><use href="assets/icons.svg#clock-rotate-left"></use></svg>Import History
+                    <svg class="icon w-5 h-5 mr-2 fill-indigo-500" aria-hidden="true"><use href="<?= $view->iconRef('clock-rotate-left') ?>"></use></svg>Import History
                 </h3>
                 <p class="modal-subtitle" id="historyModalSubtitle">Recent import operations</p>
             </div>
             <button onclick="closeHistoryModal()" class="modal-close" aria-label="Close history modal">
-                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="assets/icons.svg#xmark"></use></svg>
+                <svg class="icon w-5 h-5 fill-current" aria-hidden="true"><use href="<?= $view->iconRef('xmark') ?>"></use></svg>
             </button>
         </div>
 
@@ -429,7 +431,7 @@ $bz2Supported = function_exists('bzopen');
         <!-- Modal Footer -->
         <div class="modal-footer" style="justify-content: space-between;">
             <button onclick="clearHistory()" class="btn btn-danger-ghost">
-                <svg class="icon w-4 h-4 mr-1 fill-current"><use href="assets/icons.svg#trash"></use></svg> Clear History
+                <svg class="icon w-4 h-4 mr-1 fill-current"><use href="<?= $view->iconRef('trash') ?>"></use></svg> Clear History
             </button>
             <button onclick="closeHistoryModal()" class="btn btn-secondary">
                 Close
