@@ -4,6 +4,37 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.29] - 2026-03-01 - PHAR Fixes & UI Improvements
+
+### Added in 2.29
+
+- **View::iconRef() Helper**: PHAR-compatible SVG icon references — returns `#id` in PHAR mode, `assets/icons2.svg#id` in normal mode
+- **Icon Buttons with Spinner**: Button icons with spinner animation on click for better UX feedback
+- **SSE Files Whitelist**: Added `sse_files` to validActions in `Request::determineAction()`
+
+### Fixed in 2.29
+
+- **PHAR Home Link**: Use `$scriptName` instead of `$scriptUri` for correct header navigation in PHAR mode
+- **PHAR getScriptUri()**: Strip `.phar` entry points in addition to `index.php`
+- **Delete Button**: Replace broken POST form with GET link matching `BigDumpController::delete()`
+- **Dark Mode Warnings**: Fix readability for SSE import warning details in dark mode
+- **Import Resume**: Fixed import resume functionality
+
+### Changed in 2.29
+
+- Various design and bug corrections across templates and assets
+
+### Files Modified in 2.29
+
+| File | Change |
+|------|--------|
+| `src/Core/View.php` | Added `iconRef()` method for PHAR-compatible SVG references |
+| `src/Core/Request.php` | Fixed `getScriptUri()` regex, added `sse_files` to validActions |
+| `templates/home.php` | Replaced 15 hardcoded icon refs with `iconRef()`, fixed delete button |
+| `templates/layout_phar.php` | Fixed home link to use `$scriptName` |
+
+---
+
 ## [2.28] - 2026-01-28 - Continue On Error Mode
 
 ### Added in 2.28
