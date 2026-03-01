@@ -453,4 +453,18 @@ class View
     {
         return isset($this->data[$key]) && $this->data[$key] !== '';
     }
+
+    /**
+     * Returns the correct SVG icon href for a <use> element.
+     *
+     * In PHAR mode, icons are inlined in the DOM so we reference by fragment only (#id).
+     * In normal mode, we reference the external sprite file (assets/icons2.svg#id).
+     *
+     * @param string $id Icon identifier (e.g., 'eye', 'trash', 'spinner').
+     * @return string The href value for a <use> element.
+     */
+    public function iconRef(string $id): string
+    {
+        return $this->isPharMode ? '#' . $id : 'assets/icons2.svg#' . $id;
+    }
 }
