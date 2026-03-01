@@ -4,6 +4,93 @@ All notable changes to BigDump are documented in this file.
 
 > **Note**: BigDump was originally created by Alexey Ozerov in 2003. Version 2.x is a complete MVC refactoring by w3spi5 (2025).
 
+## [2.28] - 2026-01-28 - Continue On Error Mode
+
+### Added in 2.28
+
+- **Continue On Error Mode**: Option to continue import despite SQL errors
+  - New `continue_on_error` config option (default: false for safety)
+  - SQL errors collected as warnings instead of stopping the import
+  - Warnings displayed in collapsible orange section after successful import
+  - Maximum 100 warnings stored (bounded buffer to prevent memory issues)
+  - Warning format includes line number and SQL error message
+  - Useful for large imports where some statements may fail (e.g., duplicate keys, missing tables)
+  - Import history tracks warnings count
+
+### Changed in 2.28
+
+- **ImportSession**: Added warnings system
+  - New `$warnings` array property with `MAX_WARNINGS` constant (100)
+  - Methods: `addWarning()`, `getWarnings()`, `hasWarnings()`, `getWarningsCount()`, `isWarningsLimitReached()`
+  - Warnings persisted across SSE sessions
+  - Statistics include `warnings_count`
+
+- **ImportService**: Modified error handling in `executeQueryDirect()`
+  - Checks `continue_on_error` config before throwing exception
+  - Logs warnings with `error_log()` for server-side tracking
+
+- **SSE Complete Event**: Extended payload
+  - Includes `warnings`, `warningsCount`, `warningsLimitReached`, `maxWarnings` when applicable
+  - Success message shows with orange warning section if warnings exist
+
+- **AjaxService**: Enhanced `displaySuccessInPage()` JavaScript
+  - Accepts warnings parameters
+  - Renders collapsible amber/orange warning section with Tailwind styling
+  - Shows individual warnings grouped by line number
+  - Animations still trigger even with warnings
+
+### Config Example
+
+```php
+/**
+ * Continue import despite SQL errors (v2.28+).
+ * When enabled, SQL errors are collected as warnings instead of
+ * stopping the import. Useful for large imports where some statements
+ * may fail (e.g., duplicate keys, missing tables).
+ * Default: false (stop on first error - safest behavior)
+ */
+'continue_on_error' => false,
+```
+
+### Files Modified in 2.28
+
+| File | Change |
+|------|--------|
+| `config/config.example.php` | Added `continue_on_error` option |
+| `dist/bigdump-config.example.php` | Added `continue_on_error` option |
+| `src/Models/ImportSession.php` | Added warnings system (array, methods, MAX_WARNINGS) |
+| `src/Services/ImportService.php` | Modified `executeQueryDirect()` for continue_on_error |
+| `src/Controllers/BigDumpController.php` | Extended SSE complete event with warnings |
+| `src/Services/AjaxService.php` | Enhanced `displaySuccessInPage()` with warnings UI |
+| `src/Services/ImportHistoryService.php` | Added `warningsCount` parameter to `addEntry()` |
+
+---
+
+## [2.27] - 2025-01-13 - Celebration Effects & Visual Enhancements
+
+### Added in 2.27
+
+- **Celebration Effects**: Success triggers visual celebrations
+  - Fireworks: 20 seconds of colorful particle explosions with trails and glow
+  - Confetti: Infinite falling 3D confetti with realistic physics
+  - Side confetti cannons bursting every 2 seconds
+
+- **Visual Enhancements**:
+  - Animated favicon with bouncing arrow during import
+  - Skeleton loaders with shimmer animation for loading states
+  - Progress bar glow: Green pulsing effect on completion
+  - Improved dark mode contrast for success statistics
+
+- **French Localization**: Translated labels ("Import terminé!")
+
+### Fixed in 2.27
+
+- **Progress Bar Completion**: Progress bar now correctly reaches 100%
+- **SSE Redirect Issue**: Success now displays in-page instead of redirecting to error page
+- **CI/CD Workflow**: Compatibility fixed for protected branches
+
+---
+
 ## [2.26] - 2025-01-13 - Clean URLs & Bug Fixes
 
 ### Added in 2.26

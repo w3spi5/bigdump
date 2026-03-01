@@ -51,3 +51,4 @@ error_log
 tailwindcss-linux-x64
 esbuild
 uploads/.import_history.json
+frontend/

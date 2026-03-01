@@ -160,15 +160,77 @@ class AjaxService
     /**
      * Displays an import success message directly in the page.
      * Creates a styled success container matching the error display pattern.
+     * Optionally displays warnings in an orange section below the success message.
      *
      * @param {object} stats Statistics object
+     * @param {array} warnings Array of warning objects (optional)
+     * @param {number} warningsCount Total warnings count (may exceed warnings.length)
+     * @param {boolean} warningsLimitReached Whether max warnings limit was reached
+     * @param {number} maxWarnings Maximum warnings limit
      */
-    function displaySuccessInPage(stats) {
+    function displaySuccessInPage(stats, warnings, warningsCount, warningsLimitReached, maxWarnings) {
+        // Start celebration effects (fireworks + confetti)
+        if (window.BigDump && window.BigDump.celebration) {
+            window.BigDump.celebration.start();
+        }
+
         var queriesDone = stats && stats.queries_done ? stats.queries_done.toLocaleString() : '0';
         var linesDone = stats && stats.lines_done ? stats.lines_done.toLocaleString() : '0';
         var bytesDone = stats && stats.bytes_done ? formatBytes(stats.bytes_done) : '0 B';
         var elapsed = document.getElementById('elapsedTime');
         var elapsedTime = elapsed ? elapsed.textContent : '00:00:00';
+
+        // Determine if we have warnings to display
+        var hasWarnings = warnings && warnings.length > 0;
+        var displayWarningsCount = warningsCount || (warnings ? warnings.length : 0);
+
+        // Build warnings section HTML if needed
+        var warningsHtml = '';
+        if (hasWarnings) {
+            var warningItems = warnings.map(function(w) {
+                return '<li class="py-2 border-b border-amber-200 dark:border-amber-700 last:border-0">' +
+                    '<span class="font-mono text-xs bg-amber-200 dark:bg-amber-800 px-1.5 py-0.5 rounded mr-2">Line ' + w.line + '</span>' +
+                    '<span class="text-amber-800 dark:text-amber-200 text-sm">' + escapeHtml(w.message.split('\\n')[0]) + '</span>' +
+                    '</li>';
+            }).join('');
+
+            var limitNotice = '';
+            if (warningsLimitReached) {
+                limitNotice = '<div class="mt-2 text-xs text-amber-600 dark:text-amber-400 italic">' +
+                    '⚠️ Warning limit reached (' + maxWarnings + '). Additional errors may have occurred but were not recorded.' +
+                    '</div>';
+            }
+
+            warningsHtml = '<div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-6 mb-6" id="sse-warnings-alert">' +
+                '<div class="flex items-start gap-4">' +
+                    '<div class="flex-shrink-0">' +
+                        '<svg class="w-8 h-8 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.848c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003zM12 8.25a.75.75 0 01.75.75v3.75a.75.75 0 01-1.5 0V9a.75.75 0 01.75-.75zm0 8.25a.75.75 0 100-1.5.75.75 0 000 1.5z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                    '</div>' +
+                    '<div class="flex-1">' +
+                        '<h3 class="text-lg font-semibold text-amber-800 dark:text-amber-200">' + displayWarningsCount + ' Warning' + (displayWarningsCount !== 1 ? 's' : '') + '</h3>' +
+                        '<div class="text-sm text-amber-700 dark:text-amber-300 mt-1">Some SQL statements failed but import continued (continue_on_error enabled).</div>' +
+                    '</div>' +
+                '</div>' +
+                '<details class="mt-4">' +
+                    '<summary class="cursor-pointer flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-300 hover:text-amber-800 dark:hover:text-amber-200">' +
+                        '<svg class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">' +
+                            '<path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/>' +
+                        '</svg>' +
+                        '<span>Show Warning Details</span>' +
+                    '</summary>' +
+                    '<ul class="mt-3 bg-amber-100 dark:bg-amber-900/40 rounded-lg p-3 max-h-64 overflow-y-auto">' + warningItems + '</ul>' +
+                    limitNotice +
+                '</details>' +
+            '</div>';
+        }
+
+        // Adjust success message based on warnings presence
+        var successTitle = hasWarnings ? 'Import Complete (with Warnings)' : 'Import Complete!';
+        var successSubtitle = hasWarnings
+            ? 'File <strong>' + escapeHtml(filename) + '</strong> has been imported with ' + displayWarningsCount + ' warning' + (displayWarningsCount !== 1 ? 's' : '') + '.'
+            : 'File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.';
 
         // Create success HTML with Tailwind classes
         var successHtml = '<div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-6 mb-6" id="sse-success-alert" role="alert">' +
@@ -179,40 +241,41 @@ class AjaxService
                     '</svg>' +
                 '</div>' +
                 '<div class="flex-1">' +
-                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">Import Complete!</h2>' +
-                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">File <strong>' + escapeHtml(filename) + '</strong> has been successfully imported.</div>' +
+                    '<h2 class="text-lg font-semibold text-green-800 dark:text-green-200">' + successTitle + '</h2>' +
+                    '<div class="text-sm text-green-700 dark:text-green-300 mt-1">' + successSubtitle + '</div>' +
                 '</div>' +
-            '</div>' +
             '<div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + queriesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Queries</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + queriesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Requêtes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + linesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Lines</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + linesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Lignes</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + bytesDone + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Processed</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + bytesDone + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Traité</div>' +
                 '</div>' +
-                '<div class="bg-green-100 dark:bg-green-900/40 rounded-lg p-3">' +
-                    '<div class="text-2xl font-bold text-green-800 dark:text-green-200">' + elapsedTime + '</div>' +
-                    '<div class="text-xs text-green-600 dark:text-green-400">Duration</div>' +
+                '<div class="stat-card-success">' +
+                    '<div class="text-2xl font-bold text-green-800 dark:text-green-100">' + elapsedTime + '</div>' +
+                    '<div class="text-xs text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Durée</div>' +
                 '</div>' +
             '</div>' +
         '</div>' +
+        warningsHtml +
         '<div style="display: flex; justify-content: center; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 30px; margin-bottom: 25px;">' +
             '<a href="/" class="px-6 py-3 rounded-md font-medium text-sm transition-colors cursor-pointer inline-block text-center no-underline bg-blue-600 hover:bg-blue-700 text-white">' +
-                'Back to Home</a>' +
+                'Retour à l\\'accueil</a>' +
         '</div>';
 
-        // Find main content area and replace content
-        var mainContent = document.querySelector('main');
-        if (mainContent) {
-            // Clear all content and show success message
-            mainContent.innerHTML = successHtml;
-        }
+            // Find main content area and replace content
+            var mainContent = document.querySelector('main');
+            if (mainContent) {
+                // Clear all content and show success message
+                mainContent.innerHTML = successHtml;
+            }
+        }, 500); // 500ms delay for celebration to start
     }
 
     /**
@@ -379,6 +442,35 @@ class AjaxService
     function updateProgress(data) {
         var stats = data.stats;
         var session = data.session;
+
+        // Fix 99.5% bug: Force 100% display when import is finished
+        // The offset/fileSize calculation can plateau at 99.5% due to rounding
+        if (data.finished) {
+            var progressBar = document.querySelector('.progress-bar');
+            if (progressBar) {
+                progressBar.style.width = '100%';
+                progressBar.classList.add('progress-bar-complete');
+            }
+            // Force all percentage displays to show 100%
+            var statBoxes = document.querySelectorAll('.stat-box .stat-value');
+            if (statBoxes[3]) {
+                statBoxes[3].textContent = '100.0%';
+            }
+            var pctDisplay = document.querySelector('#elapsedTimer + div');
+            if (pctDisplay) {
+                pctDisplay.textContent = '100.00% Complete';
+            }
+            // Update table percentage row to show 100%
+            var table = document.querySelector('table tbody');
+            if (table) {
+                var rows = table.getElementsByTagName('tr');
+                if (rows[5]) { // Row 6 = Percentage
+                    var cells = rows[5].getElementsByTagName('td');
+                    if (cells[2]) cells[2].textContent = '100.00'; // pct_done column
+                }
+            }
+            return; // Don't process further updates when finished
+        }
 
         // Update line number display (using textContent for XSS safety)
         if (session && session.start !== undefined) {
@@ -661,6 +753,10 @@ class AjaxService
             }
             // Start elapsed timer
             startElapsedTimer();
+            // Start favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.start();
+            }
         });
 
         // Handle progress events (real-time updates)
@@ -697,14 +793,25 @@ class AjaxService
             console.log('SSE: Import complete');
             smoothing.stop();
             stopElapsedTimer();
+            // Stop favicon animation
+            if (window.BigDump && window.BigDump.faviconAnimator) {
+                window.BigDump.faviconAnimator.stop();
+            }
             intentionalClose = true;
             source.close();
             try {
                 var data = JSON.parse(e.data);
-                displaySuccessInPage(data.stats);
+                // Pass warnings data if available
+                displaySuccessInPage(
+                    data.stats,
+                    data.warnings || [],
+                    data.warningsCount || 0,
+                    data.warningsLimitReached || false,
+                    data.maxWarnings || 100
+                );
             } catch (err) {
                 // Fallback: show basic success without stats
-                displaySuccessInPage(null);
+                displaySuccessInPage(null, [], 0, false, 100);
             }
         });
 
@@ -736,6 +843,10 @@ class AjaxService
 
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     // Display error in page with hasCreateTable info
                     // Combine stats and hasCreateTable into stats object for displayErrorInPage
                     var errorStats = data.stats || {};
@@ -744,6 +855,10 @@ class AjaxService
                 } catch (err) {
                     smoothing.stop();
                     stopElapsedTimer();
+                    // Stop favicon animation
+                    if (window.BigDump && window.BigDump.faviconAnimator) {
+                        window.BigDump.faviconAnimator.stop();
+                    }
                     displayErrorInPage('Import error occurred', null);
                 }
                 intentionalClose = true;

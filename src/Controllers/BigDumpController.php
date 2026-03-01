@@ -527,7 +527,7 @@ class BigDumpController
             // Without this, "Back to Home" → "Import" sees invalid session and fails silently
             $this->clearSessionDirect($sessionFile);
         } else {
-            // Log successful import to history
+            // Log successful import to history (include warnings count if any)
             $this->historyService->addEntry(
                 $session->getFilename(),
                 $stats['queries_done'] ?? 0,
@@ -535,12 +535,24 @@ class BigDumpController
                 $stats['bytes_done'] ?? 0,
                 true,
                 null,
-                0.0
+                0.0,
+                $session->getWarningsCount()
             );
 
-            $sseService->sendEvent('complete', [
+            // Build complete event data with warnings if present
+            $completeData = [
                 'stats' => $stats,
-            ]);
+            ];
+
+            // Include warnings in the response if any were collected
+            if ($session->hasWarnings()) {
+                $completeData['warnings'] = $session->getWarnings();
+                $completeData['warningsCount'] = $session->getWarningsCount();
+                $completeData['warningsLimitReached'] = $session->isWarningsLimitReached();
+                $completeData['maxWarnings'] = ImportSession::getMaxWarnings();
+            }
+
+            $sseService->sendEvent('complete', $completeData);
         }
 
         // Exit to prevent Application::run() from calling Response::send()
@@ -572,6 +584,7 @@ class BigDumpController
             'file_size' => $session->getFileSize(),
             'frozen_lines_total' => $session->getFrozenLinesTotal(),
             'frozen_queries_total' => $session->getFrozenQueriesTotal(),
+            'warnings' => $session->getWarnings(),
             'active' => true,
         ];
 

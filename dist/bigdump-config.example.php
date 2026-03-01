@@ -68,6 +68,13 @@ return [
     // =========================================================================
 
     /**
+     * Continue import despite SQL errors.
+     * When enabled, SQL errors are collected as warnings instead of stopping.
+     * Useful for large imports where some statements may fail.
+     */
+    'continue_on_error' => false,
+
+    /**
      * AJAX mode (true = no page refresh during import).
      */
     'ajax' => true,

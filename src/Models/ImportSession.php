@@ -152,6 +152,18 @@ class ImportSession
     private ?array $fileAnalysisData = null;
 
     /**
+     * SQL warnings collected during import (when continue_on_error is enabled)
+     * @var array<array{line: int, message: string}>
+     */
+    private array $warnings = [];
+
+    /**
+     * Maximum number of warnings to collect (memory protection)
+     * @var int
+     */
+    private const MAX_WARNINGS = 100;
+
+    /**
      * Creates a new session from request parameters
      *
      * @param string $filename Filename
@@ -685,6 +697,80 @@ class ImportSession
     }
 
     /**
+     * Adds a warning (non-fatal SQL error) to the session.
+     *
+     * Warnings are collected when continue_on_error is enabled.
+     * Maximum MAX_WARNINGS warnings are stored to prevent memory issues.
+     *
+     * @param string $message Error message
+     * @param int $line Line number where error occurred
+     * @return self
+     */
+    public function addWarning(string $message, int $line): self
+    {
+        if (count($this->warnings) < self::MAX_WARNINGS) {
+            $this->warnings[] = [
+                'line' => $line,
+                'message' => $message,
+            ];
+        }
+        return $this;
+    }
+
+    /**
+     * Gets all collected warnings.
+     *
+     * @return array<array{line: int, message: string}> Warnings array
+     */
+    public function getWarnings(): array
+    {
+        return $this->warnings;
+    }
+
+    /**
+     * Checks if any warnings were collected.
+     *
+     * @return bool True if warnings exist
+     */
+    public function hasWarnings(): bool
+    {
+        return count($this->warnings) > 0;
+    }
+
+    /**
+     * Gets the total number of warnings collected.
+     *
+     * Note: This returns the actual count, which may be less than
+     * the total errors encountered if MAX_WARNINGS was reached.
+     *
+     * @return int Number of warnings
+     */
+    public function getWarningsCount(): int
+    {
+        return count($this->warnings);
+    }
+
+    /**
+     * Checks if warnings limit was reached.
+     *
+     * @return bool True if MAX_WARNINGS was reached
+     */
+    public function isWarningsLimitReached(): bool
+    {
+        return count($this->warnings) >= self::MAX_WARNINGS;
+    }
+
+    /**
+     * Gets the maximum warnings limit.
+     *
+     * @return int Maximum warnings allowed
+     */
+    public static function getMaxWarnings(): int
+    {
+        return self::MAX_WARNINGS;
+    }
+
+    /**
      * Calculates session statistics
      *
      * @return array<string, mixed> Statistics
@@ -818,6 +904,10 @@ class ImportSession
             'file_category_label' => $this->getFileCategoryLabel(),
             'is_bulk_insert' => $this->isBulkInsert(),
             'target_ram_usage' => $this->getTargetRamUsage(),
+
+            // Warnings (continue_on_error mode)
+            'warnings_count' => $this->getWarningsCount(),
+            'warnings_limit_reached' => $this->isWarningsLimitReached(),
         ];
     }
 
@@ -859,6 +949,7 @@ class ImportSession
             'frozen_lines_total' => $this->frozenLinesTotal,
             'frozen_queries_total' => $this->frozenQueriesTotal,
             'file_analysis_data' => $this->fileAnalysisData,
+            'warnings' => $this->warnings,
             'active' => true,
         ];
     }
@@ -897,6 +988,11 @@ class ImportSession
         // Restore file analysis data if available
         if (isset($data['file_analysis_data'])) {
             $session->fileAnalysisData = $data['file_analysis_data'];
+        }
+
+        // Restore warnings if available
+        if (isset($data['warnings']) && is_array($data['warnings'])) {
+            $session->warnings = $data['warnings'];
         }
 
         return $session;
