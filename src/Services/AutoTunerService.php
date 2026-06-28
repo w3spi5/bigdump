@@ -933,16 +933,30 @@ class AutoTunerService
 
     /**
      * Get memory info on Linux by reading /proc/meminfo (no shell execution)
+     *
+     * Wrapped in a try/catch and using the @-operator because some shared
+     * hosting environments restrict access to /proc via open_basedir. In that
+     * case is_readable()/file_get_contents() emit warnings (which the global
+     * error handler turns into exceptions); we swallow them and fall back to
+     * PHP-based memory estimation instead of crashing. See issue #48.
      */
     private function getLinuxMemory(): ?array
     {
         $meminfo = '/proc/meminfo';
 
-        if (!is_readable($meminfo)) {
+        try {
+            // The @-operator silences open_basedir warnings so the global
+            // error handler does not promote them to an ErrorException.
+            if (!@is_readable($meminfo)) {
+                return null;
+            }
+
+            $content = @file_get_contents($meminfo);
+        } catch (\Throwable $e) {
+            // open_basedir or any other restriction: degrade gracefully.
             return null;
         }
 
-        $content = @file_get_contents($meminfo);
         if ($content === false) {
             return null;
         }
